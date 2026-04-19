@@ -12,6 +12,7 @@ import {
   ShipWheel,
 } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
+import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import { t } from "../lib/i18n";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import {
@@ -73,6 +74,7 @@ export default function ShipmentJobs({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -397,7 +399,16 @@ export default function ShipmentJobs({
               {paginatedJobs.map((job) => (
                 <tr
                   key={job.id}
-                  className="align-top transition hover:bg-slate-50/80"
+                  tabIndex={0}
+                  role="button"
+                  onClick={() => setSelectedJob(job)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedJob(job);
+                    }
+                  }}
+                  className="cursor-pointer align-top transition hover:bg-slate-50/80 focus:bg-slate-50 focus:outline-none"
                 >
                   <td className="px-3 py-4">
                     <span
@@ -490,6 +501,11 @@ export default function ShipmentJobs({
           onPageSizeChange={setPageSize}
         />
       </section>
+      <ShipmentJobDetailModal
+        job={selectedJob}
+        documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
+        onClose={() => setSelectedJob(null)}
+      />
     </div>
   );
 }

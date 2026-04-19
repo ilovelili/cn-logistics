@@ -5,7 +5,11 @@ export type ShipmentStatus = "under_process" | "customs_hold" | "completed";
 export type TradeMode = "export" | "import" | "triangle";
 export type TransportMode = "air" | "lcl" | "fcl";
 export type DocumentScope = "customer" | "internal";
-export type DocumentApprovalStatus = "pending" | "approved" | "rejected";
+export type DocumentApprovalStatus =
+  | "not_requested"
+  | "pending"
+  | "approved"
+  | "rejected";
 
 export interface ShipmentJob {
   id: string;
@@ -112,12 +116,14 @@ export const statusAccentClasses: Record<ShipmentStatus, string> = {
 };
 
 export const documentApprovalLabels: Record<DocumentApprovalStatus, string> = {
+  not_requested: t("documents.approval.notRequested"),
   pending: t("documents.approval.pending"),
   approved: t("documents.approval.approved"),
   rejected: t("documents.approval.rejected"),
 };
 
 export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
+  not_requested: "bg-slate-50 text-slate-700 border-slate-200",
   pending: "bg-amber-50 text-amber-800 border-amber-200",
   approved: "bg-emerald-50 text-emerald-800 border-emerald-200",
   rejected: "bg-rose-50 text-rose-800 border-rose-200",
@@ -392,7 +398,7 @@ function buildDocumentPayload(
     file_url: uploaded?.fileUrl ?? existing?.file_url ?? null,
     approval_status:
       existing?.approval_status ??
-      (scope === "internal" ? "approved" : "pending"),
+      (scope === "internal" ? "approved" : "not_requested"),
     rejection_reason: existing?.rejection_reason ?? null,
     approved_at: existing?.approved_at ?? null,
     approved_by: existing?.approved_by ?? null,

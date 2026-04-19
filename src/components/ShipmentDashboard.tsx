@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -7,8 +8,10 @@ import {
   ShipWheel,
   TrendingUp,
 } from "lucide-react";
+import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import { t } from "../lib/i18n";
 import {
+  getDocumentsForJob,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
@@ -36,6 +39,7 @@ export default function ShipmentDashboard({
   onOpenJobs,
   onOpenDocuments,
 }: ShipmentDashboardProps) {
+  const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const underProcess = jobs.filter(
     (job) => job.status === "under_process",
   ).length;
@@ -57,6 +61,11 @@ export default function ShipmentDashboard({
     (job) => job.transport_mode ?? "unknown",
   );
   const recentJobs = jobs.slice(0, 5);
+  const documentsByJob = useMemo(() => {
+    return Object.fromEntries(
+      jobs.map((job) => [job.id, getDocumentsForJob(documents, job.id)]),
+    ) as Record<string, ShipmentDocument[]>;
+  }, [documents, jobs]);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -205,7 +214,19 @@ export default function ShipmentDashboard({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {recentJobs.map((job) => (
-                <tr key={job.id} className="text-slate-700">
+                <tr
+                  key={job.id}
+                  tabIndex={0}
+                  role="button"
+                  onClick={() => setSelectedJob(job)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedJob(job);
+                    }
+                  }}
+                  className="cursor-pointer text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+                >
                   <td className="py-4 pr-4">
                     <span
                       className={`rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
@@ -241,6 +262,11 @@ export default function ShipmentDashboard({
           )}
         </div>
       </Panel>
+      <ShipmentJobDetailModal
+        job={selectedJob}
+        documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
+        onClose={() => setSelectedJob(null)}
+      />
     </div>
   );
 }

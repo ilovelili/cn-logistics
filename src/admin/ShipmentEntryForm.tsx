@@ -298,57 +298,61 @@ function DocumentApprovalPanel({
         </div>
       ) : (
         <div className="space-y-2">
-          {documents.map((document) => (
-            <div
-              key={document.id}
-              className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {document.name}
-                  </span>
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          {documents.map((document) => {
+            const canReview = document.approval_status === "pending";
+
+            return (
+              <div
+                key={document.id}
+                className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {document.name}
+                    </span>
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {document.scope === "customer"
+                        ? t("documents.customer")
+                        : t("documents.internal")}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-bold ${documentApprovalClasses[document.approval_status]}`}
+                    >
+                      {documentApprovalLabels[document.approval_status]}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {document.scope === "customer"
-                      ? t("documents.customer")
-                      : t("documents.internal")}
-                  </span>
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-xs font-bold ${documentApprovalClasses[document.approval_status]}`}
-                  >
-                    {documentApprovalLabels[document.approval_status]}
-                  </span>
+                      ? t("documents.downloadLocked")
+                      : t("documents.internalOnly")}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {document.scope === "customer"
-                    ? t("documents.downloadLocked")
-                    : t("documents.internalOnly")}
-                </p>
+                {document.scope === "customer" && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={loading || !canReview}
+                      onClick={() => onApprove(document)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      {t("common.approve")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loading || !canReview}
+                      onClick={() => onReject(document)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <XCircle className="h-3.5 w-3.5" />
+                      {t("common.reject")}
+                    </button>
+                  </div>
+                )}
               </div>
-              {document.scope === "customer" && (
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => onApprove(document)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    {t("common.approve")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => onReject(document)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    {t("common.reject")}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

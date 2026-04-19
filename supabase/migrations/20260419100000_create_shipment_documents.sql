@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS shipment_documents (
   name text NOT NULL,
   storage_path text,
   file_url text,
-  approval_status text NOT NULL DEFAULT 'pending'
-    CHECK (approval_status IN ('pending', 'approved', 'rejected')),
+  approval_status text NOT NULL DEFAULT 'not_requested'
+    CHECK (approval_status IN ('not_requested', 'pending', 'approved', 'rejected')),
   rejection_reason text,
   approved_at timestamptz,
   approved_by text,
@@ -95,7 +95,7 @@ SELECT
   CASE
     WHEN job.invoice_number = 'ABC-123' AND document_name = '入庫票'
       THEN 'approved'
-    ELSE 'pending'
+    ELSE 'not_requested'
   END,
   CASE
     WHEN job.invoice_number = 'ABC-123' AND document_name = '入庫票'

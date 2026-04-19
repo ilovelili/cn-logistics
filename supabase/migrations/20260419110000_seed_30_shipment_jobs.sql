@@ -77,7 +77,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO shipment_documents (shipment_job_id, scope, name, approval_status)
-SELECT job.id, 'customer', document_name, 'pending'
+SELECT job.id, 'customer', document_name, 'not_requested'
 FROM shipment_jobs job
 CROSS JOIN LATERAL unnest(job.documents) AS document_name
 WHERE job.notes = 'Expanded sample shipment job.'

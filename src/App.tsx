@@ -148,6 +148,8 @@ function MainApp({
             jobs={jobs}
             documents={documents}
             loading={jobsLoading}
+            onRefresh={loadJobs}
+            isAdminAuthenticated={isAdminAuthenticated}
           />
         );
       default:
