@@ -19,6 +19,7 @@ import {
   getDocumentsForJob,
   ShipmentDocument,
   ShipmentJob,
+  ShipmentStatus,
   statusBadgeClasses,
   statusLabels,
   statusOptions,
@@ -42,6 +43,7 @@ type SortKey =
   | "bl_awb_date";
 
 type SortDirection = "asc" | "desc";
+type StatusFilter = ShipmentStatus | "all";
 const pageSizeOptions = [10, 15, 30];
 
 interface ShipmentJobsProps {
@@ -49,6 +51,8 @@ interface ShipmentJobsProps {
   documents: ShipmentDocument[];
   loading: boolean;
   onRefresh: () => Promise<void>;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (statusFilter: StatusFilter) => void;
 }
 
 export default function ShipmentJobs({
@@ -56,10 +60,11 @@ export default function ShipmentJobs({
   documents,
   loading,
   onRefresh,
+  statusFilter,
+  onStatusFilterChange,
 }: ShipmentJobsProps) {
   const { isAdminAuthenticated } = useAdminAuth();
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [tradeFilter, setTradeFilter] = useState("all");
   const [transportFilter, setTransportFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
@@ -235,7 +240,7 @@ export default function ShipmentJobs({
           <FilterSelect
             icon={<Filter className="h-4 w-4" />}
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={(value) => onStatusFilterChange(value as StatusFilter)}
             options={[
               { value: "all", label: t("jobs.filter.allStatus") },
               ...statusOptions,

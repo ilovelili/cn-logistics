@@ -47,10 +47,9 @@ const ja = {
   "transport.lcl": "LCL",
   "transport.fcl": "FCL",
 
-  "dashboard.kicker": "物流オペレーション",
   "dashboard.title": "出荷管理ダッシュボード",
   "dashboard.description":
-    "顧客提供のExcelに合わせて、取引形態、BL/AWB番号、航路、書類準備状況を一元管理します。",
+    "取引形態、BL/AWB番号、航路、書類準備状況を一元管理します。",
   "dashboard.completionRate": "完了率",
   "dashboard.totalJobs": "案件数",
   "dashboard.statusPipeline": "ステータス別件数",

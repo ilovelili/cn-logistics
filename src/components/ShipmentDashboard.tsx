@@ -11,6 +11,7 @@ import { t } from "../lib/i18n";
 import {
   ShipmentDocument,
   ShipmentJob,
+  ShipmentStatus,
   statusAccentClasses,
   statusBadgeClasses,
   statusLabels,
@@ -23,6 +24,8 @@ interface ShipmentDashboardProps {
   documents: ShipmentDocument[];
   loading: boolean;
   error: string | null;
+  onOpenJobs: (status: ShipmentStatus | "all") => void;
+  onOpenDocuments: () => void;
 }
 
 export default function ShipmentDashboard({
@@ -30,6 +33,8 @@ export default function ShipmentDashboard({
   documents,
   loading,
   error,
+  onOpenJobs,
+  onOpenDocuments,
 }: ShipmentDashboardProps) {
   const underProcess = jobs.filter(
     (job) => job.status === "under_process",
@@ -64,10 +69,7 @@ export default function ShipmentDashboard({
         <div className="absolute right-32 bottom-0 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-200">
-              {t("dashboard.kicker")}
-            </p>
-            <h1 className="mt-4 text-4xl font-black tracking-tight">
+            <h1 className="text-4xl font-black tracking-tight">
               {t("dashboard.title")}
             </h1>
             <p className="mt-3 max-w-2xl text-slate-300">
@@ -91,30 +93,35 @@ export default function ShipmentDashboard({
           value={jobs.length}
           icon={<ShipWheel />}
           tone="slate"
+          onClick={() => onOpenJobs("all")}
         />
         <MetricCard
           label={t("status.underProcess")}
           value={underProcess}
           icon={<CircleDashed />}
           tone="blue"
+          onClick={() => onOpenJobs("under_process")}
         />
         <MetricCard
           label={t("status.customsHold")}
           value={customsHold}
           icon={<AlertTriangle />}
           tone="amber"
+          onClick={() => onOpenJobs("customs_hold")}
         />
         <MetricCard
           label={t("status.completed")}
           value={completed}
           icon={<CheckCircle2 />}
           tone="emerald"
+          onClick={() => onOpenJobs("completed")}
         />
         <MetricCard
           label={t("documents.approvedDownloads")}
           value={approvedDownloads.length}
           icon={<FileStack />}
           tone="rose"
+          onClick={onOpenDocuments}
         />
       </div>
 
@@ -251,11 +258,13 @@ function MetricCard({
   value,
   icon,
   tone,
+  onClick,
 }: {
   label: string;
   value: number;
   icon: React.ReactNode;
   tone: "slate" | "blue" | "amber" | "emerald" | "rose";
+  onClick?: () => void;
 }) {
   const tones = {
     slate: "bg-slate-100 text-slate-700",
@@ -265,8 +274,18 @@ function MetricCard({
     rose: "bg-rose-100 text-rose-700",
   };
 
+  const Component = onClick ? "button" : "div";
+
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <Component
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`w-full rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
+        onClick
+          ? "cursor-pointer hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-slate-200"
+          : ""
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm font-medium text-slate-500">{label}</div>
@@ -278,7 +297,7 @@ function MetricCard({
           {icon}
         </div>
       </div>
-    </div>
+    </Component>
   );
 }
 

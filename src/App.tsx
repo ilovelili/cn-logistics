@@ -22,9 +22,11 @@ import {
   fetchShipmentJobs,
   ShipmentDocument,
   ShipmentJob,
+  ShipmentStatus,
 } from "./lib/shipmentJobs";
 
 type View = "dashboard" | "jobs" | "documents";
+type JobsStatusFilter = ShipmentStatus | "all";
 
 function useDarkMode() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -58,6 +60,8 @@ function MainApp({
   const [showAdminMode, setShowAdminMode] = useState(false);
   const [jobs, setJobs] = useState<ShipmentJob[]>([]);
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
+  const [jobsStatusFilter, setJobsStatusFilter] =
+    useState<JobsStatusFilter>("all");
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const { isAdminAuthenticated } = useAdminAuth();
@@ -109,6 +113,11 @@ function MainApp({
     { id: "documents" as View, name: t("app.nav.documents"), icon: FileStack },
   ];
 
+  const openJobsWithStatus = (status: JobsStatusFilter) => {
+    setJobsStatusFilter(status);
+    setCurrentView("jobs");
+  };
+
   const renderView = () => {
     switch (currentView) {
       case "dashboard":
@@ -118,6 +127,8 @@ function MainApp({
             documents={documents}
             loading={jobsLoading}
             error={jobsError}
+            onOpenJobs={openJobsWithStatus}
+            onOpenDocuments={() => setCurrentView("documents")}
           />
         );
       case "jobs":
@@ -127,6 +138,8 @@ function MainApp({
             documents={documents}
             loading={jobsLoading}
             onRefresh={loadJobs}
+            statusFilter={jobsStatusFilter}
+            onStatusFilterChange={setJobsStatusFilter}
           />
         );
       case "documents":
@@ -144,6 +157,8 @@ function MainApp({
             documents={documents}
             loading={jobsLoading}
             error={jobsError}
+            onOpenJobs={openJobsWithStatus}
+            onOpenDocuments={() => setCurrentView("documents")}
           />
         );
     }
