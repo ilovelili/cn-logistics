@@ -1,91 +1,60 @@
-import { useState, useEffect } from "react";
-import { Package, ClipboardList, CheckCircle, AlertCircle } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileStack,
+  ShipWheel,
+} from "lucide-react";
+import { t } from "../lib/i18n";
+import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
-interface Stats {
-  totalParcels: number;
-  totalEvents: number;
-  deliveredToday: number;
-  pendingParcels: number;
+interface AdminDashboardProps {
+  jobs: ShipmentJob[];
+  documents: ShipmentDocument[];
+  loading: boolean;
 }
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({
-    totalParcels: 0,
-    totalEvents: 0,
-    deliveredToday: 0,
-    pendingParcels: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-
-        const [parcelsRes, eventsRes, deliveredRes, pendingRes] =
-          await Promise.all([
-            supabase
-              .from("parcels")
-              .select("id", { count: "exact", head: true }),
-            supabase
-              .from("tracking_events")
-              .select("id", { count: "exact", head: true }),
-            supabase
-              .from("parcels")
-              .select("id", { count: "exact", head: true })
-              .eq("status", "delivered")
-              .gte("updated_at", todayStart.toISOString()),
-            supabase
-              .from("parcels")
-              .select("id", { count: "exact", head: true })
-              .in("status", ["created", "in_warehouse"]),
-          ]);
-
-        setStats({
-          totalParcels: parcelsRes.count || 0,
-          totalEvents: eventsRes.count || 0,
-          deliveredToday: deliveredRes.count || 0,
-          pendingParcels: pendingRes.count || 0,
-        });
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+export default function AdminDashboard({
+  jobs,
+  documents,
+  loading,
+}: AdminDashboardProps) {
+  const customsHold = jobs.filter(
+    (job) => job.status === "customs_hold",
+  ).length;
+  const completed = jobs.filter((job) => job.status === "completed").length;
+  const pendingApproval = documents.filter(
+    (document) =>
+      document.scope === "customer" && document.approval_status === "pending",
+  );
 
   const cards = [
     {
-      label: "総荷物数",
-      value: stats.totalParcels,
-      icon: Package,
+      label: t("jobs.title"),
+      value: jobs.length,
+      icon: ShipWheel,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950",
     },
     {
-      label: "追跡イベント数",
-      value: stats.totalEvents,
-      icon: ClipboardList,
-      color: "text-orange-600 dark:text-orange-400",
-      bg: "bg-orange-50 dark:bg-orange-950",
+      label: t("status.customsHold"),
+      value: customsHold,
+      icon: AlertTriangle,
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-50 dark:bg-amber-950",
     },
     {
-      label: "本日配達完了",
-      value: stats.deliveredToday,
-      icon: CheckCircle,
-      color: "text-green-600 dark:text-green-400",
-      bg: "bg-green-50 dark:bg-green-950",
+      label: t("status.completed"),
+      value: completed,
+      icon: CheckCircle2,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-950",
     },
     {
-      label: "保留中の荷物",
-      value: stats.pendingParcels,
-      icon: AlertCircle,
-      color: "text-yellow-600 dark:text-yellow-400",
-      bg: "bg-yellow-50 dark:bg-yellow-950",
+      label: t("documents.pendingApproval"),
+      value: pendingApproval.length,
+      icon: FileStack,
+      color: "text-rose-600 dark:text-rose-400",
+      bg: "bg-rose-50 dark:bg-rose-950",
     },
   ];
 
@@ -93,18 +62,18 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          管理ダッシュボード
+          {t("admin.dashboard")}
         </h2>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          システム全体の概況
+          {t("admin.dashboardDescription")}
         </p>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array(4)].map((_, index) => (
             <div
-              key={i}
+              key={index}
               className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 animate-pulse"
             >
               <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4" />
@@ -141,10 +110,10 @@ export default function AdminDashboard() {
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-          クイックアクション
+          {t("admin.operatorWorkflow")}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          左メニューの「追跡情報入力」から、荷物の追跡イベントを手動で登録できます。追跡番号で荷物を検索し、イベント種別・場所・説明を入力して登録してください。
+          {t("admin.operatorWorkflowDescription")}
         </p>
       </div>
     </div>

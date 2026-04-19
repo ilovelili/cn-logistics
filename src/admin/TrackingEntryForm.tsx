@@ -100,7 +100,7 @@ export default function TrackingEntryForm() {
         .or(`tracking_number.ilike.%${searchTerm}%`)
         .limit(10);
       if (error) throw error;
-      setParcels(data || []);
+      setParcels((data || []) as unknown as Parcel[]);
     } catch {
       showToast("error", "検索に失敗しました");
     } finally {

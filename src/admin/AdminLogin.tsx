@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Lock, User, AlertCircle, Package, ArrowLeft } from "lucide-react";
-import { useAdminAuth } from "./AdminAuthContext";
+import { useAdminAuth } from "./useAdminAuth";
+import { t } from "../lib/i18n";
 
 interface AdminLoginProps {
   onBack?: () => void;
@@ -22,7 +23,7 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
 
     const success = login(username, password);
     if (!success) {
-      setError("ユーザー名またはパスワードが正しくありません");
+      setError(t("admin.login.invalid"));
     }
     setLoading(false);
   };
@@ -38,19 +39,19 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
             CN Logistics
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-            管理者ポータル
+            {t("admin.login.title")}
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            ログイン
+            {t("admin.login.heading")}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                ユーザー名
+                {t("admin.login.username")}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -67,7 +68,7 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                パスワード
+                {t("admin.login.password")}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -99,7 +100,7 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
               ) : (
                 <Lock className="w-4 h-4" />
               )}
-              {loading ? "ログイン中..." : "ログイン"}
+              {loading ? t("admin.login.submitting") : t("admin.login.submit")}
             </button>
           </form>
         </div>
@@ -110,12 +111,12 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
             className="w-full flex items-center justify-center gap-2 mt-4 py-2.5 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            ダッシュボードに戻る
+            {t("admin.login.back")}
           </button>
         )}
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">
-          CN Logistics 管理システム - デモ環境
+          {t("admin.login.footer")}
         </p>
       </div>
     </div>

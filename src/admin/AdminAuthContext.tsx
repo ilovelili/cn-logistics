@@ -1,12 +1,14 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useState, ReactNode } from "react";
 
-interface AdminAuthContextType {
+export interface AdminAuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 }
 
-const AdminAuthContext = createContext<AdminAuthContextType | null>(null);
+export const AdminAuthContext = createContext<AdminAuthContextType | null>(
+  null,
+);
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -32,11 +34,4 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AdminAuthContext.Provider>
   );
-}
-
-export function useAdminAuth() {
-  const ctx = useContext(AdminAuthContext);
-  if (!ctx)
-    throw new Error("useAdminAuth must be used within AdminAuthProvider");
-  return ctx;
 }
