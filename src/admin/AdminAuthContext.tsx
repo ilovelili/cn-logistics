@@ -1,7 +1,7 @@
 import { createContext, useState, ReactNode } from "react";
 
 export interface AdminAuthContextType {
-  isAuthenticated: boolean;
+  isAdminAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 }
@@ -11,13 +11,13 @@ export const AdminAuthContext = createContext<AdminAuthContextType | null>(
 );
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     return sessionStorage.getItem("admin_auth") === "true";
   });
 
   const login = (username: string, password: string): boolean => {
     if (username === "admin" && password === "12345") {
-      setIsAuthenticated(true);
+      setIsAdminAuthenticated(true);
       sessionStorage.setItem("admin_auth", "true");
       return true;
     }
@@ -25,12 +25,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
+    setIsAdminAuthenticated(false);
     sessionStorage.removeItem("admin_auth");
   };
 
   return (
-    <AdminAuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AdminAuthContext.Provider value={{ isAdminAuthenticated, login, logout }}>
       {children}
     </AdminAuthContext.Provider>
   );

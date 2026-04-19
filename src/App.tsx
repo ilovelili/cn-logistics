@@ -60,7 +60,7 @@ function MainApp({
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
-  const { isAuthenticated } = useAdminAuth();
+  const { isAdminAuthenticated } = useAdminAuth();
 
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
@@ -88,7 +88,7 @@ function MainApp({
   }, [loadJobs]);
 
   if (showAdminMode) {
-    if (!isAuthenticated) {
+    if (!isAdminAuthenticated) {
       return <AdminLogin onBack={() => setShowAdminMode(false)} />;
     }
     return (

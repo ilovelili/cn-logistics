@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
 import { t } from "../lib/i18n";
+import { useAdminAuth } from "../admin/useAdminAuth";
 import {
   createShipmentJob,
   getDocumentsForJob,
@@ -56,6 +57,7 @@ export default function ShipmentJobs({
   loading,
   onRefresh,
 }: ShipmentJobsProps) {
+  const { isAdminAuthenticated } = useAdminAuth();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tradeFilter, setTradeFilter] = useState("all");
@@ -146,9 +148,17 @@ export default function ShipmentJobs({
     }
   }, [currentPage, pageCount]);
 
+  useEffect(() => {
+    if (!isAdminAuthenticated) {
+      setShowCreate(false);
+    }
+  }, [isAdminAuthenticated]);
+
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
   ) => {
+    if (!isAdminAuthenticated) return;
+
     setSaving(true);
     try {
       await createShipmentJob(form);
@@ -181,17 +191,19 @@ export default function ShipmentJobs({
               {t("jobs.description")}
             </p>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
-          >
-            <Plus className="h-4 w-4" />
-            {t("jobs.new")}
-          </button>
+          {isAdminAuthenticated && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
+            >
+              <Plus className="h-4 w-4" />
+              {t("jobs.new")}
+            </button>
+          )}
         </div>
       </div>
 
-      {showCreate && (
+      {isAdminAuthenticated && showCreate && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -267,21 +279,25 @@ export default function ShipmentJobs({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] table-fixed text-left text-sm">
+          <table
+            className={`w-full table-fixed text-left text-sm ${
+              isAdminAuthenticated ? "min-w-[1180px]" : "min-w-[1080px]"
+            }`}
+          >
             <colgroup>
-              <col className="w-[9%]" />
-              <col className="w-[6%]" />
-              <col className="w-[7%]" />
+              <col className="w-[10%]" />
               <col className="w-[6%]" />
               <col className="w-[8%]" />
+              <col className="w-[6%]" />
+              <col className="w-[8%]" />
               <col className="w-[8%]" />
               <col className="w-[7%]" />
               <col className="w-[7%]" />
               <col className="w-[8%]" />
               <col className="w-[8%]" />
               <col className="w-[8%]" />
-              <col className="w-[9%]" />
-              <col className="w-[9%]" />
+              <col className="w-[12%]" />
+              {isAdminAuthenticated && <col className="w-[9%]" />}
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
@@ -365,9 +381,11 @@ export default function ShipmentJobs({
                 <th className="whitespace-nowrap px-3 py-3">
                   {t("common.documents")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.internalDocuments")}
-                </th>
+                {isAdminAuthenticated && (
+                  <th className="whitespace-nowrap px-3 py-3">
+                    {t("common.internalDocuments")}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -430,14 +448,16 @@ export default function ShipmentJobs({
                       )}
                     />
                   </td>
-                  <td className="px-3 py-4">
-                    <DocumentPills
-                      documents={documentsByJob[job.id]?.filter(
-                        (document) => document.scope === "internal",
-                      )}
-                      muted
-                    />
-                  </td>
+                  {isAdminAuthenticated && (
+                    <td className="px-3 py-4">
+                      <DocumentPills
+                        documents={documentsByJob[job.id]?.filter(
+                          (document) => document.scope === "internal",
+                        )}
+                        muted
+                      />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -521,7 +541,7 @@ function PaginationControls({
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }) {
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pageItems = getPaginationItems(currentPage, pageCount);
 
   return (
     <div className="flex flex-col gap-4 border-t border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -543,20 +563,29 @@ function PaginationControls({
           >
             {t("jobs.pagination.previous")}
           </button>
-          {pages.map((page) => (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onPageChange(page)}
-              className={`min-w-10 border-r border-slate-200 px-3 py-2 text-sm font-semibold transition last:border-r-0 ${
-                page === currentPage
-                  ? "bg-slate-950 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+          {pageItems.map((pageItem, index) =>
+            pageItem === "ellipsis" ? (
+              <span
+                key={`ellipsis-${index}`}
+                className="min-w-10 border-r border-slate-200 px-3 py-2 text-center text-sm font-semibold text-slate-400"
+              >
+                ...
+              </span>
+            ) : (
+              <button
+                key={pageItem}
+                type="button"
+                onClick={() => onPageChange(pageItem)}
+                className={`min-w-10 border-r border-slate-200 px-3 py-2 text-sm font-semibold transition ${
+                  pageItem === currentPage
+                    ? "bg-slate-950 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {pageItem}
+              </button>
+            ),
+          )}
           <button
             type="button"
             disabled={currentPage === pageCount}
@@ -629,6 +658,40 @@ function SortHeader({
   );
 }
 
+function getPaginationItems(
+  currentPage: number,
+  pageCount: number,
+): Array<number | "ellipsis"> {
+  if (pageCount <= 5) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "ellipsis", pageCount];
+  }
+
+  if (currentPage >= pageCount - 2) {
+    return [
+      1,
+      "ellipsis",
+      pageCount - 3,
+      pageCount - 2,
+      pageCount - 1,
+      pageCount,
+    ];
+  }
+
+  return [
+    1,
+    "ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis",
+    pageCount,
+  ];
+}
+
 function DocumentPills({
   documents,
   muted = false,
@@ -641,16 +704,16 @@ function DocumentPills({
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-col items-start gap-1.5">
       {documents.map((document) => (
         <span
           key={document.id}
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+          className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
             muted ? "bg-slate-100 text-slate-600" : "bg-cyan-50 text-cyan-800"
           }`}
         >
-          <FileText className="h-3 w-3" />
-          {document.name}
+          <FileText className="h-3 w-3 shrink-0" />
+          <span className="truncate">{document.name}</span>
         </span>
       ))}
     </div>
