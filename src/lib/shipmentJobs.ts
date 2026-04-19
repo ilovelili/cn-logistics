@@ -58,7 +58,15 @@ export interface ShipmentJobForm {
   bl_awb_date: string;
   documents: string;
   internal_documents: string;
+  document_files: File[];
+  internal_document_files: File[];
   notes: string;
+}
+
+interface UploadedShipmentDocument {
+  name: string;
+  storagePath: string;
+  fileUrl: string;
 }
 
 export const statusOptions: { value: ShipmentStatus; label: string }[] = [
@@ -130,6 +138,8 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   bl_awb_date: "",
   documents: "",
   internal_documents: "",
+  document_files: [],
+  internal_document_files: [],
   notes: "",
 };
 
@@ -160,6 +170,8 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     bl_awb_date: job.bl_awb_date ?? "",
     documents: formatDocumentList(job.documents ?? []),
     internal_documents: formatDocumentList(job.internal_documents ?? []),
+    document_files: [],
+    internal_document_files: [],
     notes: job.notes ?? "",
   };
 }
@@ -178,8 +190,8 @@ export function formToPayload(form: ShipmentJobForm) {
     mbl_mawb: form.mbl_mawb || null,
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
-    documents: parseDocumentList(form.documents),
-    internal_documents: parseDocumentList(form.internal_documents),
+    documents: getDocumentNames(form, "customer"),
+    internal_documents: getDocumentNames(form, "internal"),
     notes: form.notes || null,
   };
 }
@@ -278,7 +290,7 @@ export function downloadShipmentDocument(document: ShipmentDocument) {
   if (document.file_url) {
     const link = window.document.createElement("a");
     link.href = document.file_url;
-    link.download = `${document.name}.pdf`;
+    link.download = document.name;
     link.click();
     return;
   }
@@ -291,6 +303,14 @@ export function downloadShipmentDocument(document: ShipmentDocument) {
 
 async function replaceShipmentDocuments(jobId: string, form: ShipmentJobForm) {
   const existing = await fetchDocumentsForJob(jobId);
+  const [customerUploads, internalUploads] = await Promise.all([
+    uploadShipmentDocumentFiles(jobId, "customer", form.document_files),
+    uploadShipmentDocumentFiles(
+      jobId,
+      "internal",
+      form.internal_document_files,
+    ),
+  ]);
   const existingByKey = new Map(
     existing.map((document) => [
       documentKey(document.scope, document.name),
@@ -298,11 +318,23 @@ async function replaceShipmentDocuments(jobId: string, form: ShipmentJobForm) {
     ]),
   );
   const nextDocuments = [
-    ...parseDocumentList(form.documents).map((name) =>
-      buildDocumentPayload(jobId, "customer", name, existingByKey),
+    ...getDocumentNames(form, "customer").map((name) =>
+      buildDocumentPayload(
+        jobId,
+        "customer",
+        name,
+        existingByKey,
+        customerUploads,
+      ),
     ),
-    ...parseDocumentList(form.internal_documents).map((name) =>
-      buildDocumentPayload(jobId, "internal", name, existingByKey),
+    ...getDocumentNames(form, "internal").map((name) =>
+      buildDocumentPayload(
+        jobId,
+        "internal",
+        name,
+        existingByKey,
+        internalUploads,
+      ),
     ),
   ];
 
@@ -348,14 +380,16 @@ function buildDocumentPayload(
   scope: DocumentScope,
   name: string,
   existingByKey: Map<string, ShipmentDocument>,
+  uploadedDocuments: UploadedShipmentDocument[],
 ) {
   const existing = existingByKey.get(documentKey(scope, name));
+  const uploaded = uploadedDocuments.find((document) => document.name === name);
   return {
     shipment_job_id: jobId,
     scope,
     name,
-    storage_path: existing?.storage_path ?? null,
-    file_url: existing?.file_url ?? null,
+    storage_path: uploaded?.storagePath ?? existing?.storage_path ?? null,
+    file_url: uploaded?.fileUrl ?? existing?.file_url ?? null,
     approval_status:
       existing?.approval_status ??
       (scope === "internal" ? "approved" : "pending"),
@@ -367,4 +401,55 @@ function buildDocumentPayload(
 
 function documentKey(scope: DocumentScope, name: string) {
   return `${scope}:${name}`;
+}
+
+function getDocumentNames(form: ShipmentJobForm, scope: DocumentScope) {
+  const existingNames =
+    scope === "customer"
+      ? parseDocumentList(form.documents)
+      : parseDocumentList(form.internal_documents);
+  const fileNames =
+    scope === "customer"
+      ? form.document_files.map((file) => file.name)
+      : form.internal_document_files.map((file) => file.name);
+
+  return Array.from(new Set([...existingNames, ...fileNames]));
+}
+
+async function uploadShipmentDocumentFiles(
+  jobId: string,
+  scope: DocumentScope,
+  files: File[],
+): Promise<UploadedShipmentDocument[]> {
+  if (!files.length) return [];
+
+  return Promise.all(
+    files.map(async (file) => {
+      const storagePath = `${jobId}/${scope}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageName(file.name)}`;
+      const { error } = await supabase.storage
+        .from("shipment-documents")
+        .upload(storagePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data } = supabase.storage
+        .from("shipment-documents")
+        .getPublicUrl(storagePath);
+
+      return {
+        name: file.name,
+        storagePath,
+        fileUrl: data.publicUrl,
+      };
+    }),
+  );
+}
+
+function sanitizeStorageName(fileName: string) {
+  return fileName.replace(/[^\w.-]+/g, "_");
 }

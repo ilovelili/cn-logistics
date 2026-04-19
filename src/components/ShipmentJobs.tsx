@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   CalendarDays,
   FileText,
   Filter,
@@ -24,6 +27,22 @@ import {
   transportModeOptions,
 } from "../lib/shipmentJobs";
 
+type SortKey =
+  | "status"
+  | "trade"
+  | "invoice_number"
+  | "transport_mode"
+  | "shipper_name"
+  | "consignee_name"
+  | "pol_aol"
+  | "pod_aod"
+  | "mbl_mawb"
+  | "hbl_hawb"
+  | "bl_awb_date";
+
+type SortDirection = "asc" | "desc";
+const pageSizeOptions = [10, 15, 30];
+
 interface ShipmentJobsProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
@@ -43,6 +62,10 @@ export default function ShipmentJobs({
   const [transportFilter, setTransportFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -76,11 +99,52 @@ export default function ShipmentJobs({
     });
   }, [jobs, query, statusFilter, tradeFilter, transportFilter]);
 
+  const sortedJobs = useMemo(() => {
+    if (!sortKey) return filteredJobs;
+
+    return [...filteredJobs].sort((first, second) =>
+      compareSortValues(
+        getSortValue(first, sortKey),
+        getSortValue(second, sortKey),
+        sortDirection,
+        sortKey,
+      ),
+    );
+  }, [filteredJobs, sortDirection, sortKey]);
+
+  const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
+  const safeCurrentPage = Math.min(currentPage, pageCount);
+  const pageStartIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedJobs = sortedJobs.slice(
+    pageStartIndex,
+    pageStartIndex + pageSize,
+  );
+  const visibleFrom = sortedJobs.length ? pageStartIndex + 1 : 0;
+  const visibleTo = Math.min(pageStartIndex + pageSize, sortedJobs.length);
+
   const documentsByJob = useMemo(() => {
     return Object.fromEntries(
       jobs.map((job) => [job.id, getDocumentsForJob(documents, job.id)]),
     ) as Record<string, ShipmentDocument[]>;
   }, [documents, jobs]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    pageSize,
+    query,
+    sortDirection,
+    sortKey,
+    statusFilter,
+    tradeFilter,
+    transportFilter,
+  ]);
+
+  useEffect(() => {
+    if (currentPage > pageCount) {
+      setCurrentPage(pageCount);
+    }
+  }, [currentPage, pageCount]);
 
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
@@ -93,6 +157,16 @@ export default function ShipmentJobs({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSort = (nextSortKey: SortKey) => {
+    if (sortKey === nextSortKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortKey(nextSortKey);
+    setSortDirection("asc");
   };
 
   return (
@@ -124,9 +198,6 @@ export default function ShipmentJobs({
               <h2 className="text-xl font-black text-slate-950">
                 {t("jobs.createTitle")}
               </h2>
-              <p className="text-sm text-slate-500">
-                {t("jobs.createDescription")}
-              </p>
             </div>
           </div>
           <ShipmentJobForm
@@ -188,7 +259,7 @@ export default function ShipmentJobs({
               <p className="text-sm text-slate-500">
                 {t("jobs.count", {
                   total: jobs.length,
-                  filtered: filteredJobs.length,
+                  filtered: sortedJobs.length,
                 })}
               </p>
             </div>
@@ -214,31 +285,83 @@ export default function ShipmentJobs({
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.status")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.trade")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.invoice")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.transport")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.shipper")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.consignee")}
-                </th>
-                <th className="whitespace-nowrap px-3 py-3">POL/AOL</th>
-                <th className="whitespace-nowrap px-3 py-3">POD/AOD</th>
-                <th className="whitespace-nowrap px-3 py-3">MBL/MAWB</th>
-                <th className="whitespace-nowrap px-3 py-3">HBL/HAWB</th>
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.blAwbDate")}
-                </th>
+                <SortHeader
+                  label={t("common.status")}
+                  sortKey="status"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.trade")}
+                  sortKey="trade"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.invoice")}
+                  sortKey="invoice_number"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.transport")}
+                  sortKey="transport_mode"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.shipper")}
+                  sortKey="shipper_name"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.consignee")}
+                  sortKey="consignee_name"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label="POL/AOL"
+                  sortKey="pol_aol"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label="POD/AOD"
+                  sortKey="pod_aod"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label="MBL/MAWB"
+                  sortKey="mbl_mawb"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label="HBL/HAWB"
+                  sortKey="hbl_hawb"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  label={t("common.blAwbDate")}
+                  sortKey="bl_awb_date"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
                 <th className="whitespace-nowrap px-3 py-3">
                   {t("common.documents")}
                 </th>
@@ -248,7 +371,7 @@ export default function ShipmentJobs({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredJobs.map((job) => (
+              {paginatedJobs.map((job) => (
                 <tr
                   key={job.id}
                   className="align-top transition hover:bg-slate-50/80"
@@ -319,7 +442,7 @@ export default function ShipmentJobs({
               ))}
             </tbody>
           </table>
-          {!loading && filteredJobs.length === 0 && (
+          {!loading && sortedJobs.length === 0 && (
             <div className="py-16 text-center text-slate-500">
               <MoreHorizontal className="mx-auto mb-3 h-8 w-8" />
               {t("jobs.noMatches")}
@@ -331,6 +454,16 @@ export default function ShipmentJobs({
             </div>
           )}
         </div>
+        <PaginationControls
+          currentPage={safeCurrentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={sortedJobs.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
     </div>
   );
@@ -369,6 +502,133 @@ function FilterSelect({
   );
 }
 
+function PaginationControls({
+  currentPage,
+  pageCount,
+  pageSize,
+  total,
+  visibleFrom,
+  visibleTo,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  currentPage: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  visibleFrom: number;
+  visibleTo: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+}) {
+  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+
+  return (
+    <div className="flex flex-col gap-4 border-t border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="text-sm font-medium text-slate-500">
+        {t("jobs.pagination.summary", {
+          total,
+          from: visibleFrom,
+          to: visibleTo,
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
+        <div className="inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+            className="border-r border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {t("jobs.pagination.previous")}
+          </button>
+          {pages.map((page) => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              className={`min-w-10 border-r border-slate-200 px-3 py-2 text-sm font-semibold transition last:border-r-0 ${
+                page === currentPage
+                  ? "bg-slate-950 text-white"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={currentPage === pageCount}
+            onClick={() => onPageChange(Math.min(currentPage + 1, pageCount))}
+            className="border-l border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {t("jobs.pagination.next")}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-500">
+            {t("jobs.pagination.pageSize")}
+          </span>
+          <div className="inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {pageSizeOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onPageSizeChange(option)}
+                className={`min-w-10 border-r border-slate-200 px-3 py-2 text-sm font-semibold transition last:border-r-0 ${
+                  option === pageSize
+                    ? "bg-slate-950 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  activeSortKey,
+  direction,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeSortKey: SortKey | null;
+  direction: SortDirection;
+  onSort: (sortKey: SortKey) => void;
+}) {
+  const isActive = activeSortKey === sortKey;
+  const Icon = !isActive
+    ? ArrowUpDown
+    : direction === "asc"
+      ? ArrowUp
+      : ArrowDown;
+
+  return (
+    <th className="whitespace-nowrap px-3 py-3">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-slate-100 hover:text-slate-900 ${
+          isActive ? "text-slate-950" : ""
+        }`}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    </th>
+  );
+}
+
 function DocumentPills({
   documents,
   muted = false,
@@ -395,4 +655,67 @@ function DocumentPills({
       ))}
     </div>
   );
+}
+
+function getSortValue(job: ShipmentJob, sortKey: SortKey) {
+  switch (sortKey) {
+    case "status":
+      return statusLabels[job.status];
+    case "trade":
+      return `${tradeModeLabels[job.trade_mode]} ${job.trade_term ?? ""}`;
+    case "transport_mode":
+      return job.transport_mode ? transportModeLabels[job.transport_mode] : "";
+    case "invoice_number":
+    case "shipper_name":
+    case "consignee_name":
+    case "pol_aol":
+    case "pod_aod":
+    case "mbl_mawb":
+    case "hbl_hawb":
+    case "bl_awb_date":
+      return job[sortKey] ?? "";
+  }
+}
+
+function compareSortValues(
+  first: string,
+  second: string,
+  direction: SortDirection,
+  sortKey: SortKey,
+) {
+  if (
+    sortKey === "invoice_number" ||
+    sortKey === "mbl_mawb" ||
+    sortKey === "hbl_hawb" ||
+    sortKey === "bl_awb_date"
+  ) {
+    return compareNonPinnedValues(first, second, direction);
+  }
+
+  const firstIsEmpty = first.trim() === "";
+  const secondIsEmpty = second.trim() === "";
+
+  if (firstIsEmpty && secondIsEmpty) return 0;
+  if (firstIsEmpty) return 1;
+  if (secondIsEmpty) return -1;
+
+  const comparison = first.localeCompare(second, "ja-JP", {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+  return direction === "asc" ? comparison : -comparison;
+}
+
+function compareNonPinnedValues(
+  first: string,
+  second: string,
+  direction: SortDirection,
+) {
+  const comparison = first.localeCompare(second, "ja-JP", {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+  return direction === "asc" ? comparison : -comparison;
 }

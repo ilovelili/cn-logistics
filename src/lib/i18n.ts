@@ -68,7 +68,6 @@ const ja = {
     "取引形態、輸送形態、BL/AWB番号、荷主/荷受人、ルート、書類チェックリストを管理します。",
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
-  "jobs.createDescription": "顧客提供のExcel列を基準に入力します。",
   "jobs.searchPlaceholder":
     "インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
   "jobs.filter.allStatus": "すべてのステータス",
@@ -77,6 +76,10 @@ const ja = {
   "jobs.list": "案件一覧",
   "jobs.count": "{total}件中 {filtered}件",
   "jobs.noMatches": "現在の条件に一致する出荷案件はありません。",
+  "jobs.pagination.previous": "前へ",
+  "jobs.pagination.next": "次へ",
+  "jobs.pagination.pageSize": "表示件数",
+  "jobs.pagination.summary": "{total}件中 {from}-{to}件を表示",
 
   "documents.kicker": "書類チェックリスト",
   "documents.title": "書類管理",
@@ -111,8 +114,12 @@ const ja = {
   "form.invoice": "インボイス#",
   "form.shipper": "荷主",
   "form.consignee": "荷受人",
-  "form.documentsPlaceholder": "入庫票・輸出許可書・請求書",
-  "form.internalDocumentsPlaceholder": "DN・AN・振込証明",
+  "form.selectFiles": "ファイルを選択",
+  "form.uploadHelp":
+    "PDF、画像、Excelなどの書類ファイルをアップロードできます。",
+  "form.existingFiles": "登録済み",
+  "form.selectedFiles": "追加予定",
+  "form.noFiles": "ファイルが選択されていません",
   "form.notesPlaceholder": "運用メモ、顧客要望、通関状況など",
 
   "admin.dashboard": "管理ダッシュボード",

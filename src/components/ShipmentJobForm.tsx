@@ -141,17 +141,17 @@ export default function ShipmentJobForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TextAreaField
+        <FileUploadField
           label={t("common.documents")}
-          value={form.documents}
-          onChange={(value) => updateField("documents", value)}
-          placeholder={t("form.documentsPlaceholder")}
+          existingFiles={splitDocumentNames(form.documents)}
+          files={form.document_files}
+          onChange={(files) => updateField("document_files", files)}
         />
-        <TextAreaField
+        <FileUploadField
           label={t("common.internalDocuments")}
-          value={form.internal_documents}
-          onChange={(value) => updateField("internal_documents", value)}
-          placeholder={t("form.internalDocumentsPlaceholder")}
+          existingFiles={splitDocumentNames(form.internal_documents)}
+          files={form.internal_document_files}
+          onChange={(files) => updateField("internal_document_files", files)}
         />
       </div>
 
@@ -280,4 +280,79 @@ function TextAreaField({
       />
     </label>
   );
+}
+
+function FileUploadField({
+  label,
+  existingFiles,
+  files,
+  onChange,
+}: {
+  label: string;
+  existingFiles: string[];
+  files: File[];
+  onChange: (files: File[]) => void;
+}) {
+  const inputId = React.useId();
+
+  return (
+    <div className="block">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </span>
+      <label
+        htmlFor={inputId}
+        className="mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-slate-500 hover:bg-white"
+      >
+        <span className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white">
+          {t("form.selectFiles")}
+        </span>
+        <span className="mt-3 text-xs text-slate-500">
+          {t("form.uploadHelp")}
+        </span>
+        <input
+          id={inputId}
+          type="file"
+          multiple
+          className="sr-only"
+          onChange={(event) => onChange(Array.from(event.target.files ?? []))}
+        />
+      </label>
+
+      <FileNameList title={t("form.existingFiles")} names={existingFiles} />
+      <FileNameList
+        title={t("form.selectedFiles")}
+        names={files.map((file) => file.name)}
+      />
+    </div>
+  );
+}
+
+function FileNameList({ title, names }: { title: string; names: string[] }) {
+  if (!names.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="text-xs font-bold text-slate-500">{title}</div>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {names.map((name) => (
+          <span
+            key={name}
+            className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+          >
+            {name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function splitDocumentNames(value: string) {
+  return value
+    .split("・")
+    .map((name) => name.trim())
+    .filter(Boolean);
 }
