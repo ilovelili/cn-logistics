@@ -31,6 +31,7 @@ import {
 } from "../lib/shipmentJobs";
 
 type SortKey =
+  | "id"
   | "status"
   | "trade"
   | "invoice_number"
@@ -81,6 +82,8 @@ export default function ShipmentJobs({
 
     return jobs.filter((job) => {
       const searchable = [
+        job.id,
+        formatShortId(job.id),
         job.invoice_number,
         job.shipper_name,
         job.consignee_name,
@@ -288,11 +291,12 @@ export default function ShipmentJobs({
         <div className="overflow-x-auto">
           <table
             className={`w-full table-fixed text-left text-sm ${
-              isAdminAuthenticated ? "min-w-[1180px]" : "min-w-[1080px]"
+              isAdminAuthenticated ? "min-w-[1260px]" : "min-w-[1160px]"
             }`}
           >
             <colgroup>
-              <col className="w-[10%]" />
+              <col className="w-[7%]" />
+              <col className="w-[9%]" />
               <col className="w-[6%]" />
               <col className="w-[8%]" />
               <col className="w-[6%]" />
@@ -308,6 +312,13 @@ export default function ShipmentJobs({
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
+                <SortHeader
+                  label="ID"
+                  sortKey="id"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
                 <SortHeader
                   label={t("common.status")}
                   sortKey="status"
@@ -410,6 +421,9 @@ export default function ShipmentJobs({
                   }}
                   className="cursor-pointer align-top transition hover:bg-slate-50/80 focus:bg-slate-50 focus:outline-none"
                 >
+                  <td className="px-3 py-4 font-mono text-xs font-bold text-slate-500">
+                    <span title={job.id}>{formatShortId(job.id)}</span>
+                  </td>
                   <td className="px-3 py-4">
                     <span
                       className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
@@ -743,6 +757,8 @@ function DocumentPills({
 
 function getSortValue(job: ShipmentJob, sortKey: SortKey) {
   switch (sortKey) {
+    case "id":
+      return job.id;
     case "status":
       return statusLabels[job.status];
     case "trade":
@@ -759,6 +775,10 @@ function getSortValue(job: ShipmentJob, sortKey: SortKey) {
     case "bl_awb_date":
       return job[sortKey] ?? "";
   }
+}
+
+function formatShortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
 }
 
 function compareSortValues(

@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { t } from "../lib/i18n";
 import {
-  documentApprovalLabels,
   downloadShipmentDocument,
   isCustomerDocumentDownloadable,
   ShipmentDocument,
@@ -36,8 +35,10 @@ interface DocumentRow {
 }
 
 type DocumentSortKey =
+  | "id"
   | "scope"
   | "document"
+  | "approval"
   | "status"
   | "invoice"
   | "parties"
@@ -65,7 +66,25 @@ export default function DocumentControl({
     if (!isAdminAuthenticated && scope === "internal") {
       setScope("all");
     }
-  }, [isAdminAuthenticated, scope]);
+    if (!isAdminAuthenticated && sortKey === "scope") {
+      setSortKey(null);
+    }
+  }, [isAdminAuthenticated, scope, sortKey]);
+
+  React.useEffect(() => {
+    void onRefresh();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void onRefresh();
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [onRefresh]);
 
   const rows = React.useMemo<DocumentRow[]>(() => {
     const jobsById = new Map(jobs.map((job) => [job.id, job]));
@@ -92,6 +111,8 @@ export default function DocumentControl({
 
     return rows.filter((row) => {
       const haystack = [
+        row.document.id,
+        formatShortId(row.document.id),
         row.document.name,
         row.job.invoice_number,
         row.job.shipper_name,
@@ -122,18 +143,9 @@ export default function DocumentControl({
     );
   }, [filteredRows, sortDirection, sortKey]);
 
-  const customerCount = rows.filter(
-    (row) => row.document.scope === "customer",
-  ).length;
   const internalCount = rows.filter(
     (row) => row.document.scope === "internal",
   ).length;
-  const pendingApproval = rows.filter(
-    (row) =>
-      row.document.scope === "customer" &&
-      row.document.approval_status === "pending",
-  ).length;
-
   const handleSort = (nextSortKey: DocumentSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -166,21 +178,11 @@ export default function DocumentControl({
               {t("documents.description")}
             </p>
           </div>
-          <div
-            className={`grid gap-3 text-center ${
-              isAdminAuthenticated ? "grid-cols-3" : "grid-cols-2"
-            }`}
-          >
-            <MiniStat label={t("documents.customer")} value={customerCount} />
-            {isAdminAuthenticated && (
+          {isAdminAuthenticated && (
+            <div className="grid grid-cols-1 gap-3 text-center">
               <MiniStat label={t("documents.internal")} value={internalCount} />
-            )}
-            <MiniStat
-              label={t("documents.pendingApproval")}
-              value={pendingApproval}
-              warn
-            />
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -219,27 +221,44 @@ export default function DocumentControl({
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1280px] table-fixed text-left text-sm">
+          <table
+            className={`w-full table-fixed text-left text-sm ${
+              isAdminAuthenticated ? "min-w-[1240px]" : "min-w-[1100px]"
+            }`}
+          >
             <colgroup>
-              <col className="w-[130px]" />
-              <col className="w-[180px]" />
+              <col className="w-[96px]" />
+              {isAdminAuthenticated && <col className="w-[130px]" />}
+              <col
+                className={isAdminAuthenticated ? "w-[180px]" : "w-[220px]"}
+              />
               <col className="w-[120px]" />
               <col className="w-[130px]" />
-              <col className="w-[220px]" />
+              <col
+                className={isAdminAuthenticated ? "w-[220px]" : "w-[240px]"}
+              />
               <col className="w-[180px]" />
               <col className="w-[180px]" />
-              <col className="w-[130px]" />
               <col className="w-[160px]" />
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
                 <SortHeader
-                  label={t("documents.scope")}
-                  sortKey="scope"
+                  label="ID"
+                  sortKey="id"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
+                {isAdminAuthenticated && (
+                  <SortHeader
+                    label={t("documents.scope")}
+                    sortKey="scope"
+                    activeSortKey={sortKey}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                )}
                 <SortHeader
                   label={t("common.documents")}
                   sortKey="document"
@@ -282,31 +301,43 @@ export default function DocumentControl({
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <StaticHeader label={t("documents.downloadRequest")} />
-                <StaticHeader label={t("documents.downloadColumn")} />
+                <SortHeader
+                  label={t("documents.downloadRequest")}
+                  sortKey="approval"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {sortedRows.map((row) => (
                 <tr key={row.id} className="transition hover:bg-slate-50/80">
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
-                        row.document.scope === "internal"
-                          ? "bg-slate-100 text-slate-700"
-                          : "bg-cyan-50 text-cyan-800"
-                      }`}
-                    >
-                      {row.document.scope === "internal" ? (
-                        <LockKeyhole className="h-3.5 w-3.5" />
-                      ) : (
-                        <FileCheck2 className="h-3.5 w-3.5" />
-                      )}
-                      {row.document.scope === "internal"
-                        ? t("documents.internal")
-                        : t("documents.customer")}
+                  <td className="px-5 py-4 font-mono text-xs font-bold text-slate-500">
+                    <span title={row.document.id}>
+                      {formatShortId(row.document.id)}
                     </span>
                   </td>
+                  {isAdminAuthenticated && (
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
+                          row.document.scope === "internal"
+                            ? "bg-slate-100 text-slate-700"
+                            : "bg-cyan-50 text-cyan-800"
+                        }`}
+                      >
+                        {row.document.scope === "internal" ? (
+                          <LockKeyhole className="h-3.5 w-3.5" />
+                        ) : (
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                        )}
+                        {row.document.scope === "internal"
+                          ? t("documents.internal")
+                          : t("documents.customer")}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-5 py-4 font-semibold text-slate-950">
                     {row.document.name}
                   </td>
@@ -331,14 +362,11 @@ export default function DocumentControl({
                     {row.job.pol_aol || "-"} → {row.job.pod_aod || "-"}
                   </td>
                   <td className="px-5 py-4">
-                    <DownloadRequestButton
+                    <DocumentActionButton
                       row={row}
                       requesting={requestingDocumentId === row.document.id}
                       onRequest={handleDownloadRequest}
                     />
-                  </td>
-                  <td className="px-5 py-4">
-                    <DownloadButton row={row} />
                   </td>
                 </tr>
               ))}
@@ -361,7 +389,7 @@ export default function DocumentControl({
   );
 }
 
-function DownloadRequestButton({
+function DocumentActionButton({
   row,
   requesting,
   onRequest,
@@ -372,30 +400,49 @@ function DownloadRequestButton({
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
+  const canDownload = isCustomerDocumentDownloadable(document);
   const canRequest =
     isCustomerDocument &&
     (document.approval_status === "not_requested" ||
       document.approval_status === "rejected");
-  const buttonLabel = getDownloadRequestLabel(document);
+  const buttonLabel = getDocumentActionLabel(document);
+  const lockedTitle =
+    document.scope === "internal"
+      ? t("documents.internalOnly")
+      : t("documents.downloadLocked");
+
+  const handleClick = () => {
+    if (canDownload) {
+      downloadShipmentDocument(document);
+      return;
+    }
+
+    if (canRequest) {
+      void onRequest(document);
+    }
+  };
 
   return (
     <button
       type="button"
-      disabled={!canRequest || requesting}
-      onClick={() => onRequest(document)}
-      className={`inline-flex min-w-[96px] items-center justify-center whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition ${
-        canRequest
-          ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
-          : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+      disabled={(!canRequest && !canDownload) || requesting}
+      onClick={handleClick}
+      className={`inline-flex min-w-[96px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition ${
+        canDownload
+          ? "border-slate-200 text-slate-700 hover:bg-slate-50"
+          : canRequest
+            ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
+            : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
       }`}
-      title={!isCustomerDocument ? t("documents.internalOnly") : undefined}
+      title={!canDownload && !canRequest ? lockedTitle : undefined}
     >
+      {canDownload && <Download className="h-3.5 w-3.5" />}
       {requesting ? t("common.saving") : buttonLabel}
     </button>
   );
 }
 
-function getDownloadRequestLabel(document: ShipmentDocument) {
+function getDocumentActionLabel(document: ShipmentDocument) {
   if (document.scope === "internal") return t("documents.internalOnly");
 
   switch (document.approval_status) {
@@ -405,33 +452,8 @@ function getDownloadRequestLabel(document: ShipmentDocument) {
     case "pending":
       return t("documents.downloadRequestApplied");
     case "approved":
-      return documentApprovalLabels.approved;
+      return t("documents.downloadColumn");
   }
-}
-
-function DownloadButton({ row }: { row: DocumentRow }) {
-  const canDownload = isCustomerDocumentDownloadable(row.document);
-  const lockedTitle =
-    row.document.scope === "internal"
-      ? t("documents.internalOnly")
-      : t("documents.downloadLocked");
-
-  return (
-    <button
-      type="button"
-      disabled={!canDownload}
-      onClick={() => downloadShipmentDocument(row.document)}
-      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
-        canDownload
-          ? "border-slate-200 text-slate-700 hover:bg-slate-50"
-          : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-      }`}
-      title={!canDownload ? lockedTitle : undefined}
-    >
-      <Download className="h-3.5 w-3.5" />
-      {t("documents.downloadColumn")}
-    </button>
-  );
 }
 
 function SortHeader({
@@ -470,10 +492,6 @@ function SortHeader({
   );
 }
 
-function StaticHeader({ label }: { label: string }) {
-  return <th className="whitespace-nowrap px-5 py-3">{label}</th>;
-}
-
 function MiniStat({
   label,
   value,
@@ -501,12 +519,16 @@ function MiniStat({
 
 function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
   switch (sortKey) {
+    case "id":
+      return row.document.id;
     case "scope":
       return row.document.scope === "internal"
         ? t("documents.internal")
         : t("documents.customer");
     case "document":
       return row.document.name;
+    case "approval":
+      return getDocumentApprovalSortValue(row.document);
     case "status":
       return statusLabels[row.job.status];
     case "invoice":
@@ -518,6 +540,21 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
     case "route":
       return `${row.job.pol_aol ?? ""} ${row.job.pod_aod ?? ""}`;
   }
+}
+
+function formatShortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
+}
+
+function getDocumentApprovalSortValue(document: ShipmentDocument) {
+  const statusOrder = {
+    not_requested: 0,
+    pending: 1,
+    approved: 2,
+    rejected: 3,
+  } satisfies Record<ShipmentDocument["approval_status"], number>;
+
+  return `${statusOrder[document.approval_status]}-${document.approval_status}`;
 }
 
 function compareDocumentSortValues(

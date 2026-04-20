@@ -219,7 +219,8 @@ export async function fetchShipmentDocuments(): Promise<ShipmentDocument[]> {
   const { data, error } = await supabase
     .from("shipment_documents")
     .select("*")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error) {
     throw error;

@@ -68,7 +68,7 @@ const ja = {
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
-    "インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
+    "ID、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
   "jobs.filter.allStatus": "すべてのステータス",
   "jobs.filter.allTrade": "すべての取引",
   "jobs.filter.allTransport": "すべての輸送",
@@ -94,7 +94,7 @@ const ja = {
   "documents.pendingApproval": "承認待ち",
   "documents.approvedDownloads": "承認済みDL",
   "documents.searchPlaceholder":
-    "書類、インボイス、荷主、荷受人、MBL/MAWB、HBL/HAWBで検索...",
+    "ID、書類、インボイス、荷主、荷受人、MBL/MAWB、HBL/HAWBで検索...",
   "documents.filter.all": "すべての書類",
   "documents.filter.customer": "顧客向け書類",
   "documents.filter.internal": "社内書類",
