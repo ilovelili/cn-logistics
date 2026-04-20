@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
-import DocumentControl from "./components/DocumentControl";
+import DocumentControl, {
+  DocumentApprovalFilter,
+} from "./components/DocumentControl";
 import { AdminAuthProvider } from "./admin/AdminAuthContext";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminLogin from "./admin/AdminLogin";
@@ -62,6 +64,8 @@ function MainApp({
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
   const [jobsStatusFilter, setJobsStatusFilter] =
     useState<JobsStatusFilter>("all");
+  const [documentsApprovalFilter, setDocumentsApprovalFilter] =
+    useState<DocumentApprovalFilter>("all");
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const { isAdminAuthenticated } = useAdminAuth();
@@ -118,6 +122,13 @@ function MainApp({
     setCurrentView("jobs");
   };
 
+  const openDocumentsWithFilter = (
+    approvalFilter: DocumentApprovalFilter = "all",
+  ) => {
+    setDocumentsApprovalFilter(approvalFilter);
+    setCurrentView("documents");
+  };
+
   const renderView = () => {
     switch (currentView) {
       case "dashboard":
@@ -128,7 +139,7 @@ function MainApp({
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
-            onOpenDocuments={() => setCurrentView("documents")}
+            onOpenDocuments={openDocumentsWithFilter}
           />
         );
       case "jobs":
@@ -150,6 +161,7 @@ function MainApp({
             loading={jobsLoading}
             onRefresh={loadJobs}
             isAdminAuthenticated={isAdminAuthenticated}
+            approvalFilter={documentsApprovalFilter}
           />
         );
       default:
@@ -160,7 +172,7 @@ function MainApp({
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
-            onOpenDocuments={() => setCurrentView("documents")}
+            onOpenDocuments={openDocumentsWithFilter}
           />
         );
     }
@@ -204,6 +216,9 @@ function MainApp({
                   <button
                     key={item.id}
                     onClick={() => {
+                      if (item.id === "documents") {
+                        setDocumentsApprovalFilter("all");
+                      }
                       setCurrentView(item.id);
                       setSidebarOpen(false);
                     }}

@@ -92,7 +92,7 @@ const ja = {
   "documents.internal": "社内",
   "documents.onHold": "保留中",
   "documents.pendingApproval": "承認待ち",
-  "documents.approvedDownloads": "承認済みDL",
+  "documents.approvedDownloads": "書類DL承認済み",
   "documents.searchPlaceholder":
     "ID、書類、インボイス、荷主、荷受人、MBL/MAWB、HBL/HAWBで検索...",
   "documents.filter.all": "すべての書類",
@@ -103,7 +103,7 @@ const ja = {
   "documents.scope": "区分",
   "documents.approval": "承認状態",
   "documents.downloadRequest": "DL申請",
-  "documents.downloadRequestApplied": "DL申請済み",
+  "documents.downloadRequestApplied": "承認中",
   "documents.downloadColumn": "DL",
   "documents.action": "操作",
   "documents.downloadLocked": "承認後にDL可能",

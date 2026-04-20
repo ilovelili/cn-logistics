@@ -28,7 +28,7 @@ interface ShipmentDashboardProps {
   loading: boolean;
   error: string | null;
   onOpenJobs: (status: ShipmentStatus | "all") => void;
-  onOpenDocuments: () => void;
+  onOpenDocuments: (filter?: "all" | "approved") => void;
 }
 
 export default function ShipmentDashboard({
@@ -130,7 +130,7 @@ export default function ShipmentDashboard({
           value={approvedDownloads.length}
           icon={<FileStack />}
           tone="rose"
-          onClick={onOpenDocuments}
+          onClick={() => onOpenDocuments("approved")}
         />
       </div>
 

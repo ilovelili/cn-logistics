@@ -293,19 +293,32 @@ export function isCustomerDocumentDownloadable(document: ShipmentDocument) {
   );
 }
 
-export function downloadShipmentDocument(document: ShipmentDocument) {
-  if (document.file_url) {
-    const link = window.document.createElement("a");
-    link.href = document.file_url;
-    link.download = document.name;
-    link.click();
-    return;
+export async function downloadShipmentDocument(document: ShipmentDocument) {
+  const fileUrl = document.file_url || "/sample-document.pdf";
+  const fileName = getDownloadFileName(document);
+  const response = await fetch(fileUrl);
+
+  if (!response.ok) {
+    throw new Error(`Failed to download document: ${response.status}`);
   }
 
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
   const link = window.document.createElement("a");
-  link.href = "/sample-document.pdf";
-  link.download = `${document.name}.pdf`;
+  link.href = objectUrl;
+  link.download = fileName;
+  link.style.display = "none";
+  window.document.body.appendChild(link);
   link.click();
+  link.remove();
+
+  URL.revokeObjectURL(objectUrl);
+}
+
+function getDownloadFileName(document: ShipmentDocument) {
+  const hasExtension = /\.[a-z0-9]+$/i.test(document.name);
+  return hasExtension ? document.name : `${document.name}.pdf`;
 }
 
 async function replaceShipmentDocuments(jobId: string, form: ShipmentJobForm) {

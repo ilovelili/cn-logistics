@@ -227,7 +227,7 @@ function DocumentSection({
                 <button
                   type="button"
                   disabled={!downloadable}
-                  onClick={() => downloadShipmentDocument(document)}
+                  onClick={() => void downloadShipmentDocument(document)}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Download className="h-3.5 w-3.5" />

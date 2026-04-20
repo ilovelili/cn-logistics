@@ -19,6 +19,7 @@ import {
   statusLabels,
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
+import PaginationControls from "./PaginationControls";
 
 interface DocumentControlProps {
   jobs: ShipmentJob[];
@@ -26,6 +27,7 @@ interface DocumentControlProps {
   loading: boolean;
   onRefresh: () => Promise<void>;
   isAdminAuthenticated: boolean;
+  approvalFilter: DocumentApprovalFilter;
 }
 
 interface DocumentRow {
@@ -45,6 +47,7 @@ type DocumentSortKey =
   | "blAwb"
   | "route";
 type SortDirection = "asc" | "desc";
+export type DocumentApprovalFilter = "all" | "approved";
 
 export default function DocumentControl({
   jobs,
@@ -52,12 +55,15 @@ export default function DocumentControl({
   loading,
   onRefresh,
   isAdminAuthenticated,
+  approvalFilter,
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
   const [scope, setScope] = React.useState("all");
   const [sortKey, setSortKey] = React.useState<DocumentSortKey | null>(null);
   const [sortDirection, setSortDirection] =
     React.useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
   const [requestingDocumentId, setRequestingDocumentId] = React.useState<
     string | null
   >(null);
@@ -126,10 +132,12 @@ export default function DocumentControl({
 
       return (
         (!normalizedQuery || haystack.includes(normalizedQuery)) &&
-        (scope === "all" || row.document.scope === scope)
+        (scope === "all" || row.document.scope === scope) &&
+        (approvalFilter === "all" ||
+          row.document.approval_status === approvalFilter)
       );
     });
-  }, [query, rows, scope]);
+  }, [approvalFilter, query, rows, scope]);
 
   const sortedRows = React.useMemo(() => {
     if (!sortKey) return filteredRows;
@@ -142,6 +150,34 @@ export default function DocumentControl({
       ),
     );
   }, [filteredRows, sortDirection, sortKey]);
+
+  const pageCount = Math.max(Math.ceil(sortedRows.length / pageSize), 1);
+  const safeCurrentPage = Math.min(currentPage, pageCount);
+  const pageStartIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedRows = sortedRows.slice(
+    pageStartIndex,
+    pageStartIndex + pageSize,
+  );
+  const visibleFrom = sortedRows.length ? pageStartIndex + 1 : 0;
+  const visibleTo = Math.min(pageStartIndex + pageSize, sortedRows.length);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    approvalFilter,
+    pageSize,
+    query,
+    scope,
+    sortDirection,
+    sortKey,
+    isAdminAuthenticated,
+  ]);
+
+  React.useEffect(() => {
+    if (currentPage > pageCount) {
+      setCurrentPage(pageCount);
+    }
+  }, [currentPage, pageCount]);
 
   const internalCount = rows.filter(
     (row) => row.document.scope === "internal",
@@ -187,7 +223,11 @@ export default function DocumentControl({
       </div>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px]">
+        <div
+          className={`grid grid-cols-1 gap-3 ${
+            isAdminAuthenticated ? "md:grid-cols-[1fr_220px]" : ""
+          }`}
+        >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -197,17 +237,17 @@ export default function DocumentControl({
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
             />
           </div>
-          <select
-            value={scope}
-            onChange={(event) => setScope(event.target.value)}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
-          >
-            <option value="all">{t("documents.filter.all")}</option>
-            <option value="customer">{t("documents.filter.customer")}</option>
-            {isAdminAuthenticated && (
+          {isAdminAuthenticated && (
+            <select
+              value={scope}
+              onChange={(event) => setScope(event.target.value)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+            >
+              <option value="all">{t("documents.filter.all")}</option>
+              <option value="customer">{t("documents.filter.customer")}</option>
               <option value="internal">{t("documents.filter.internal")}</option>
-            )}
-          </select>
+            </select>
+          )}
         </div>
       </section>
 
@@ -311,7 +351,7 @@ export default function DocumentControl({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedRows.map((row) => (
+              {paginatedRows.map((row) => (
                 <tr key={row.id} className="transition hover:bg-slate-50/80">
                   <td className="px-5 py-4 font-mono text-xs font-bold text-slate-500">
                     <span title={row.document.id}>
@@ -384,6 +424,16 @@ export default function DocumentControl({
             </div>
           )}
         </div>
+        <PaginationControls
+          currentPage={safeCurrentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={sortedRows.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
     </div>
   );
@@ -413,7 +463,7 @@ function DocumentActionButton({
 
   const handleClick = () => {
     if (canDownload) {
-      downloadShipmentDocument(document);
+      void downloadShipmentDocument(document);
       return;
     }
 
