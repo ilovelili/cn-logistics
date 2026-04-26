@@ -6,15 +6,17 @@ import {
   ShipWheel,
   Sun,
   LayoutDashboard,
+  UserPlus,
 } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
 import AdminDashboard from "./AdminDashboard";
 import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
+import UserRegistrationForm from "./UserRegistrationForm";
 import ProfileButton from "../components/ProfileButton";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
-type AdminView = "dashboard" | "shipmentEntry";
+type AdminView = "dashboard" | "shipmentEntry" | "userRegistration";
 
 interface AdminPanelProps {
   darkMode: boolean;
@@ -52,6 +54,11 @@ export default function AdminPanel({
       id: "shipmentEntry" as AdminView,
       label: t("admin.nav.shipmentEntry"),
       icon: FilePlus2,
+    },
+    {
+      id: "userRegistration" as AdminView,
+      label: t("admin.nav.userRegistration"),
+      icon: UserPlus,
     },
   ];
 
@@ -146,6 +153,9 @@ export default function AdminPanel({
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />
+          )}
+          {view === "userRegistration" && (
+            <UserRegistrationForm adminEmail={profileEmail} />
           )}
         </main>
       </div>
