@@ -22,6 +22,7 @@ interface AdminPanelProps {
   documents: ShipmentDocument[];
   jobsLoading: boolean;
   onToggleDark: () => void;
+  onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export default function AdminPanel({
   documents,
   jobsLoading,
   onToggleDark,
+  onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
   const { logout } = useAdminAuth();
@@ -81,7 +83,7 @@ export default function AdminPanel({
               </span>
             </button>
             <button
-              onClick={logout}
+              onClick={onLogout ?? logout}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />

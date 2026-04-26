@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lock, User, AlertCircle, Package, ArrowLeft } from "lucide-react";
+import { Lock, Mail, AlertCircle, Package, ArrowLeft } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
 import { t } from "../lib/i18n";
 
@@ -9,7 +9,7 @@ interface AdminLoginProps {
 
 export default function AdminLogin({ onBack }: AdminLoginProps) {
   const { login } = useAdminAuth();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
 
     await new Promise((r) => setTimeout(r, 400));
 
-    const success = login(username, password);
+    const success = await login(email, password);
     if (!success) {
       setError(t("admin.login.invalid"));
     }
@@ -54,12 +54,12 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
                 {t("admin.login.username")}
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
                   required
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />

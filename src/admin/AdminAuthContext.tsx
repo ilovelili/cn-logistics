@@ -1,8 +1,9 @@
 import { createContext, useState, ReactNode } from "react";
+import { verifyAppLogin } from "../lib/auth";
 
 export interface AdminAuthContextType {
   isAdminAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -15,8 +16,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return sessionStorage.getItem("admin_auth") === "true";
   });
 
-  const login = (username: string, password: string): boolean => {
-    if (username === "admin" && password === "12345") {
+  const login = async (email: string, password: string): Promise<boolean> => {
+    const role = await verifyAppLogin(email, password);
+    if (role === "admin") {
       setIsAdminAuthenticated(true);
       sessionStorage.setItem("admin_auth", "true");
       return true;

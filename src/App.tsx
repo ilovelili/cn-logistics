@@ -2,22 +2,23 @@ import { useCallback, useEffect, useState } from "react";
 import {
   BarChart3,
   FileStack,
+  LogOut,
   Menu,
   Moon,
-  ShieldCheck,
   ShipWheel,
   Sun,
   X,
 } from "lucide-react";
 import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
+import LoginPage from "./components/LoginPage";
 import DocumentControl, {
   DocumentApprovalFilter,
 } from "./components/DocumentControl";
 import { AdminAuthProvider } from "./admin/AdminAuthContext";
 import { useAdminAuth } from "./admin/useAdminAuth";
-import AdminLogin from "./admin/AdminLogin";
 import AdminPanel from "./admin/AdminPanel";
+import { verifyAppLogin } from "./lib/auth";
 import { t } from "./lib/i18n";
 import {
   fetchShipmentDocuments,
@@ -29,6 +30,7 @@ import {
 
 type View = "dashboard" | "jobs" | "documents";
 type JobsStatusFilter = ShipmentStatus | "all";
+type AuthRole = "user" | "admin";
 
 function useDarkMode() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -53,13 +55,17 @@ function useDarkMode() {
 function MainApp({
   darkMode,
   onToggleDark,
+  initialAdminMode = false,
+  onLogout,
 }: {
   darkMode: boolean;
   onToggleDark: () => void;
+  initialAdminMode?: boolean;
+  onLogout: () => void;
 }) {
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showAdminMode, setShowAdminMode] = useState(false);
+  const showAdminMode = initialAdminMode;
   const [jobs, setJobs] = useState<ShipmentJob[]>([]);
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
   const [jobsStatusFilter, setJobsStatusFilter] =
@@ -96,9 +102,6 @@ function MainApp({
   }, [loadJobs]);
 
   if (showAdminMode) {
-    if (!isAdminAuthenticated) {
-      return <AdminLogin onBack={() => setShowAdminMode(false)} />;
-    }
     return (
       <AdminPanel
         darkMode={darkMode}
@@ -106,6 +109,7 @@ function MainApp({
         documents={documents}
         jobsLoading={jobsLoading}
         onToggleDark={onToggleDark}
+        onLogout={onLogout}
         onRefreshJobs={loadJobs}
       />
     );
@@ -239,13 +243,11 @@ function MainApp({
 
             <div className="space-y-3 border-t border-white/10 p-4">
               <button
-                onClick={() => setShowAdminMode(true)}
-                className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-white/20 px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                onClick={onLogout}
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
               >
-                <ShieldCheck className="h-5 w-5" />
-                <span className="text-sm font-bold">
-                  {t("app.adminPortal")}
-                </span>
+                <LogOut className="h-5 w-5" />
+                <span className="text-sm font-bold">{t("common.logout")}</span>
               </button>
             </div>
           </div>
@@ -303,11 +305,77 @@ function MainApp({
   );
 }
 
+function AppContent({
+  darkMode,
+  onToggleDark,
+}: {
+  darkMode: boolean;
+  onToggleDark: () => void;
+}) {
+  const {
+    login: loginAdmin,
+    logout: logoutAdmin,
+    isAdminAuthenticated,
+  } = useAdminAuth();
+  const [authRole, setAuthRole] = useState<AuthRole | null>(() => {
+    const savedRole = sessionStorage.getItem("app_auth_role");
+    if (
+      (savedRole === "admin" &&
+        sessionStorage.getItem("admin_auth") === "true") ||
+      savedRole === "user"
+    ) {
+      return savedRole;
+    }
+    return null;
+  });
+
+  const loginUser = async (email: string, password: string) => {
+    const role = await verifyAppLogin(email, password);
+    if (role === "user") {
+      setAuthRole("user");
+      sessionStorage.setItem("app_auth_role", "user");
+      logoutAdmin();
+      return true;
+    }
+    return false;
+  };
+
+  const handleAdminLogin = async (email: string, password: string) => {
+    const success = await loginAdmin(email, password);
+    if (success) {
+      setAuthRole("admin");
+      sessionStorage.setItem("app_auth_role", "admin");
+    }
+    return success;
+  };
+
+  const handleLogout = () => {
+    logoutAdmin();
+    setAuthRole(null);
+    sessionStorage.removeItem("app_auth_role");
+  };
+
+  if (!authRole || (authRole === "admin" && !isAdminAuthenticated)) {
+    return (
+      <LoginPage onUserLogin={loginUser} onAdminLogin={handleAdminLogin} />
+    );
+  }
+
+  return (
+    <MainApp
+      darkMode={darkMode}
+      onToggleDark={onToggleDark}
+      initialAdminMode={authRole === "admin"}
+      onLogout={handleLogout}
+    />
+  );
+}
+
 function AppWithAuth() {
   const [darkMode, toggleDark] = useDarkMode();
   return (
     <AdminAuthProvider>
-      <MainApp darkMode={darkMode} onToggleDark={toggleDark} />
+      <AppContent darkMode={darkMode} onToggleDark={toggleDark} />
     </AdminAuthProvider>
   );
 }
