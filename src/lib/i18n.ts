@@ -176,11 +176,15 @@ const ja = {
   "admin.documents.updateFailed": "書類承認の更新に失敗しました",
 
   "admin.userRegistration.title": "ユーザー登録",
-  "admin.userRegistration.dashboard": "登録済みユーザー",
+  "admin.userRegistration.dashboard": "登録ユーザー一覧",
   "admin.userRegistration.newUser": "新規ユーザー作成",
   "admin.userRegistration.noUsers": "登録済みユーザーはまだありません。",
+  "admin.userRegistration.noMatches":
+    "現在の条件に一致するユーザーはありません。",
   "admin.userRegistration.count": "{count}件",
-  "admin.userRegistration.email": "ユーザーメール",
+  "admin.userRegistration.searchPlaceholder":
+    "ID、会社名、メール、郵便番号、住所、電話番号、担当者で検索...",
+  "admin.userRegistration.email": "メールアドレス",
   "admin.userRegistration.companyName": "会社名",
   "admin.userRegistration.zipcode": "郵便番号",
   "admin.userRegistration.companyAddress": "会社住所",
@@ -190,6 +194,7 @@ const ja = {
   "admin.userRegistration.contactPerson": "担当者",
   "admin.userRegistration.notes": "備考",
   "admin.userRegistration.status": "ステータス",
+  "admin.userRegistration.status.all": "すべてのステータス",
   "admin.userRegistration.status.toBeApproved": "承認待ち",
   "admin.userRegistration.status.approved": "承認済み",
   "admin.userRegistration.status.rejected": "却下",
@@ -202,6 +207,7 @@ const ja = {
     "登録済みユーザーの読み込みに失敗しました",
   "admin.userRegistration.created": "ユーザーを登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "ユーザー登録に失敗しました",
+  "admin.userRegistration.updateFailed": "ユーザー情報の更新に失敗しました",
 
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",

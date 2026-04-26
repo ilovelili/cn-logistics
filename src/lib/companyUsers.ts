@@ -79,3 +79,33 @@ export async function fetchCompanyUsersByAdmin(createdBy: string) {
 
   return (data ?? []) as CompanyUser[];
 }
+
+export async function updatePendingCompanyUser(
+  id: string,
+  form: CompanyUserForm,
+) {
+  const { data, error } = await supabase
+    .from("company_users")
+    .update({
+      email: form.email.trim(),
+      user_name: form.company_name.trim(),
+      company_name: form.company_name.trim(),
+      zipcode: form.zipcode.trim(),
+      company_address: form.company_address.trim(),
+      telephone: form.telephone.trim(),
+      budget: Number(form.budget || 0),
+      contact_person: form.contact_person.trim() || null,
+      notes: form.notes.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("approval_status", "to_be_approved")
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as CompanyUser;
+}
