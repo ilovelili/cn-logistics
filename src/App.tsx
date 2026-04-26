@@ -341,7 +341,7 @@ function AppContent({
 
   const loginUser = async (email: string, password: string) => {
     const profile = await verifyAppLogin(email, password);
-    if (profile?.role === "user") {
+    if (profile?.role === "normal") {
       setAuthRole("user");
       setAuthEmail(profile.email);
       sessionStorage.setItem("app_auth_role", "user");

@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-export type AppUserRole = "user" | "admin";
+export type AppUserRole = "normal" | "admin" | "super_admin";
 
 export interface AppUserProfile {
   email: string;

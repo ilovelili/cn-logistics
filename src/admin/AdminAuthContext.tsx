@@ -18,7 +18,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     const profile = await verifyAppLogin(email, password);
-    if (profile?.role === "admin") {
+    if (profile?.role === "admin" || profile?.role === "super_admin") {
       setIsAdminAuthenticated(true);
       sessionStorage.setItem("admin_auth", "true");
       return true;

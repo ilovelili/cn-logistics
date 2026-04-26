@@ -47,18 +47,16 @@ export async function createCompanyUser(
   form: CompanyUserForm,
   createdBy: string,
 ) {
-  const { error } = await supabase.from("company_users").insert({
-    email: form.email.trim(),
-    user_name: form.company_name.trim(),
-    company_name: form.company_name.trim(),
-    zipcode: form.zipcode.trim(),
-    company_address: form.company_address.trim(),
-    telephone: form.telephone.trim(),
-    budget: Number(form.budget || 0),
-    contact_person: form.contact_person.trim() || null,
-    notes: form.notes.trim() || null,
-    approval_status: "to_be_approved",
-    created_by: createdBy,
+  const { error } = await supabase.rpc("create_registered_normal_user", {
+    user_email: form.email.trim(),
+    user_company_name: form.company_name.trim(),
+    user_zipcode: form.zipcode.trim(),
+    user_company_address: form.company_address.trim(),
+    user_telephone: form.telephone.trim(),
+    user_budget: Number(form.budget || 0),
+    user_contact_person: form.contact_person.trim(),
+    user_notes: form.notes.trim(),
+    admin_email: createdBy,
   });
 
   if (error) {
@@ -67,11 +65,9 @@ export async function createCompanyUser(
 }
 
 export async function fetchCompanyUsersByAdmin(createdBy: string) {
-  const { data, error } = await supabase
-    .from("company_users")
-    .select("*")
-    .eq("created_by", createdBy)
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("list_registered_normal_users", {
+    admin_email: createdBy,
+  });
 
   if (error) {
     throw error;
@@ -84,28 +80,25 @@ export async function updatePendingCompanyUser(
   id: string,
   form: CompanyUserForm,
 ) {
-  const { data, error } = await supabase
-    .from("company_users")
-    .update({
-      email: form.email.trim(),
-      user_name: form.company_name.trim(),
-      company_name: form.company_name.trim(),
-      zipcode: form.zipcode.trim(),
-      company_address: form.company_address.trim(),
-      telephone: form.telephone.trim(),
-      budget: Number(form.budget || 0),
-      contact_person: form.contact_person.trim() || null,
-      notes: form.notes.trim() || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("approval_status", "to_be_approved")
-    .select("*")
-    .single();
+  const { data, error } = await supabase.rpc(
+    "update_pending_registered_normal_user",
+    {
+      user_id: id,
+      user_email: form.email.trim(),
+      user_company_name: form.company_name.trim(),
+      user_zipcode: form.zipcode.trim(),
+      user_company_address: form.company_address.trim(),
+      user_telephone: form.telephone.trim(),
+      user_budget: Number(form.budget || 0),
+      user_contact_person: form.contact_person.trim(),
+      user_notes: form.notes.trim(),
+    },
+  );
 
   if (error) {
     throw error;
   }
 
-  return data as CompanyUser;
+  const [updatedUser] = (data ?? []) as CompanyUser[];
+  return updatedUser;
 }
