@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, Check, Mail, Upload, UserRound, X } from "lucide-react";
 import {
@@ -13,6 +13,8 @@ interface ProfileButtonProps {
   email: string;
 }
 
+const CROP_PREVIEW_SIZE = 256;
+
 export default function ProfileButton({ email }: ProfileButtonProps) {
   const [profile, setProfile] = useState<AppUserProfile | null>(null);
   const [open, setOpen] = useState(false);
@@ -22,6 +24,15 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
   const [cropImageUrl, setCropImageUrl] = useState("");
   const [cropFileName, setCropFileName] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
+  const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
+  const [cropImageSize, setCropImageSize] = useState({ width: 0, height: 0 });
+  const [dragStart, setDragStart] = useState<{
+    pointerId: number;
+    x: number;
+    y: number;
+    cropX: number;
+    cropY: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cropImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -65,6 +76,8 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
     setError("");
     setCropZoom(1);
+    setCropPosition({ x: 0, y: 0 });
+    setCropImageSize({ width: 0, height: 0 });
     setCropFileName(file.name);
     setCropImageUrl(URL.createObjectURL(file));
     event.target.value = "";
@@ -77,7 +90,38 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
     setCropImageUrl("");
     setCropFileName("");
     setCropZoom(1);
+    setCropPosition({ x: 0, y: 0 });
+    setCropImageSize({ width: 0, height: 0 });
+    setDragStart(null);
   };
+
+  const clampCropPosition = useCallback(
+    (
+      position: { x: number; y: number },
+      zoom = cropZoom,
+      imageSize = cropImageSize,
+    ) => {
+      if (!imageSize.width || !imageSize.height) {
+        return { x: 0, y: 0 };
+      }
+
+      const coverScale =
+        Math.min(
+          CROP_PREVIEW_SIZE / imageSize.width,
+          CROP_PREVIEW_SIZE / imageSize.height,
+        ) * zoom;
+      const renderedWidth = imageSize.width * coverScale;
+      const renderedHeight = imageSize.height * coverScale;
+      const maxX = Math.max((renderedWidth - CROP_PREVIEW_SIZE) / 2, 0);
+      const maxY = Math.max((renderedHeight - CROP_PREVIEW_SIZE) / 2, 0);
+
+      return {
+        x: Math.min(Math.max(position.x, -maxX), maxX),
+        y: Math.min(Math.max(position.y, -maxY), maxY),
+      };
+    },
+    [cropImageSize, cropZoom],
+  );
 
   const createCroppedAvatarFile = async () => {
     const image = cropImageRef.current;
@@ -93,20 +137,25 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
-    const cropSize = Math.min(naturalWidth, naturalHeight) / cropZoom;
-    const sourceX = (naturalWidth - cropSize) / 2;
-    const sourceY = (naturalHeight - cropSize) / 2;
+    const displayScale =
+      Math.min(
+        CROP_PREVIEW_SIZE / naturalWidth,
+        CROP_PREVIEW_SIZE / naturalHeight,
+      ) * cropZoom;
+    const renderedWidth = naturalWidth * displayScale;
+    const renderedHeight = naturalHeight * displayScale;
+    const topLeftX = (CROP_PREVIEW_SIZE - renderedWidth) / 2 + cropPosition.x;
+    const topLeftY = (CROP_PREVIEW_SIZE - renderedHeight) / 2 + cropPosition.y;
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, size, size);
 
     context.drawImage(
       image,
-      sourceX,
-      sourceY,
-      cropSize,
-      cropSize,
-      0,
-      0,
-      size,
-      size,
+      topLeftX * (size / CROP_PREVIEW_SIZE),
+      topLeftY * (size / CROP_PREVIEW_SIZE),
+      renderedWidth * (size / CROP_PREVIEW_SIZE),
+      renderedHeight * (size / CROP_PREVIEW_SIZE),
     );
 
     const blob = await new Promise<Blob | null>((resolve) => {
@@ -140,6 +189,52 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
     }
   };
 
+  const handleCropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragStart({
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      cropX: cropPosition.x,
+      cropY: cropPosition.y,
+    });
+  };
+
+  const handleCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart || dragStart.pointerId !== event.pointerId) return;
+
+    const nextX = dragStart.cropX + event.clientX - dragStart.x;
+    const nextY = dragStart.cropY + event.clientY - dragStart.y;
+    const nextPosition = clampCropPosition({ x: nextX, y: nextY });
+
+    setCropPosition(nextPosition);
+  };
+
+  const handleCropPointerEnd = () => {
+    setDragStart(null);
+  };
+
+  const cropRenderedSize = (() => {
+    if (!cropImageSize.width || !cropImageSize.height) {
+      return { width: CROP_PREVIEW_SIZE, height: CROP_PREVIEW_SIZE };
+    }
+
+    const displayScale =
+      Math.min(
+        CROP_PREVIEW_SIZE / cropImageSize.width,
+        CROP_PREVIEW_SIZE / cropImageSize.height,
+      ) * cropZoom;
+
+    return {
+      width: cropImageSize.width * displayScale,
+      height: cropImageSize.height * displayScale,
+    };
+  })();
+
+  useEffect(() => {
+    setCropPosition((position) => clampCropPosition(position));
+  }, [clampCropPosition, cropImageSize, cropZoom]);
+
   const avatar = avatarUrl ? (
     <img
       src={avatarUrl}
@@ -168,13 +263,31 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
         {cropImageUrl ? (
           <div className="space-y-4">
-            <div className="mx-auto h-64 w-64 overflow-hidden rounded-2xl bg-slate-950">
+            <div
+              className="relative mx-auto h-64 w-64 cursor-move touch-none overflow-hidden rounded-2xl bg-slate-950"
+              onPointerDown={handleCropPointerDown}
+              onPointerMove={handleCropPointerMove}
+              onPointerUp={handleCropPointerEnd}
+              onPointerCancel={handleCropPointerEnd}
+            >
               <img
                 ref={cropImageRef}
                 src={cropImageUrl}
                 alt={t("profile.crop")}
-                className="h-full w-full object-cover"
-                style={{ transform: `scale(${cropZoom})` }}
+                onLoad={(event) => {
+                  setCropImageSize({
+                    width: event.currentTarget.naturalWidth,
+                    height: event.currentTarget.naturalHeight,
+                  });
+                }}
+                draggable={false}
+                className="absolute left-1/2 top-1/2 max-w-none select-none"
+                style={{
+                  width: cropRenderedSize.width,
+                  height: cropRenderedSize.height,
+                  transform: `translate(calc(-50% + ${cropPosition.x}px), calc(-50% + ${cropPosition.y}px))`,
+                  transformOrigin: "center",
+                }}
               />
             </div>
 
@@ -188,7 +301,13 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
                 max="3"
                 step="0.05"
                 value={cropZoom}
-                onChange={(event) => setCropZoom(Number(event.target.value))}
+                onChange={(event) => {
+                  const nextZoom = Number(event.target.value);
+                  setCropZoom(nextZoom);
+                  setCropPosition((position) =>
+                    clampCropPosition(position, nextZoom),
+                  );
+                }}
                 className="w-full accent-cyan-400"
               />
             </div>

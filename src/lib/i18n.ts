@@ -151,18 +151,13 @@ const ja = {
   "admin.dashboard": "管理ダッシュボード",
   "admin.dashboardDescription":
     "出荷案件、通関保留、書類対応状況を管理します。",
-  "admin.operatorWorkflow": "オペレーター業務",
-  "admin.operatorWorkflowDescription":
-    "「出荷案件入力」から、Excel形式の新規案件作成や既存案件のステータス、BL/AWB日付、ルート、顧客向け/社内書類チェックリストを更新できます。",
   "admin.nav.dashboard": "ダッシュボード",
   "admin.nav.shipmentEntry": "出荷案件入力",
-  "admin.workflowHint":
-    "Excel基準の業務フロー: ステータス、取引形態、ルート、BL/AWB、書類を管理します。",
   "admin.entry.title": "出荷案件入力",
-  "admin.entry.description": "Excelベースの出荷案件を作成・更新します。",
   "admin.entry.updateExisting": "既存案件を更新",
   "admin.entry.createNew": "新規作成",
   "admin.entry.findJob": "案件を検索",
+  "admin.entry.filter.all": "すべて",
   "admin.entry.searchPlaceholder": "インボイス、荷主、荷受人、BL/AWB...",
   "admin.entry.untitledJob": "名称未設定の案件",
   "admin.entry.selectJob":
@@ -175,7 +170,7 @@ const ja = {
   "admin.documents.description":
     "顧客向け書類は承認後にダウンロード可能になります。社内書類は管理者専用です。",
   "admin.documents.noDocuments": "この案件には書類が登録されていません。",
-  "admin.documents.approved": "書類を承認しました",
+  "admin.documents.approved": "承認しました",
   "admin.documents.rejected": "書類を却下しました",
   "admin.documents.updateFailed": "書類承認の更新に失敗しました",
 

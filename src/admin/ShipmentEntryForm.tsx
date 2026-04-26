@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle,
   Edit3,
@@ -14,26 +14,39 @@ import {
   documentApprovalClasses,
   documentApprovalLabels,
   getDocumentsForJob,
+  DocumentApprovalStatus,
   ShipmentDocument,
   ShipmentJob,
+  ShipmentStatus,
   statusBadgeClasses,
   statusLabels,
+  statusOptions,
   updateShipmentDocumentApproval,
   updateShipmentJob,
 } from "../lib/shipmentJobs";
 
+export type ShipmentEntryCriteria =
+  | { kind: "all" }
+  | { kind: "status"; status: ShipmentStatus }
+  | { kind: "documentApproval"; approvalStatus: DocumentApprovalStatus };
+
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
+  criteria?: ShipmentEntryCriteria;
   onRefresh: () => Promise<void>;
 }
 
 export default function ShipmentEntryForm({
   jobs,
   documents,
+  criteria = { kind: "all" },
   onRefresh,
 }: ShipmentEntryFormProps) {
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ShipmentStatus | "all">(
+    "all",
+  );
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
@@ -44,11 +57,34 @@ export default function ShipmentEntryForm({
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return jobs.slice(0, 8);
+    const pendingApprovalJobIds = new Set(
+      documents
+        .filter(
+          (document) =>
+            document.scope === "customer" &&
+            criteria.kind === "documentApproval" &&
+            document.approval_status === criteria.approvalStatus,
+        )
+        .map((document) => document.shipment_job_id),
+    );
 
     return jobs
-      .filter((job) =>
-        [
+      .filter((job) => {
+        if (criteria.kind === "status") {
+          return job.status === criteria.status;
+        }
+        if (criteria.kind === "documentApproval") {
+          return pendingApprovalJobIds.has(job.id);
+        }
+        return true;
+      })
+      .filter((job) => {
+        if (statusFilter === "all") return true;
+        return job.status === statusFilter;
+      })
+      .filter((job) => {
+        if (!normalizedQuery) return true;
+        return [
           job.invoice_number,
           job.shipper_name,
           job.consignee_name,
@@ -60,15 +96,38 @@ export default function ShipmentEntryForm({
           .filter(Boolean)
           .join(" ")
           .toLowerCase()
-          .includes(normalizedQuery),
-      )
+          .includes(normalizedQuery);
+      })
       .slice(0, 8);
-  }, [jobs, query]);
+  }, [criteria, documents, jobs, query, statusFilter]);
+
+  const criteriaLabel = (() => {
+    if (criteria.kind === "status") {
+      return statusLabels[criteria.status];
+    }
+    if (criteria.kind === "documentApproval") {
+      return documentApprovalLabels[criteria.approvalStatus];
+    }
+    return t("admin.entry.filter.all");
+  })();
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
   };
+
+  useEffect(() => {
+    setMode("update");
+    setSelectedJob(null);
+    setQuery("");
+    setStatusFilter(criteria.kind === "status" ? criteria.status : "all");
+  }, [criteria]);
+
+  useEffect(() => {
+    if (!selectedJob || !results.some((job) => job.id === selectedJob.id)) {
+      setSelectedJob(results[0] ?? null);
+    }
+  }, [results, selectedJob]);
 
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
@@ -145,9 +204,6 @@ export default function ShipmentEntryForm({
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           {t("admin.entry.title")}
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          {t("admin.entry.description")}
-        </p>
       </div>
 
       <div className="flex gap-2 rounded-xl bg-gray-100 dark:bg-gray-900 p-1 w-fit">
@@ -181,17 +237,39 @@ export default function ShipmentEntryForm({
       {mode === "update" && (
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 h-fit">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-              {t("admin.entry.findJob")}
-            </h3>
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t("admin.entry.searchPlaceholder")}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {t("admin.entry.findJob")}
+              </h3>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {criteriaLabel}
+              </span>
+            </div>
+            <div className="mb-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t("admin.entry.searchPlaceholder")}
+                  className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value as ShipmentStatus | "all");
+                  setSelectedJob(null);
+                }}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="all">{t("jobs.filter.allStatus")}</option>
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2 max-h-[560px] overflow-y-auto">
               {results.map((job) => (

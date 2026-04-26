@@ -3,14 +3,13 @@ import {
   FilePlus2,
   LogOut,
   Moon,
-  Package,
   ShipWheel,
   Sun,
   LayoutDashboard,
 } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
 import AdminDashboard from "./AdminDashboard";
-import ShipmentEntryForm from "./ShipmentEntryForm";
+import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import ProfileButton from "../components/ProfileButton";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
@@ -40,6 +39,8 @@ export default function AdminPanel({
 }: AdminPanelProps) {
   const { logout } = useAdminAuth();
   const [view, setView] = useState<AdminView>("dashboard");
+  const [shipmentEntryCriteria, setShipmentEntryCriteria] =
+    useState<ShipmentEntryCriteria>({ kind: "all" });
 
   const navItems = [
     {
@@ -106,7 +107,12 @@ export default function AdminPanel({
               return (
                 <button
                   key={item.id}
-                  onClick={() => setView(item.id)}
+                  onClick={() => {
+                    if (item.id === "shipmentEntry") {
+                      setShipmentEntryCriteria({ kind: "all" });
+                    }
+                    setView(item.id);
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white"
@@ -119,11 +125,6 @@ export default function AdminPanel({
               );
             })}
           </nav>
-
-          <div className="mt-6 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-4 text-xs text-gray-500 dark:text-gray-400">
-            <Package className="mb-2 h-4 w-4" />
-            {t("admin.workflowHint")}
-          </div>
         </aside>
 
         <main className="flex-1 p-6 overflow-y-auto">
@@ -132,12 +133,17 @@ export default function AdminPanel({
               jobs={jobs}
               documents={documents}
               loading={jobsLoading}
+              onOpenShipmentEntry={(criteria) => {
+                setShipmentEntryCriteria(criteria);
+                setView("shipmentEntry");
+              }}
             />
           )}
           {view === "shipmentEntry" && (
             <ShipmentEntryForm
               jobs={jobs}
               documents={documents}
+              criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />
           )}

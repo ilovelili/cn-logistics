@@ -6,17 +6,20 @@ import {
 } from "lucide-react";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
+import { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 
 interface AdminDashboardProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
   loading: boolean;
+  onOpenShipmentEntry: (criteria: ShipmentEntryCriteria) => void;
 }
 
 export default function AdminDashboard({
   jobs,
   documents,
   loading,
+  onOpenShipmentEntry,
 }: AdminDashboardProps) {
   const customsHold = jobs.filter(
     (job) => job.status === "customs_hold",
@@ -26,7 +29,6 @@ export default function AdminDashboard({
     (document) =>
       document.scope === "customer" && document.approval_status === "pending",
   );
-
   const cards = [
     {
       label: t("jobs.title"),
@@ -34,6 +36,7 @@ export default function AdminDashboard({
       icon: ShipWheel,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950",
+      criteria: { kind: "all" } satisfies ShipmentEntryCriteria,
     },
     {
       label: t("status.customsHold"),
@@ -41,6 +44,10 @@ export default function AdminDashboard({
       icon: AlertTriangle,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950",
+      criteria: {
+        kind: "status",
+        status: "customs_hold",
+      } satisfies ShipmentEntryCriteria,
     },
     {
       label: t("status.completed"),
@@ -48,6 +55,10 @@ export default function AdminDashboard({
       icon: CheckCircle2,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950",
+      criteria: {
+        kind: "status",
+        status: "completed",
+      } satisfies ShipmentEntryCriteria,
     },
     {
       label: t("documents.pendingApproval"),
@@ -55,6 +66,10 @@ export default function AdminDashboard({
       icon: FileStack,
       color: "text-rose-600 dark:text-rose-400",
       bg: "bg-rose-50 dark:bg-rose-950",
+      criteria: {
+        kind: "documentApproval",
+        approvalStatus: "pending",
+      } satisfies ShipmentEntryCriteria,
     },
   ];
 
@@ -87,9 +102,11 @@ export default function AdminDashboard({
           {cards.map((card) => {
             const Icon = card.icon;
             return (
-              <div
+              <button
+                type="button"
                 key={card.label}
-                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
+                onClick={() => onOpenShipmentEntry(card.criteria)}
+                className="rounded-xl border border-gray-200 bg-white p-6 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900 dark:hover:border-cyan-700"
               >
                 <div
                   className={`w-10 h-10 ${card.bg} rounded-lg flex items-center justify-center mb-4`}
@@ -102,20 +119,11 @@ export default function AdminDashboard({
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {card.label}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
-
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-          {t("admin.operatorWorkflow")}
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {t("admin.operatorWorkflowDescription")}
-        </p>
-      </div>
     </div>
   );
 }
