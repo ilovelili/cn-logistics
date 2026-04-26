@@ -15,6 +15,17 @@ const ja = {
   "login.invalid": "メールアドレスまたはパスワードが正しくありません",
   "login.submit": "ログイン",
 
+  "profile.title": "プロフィール",
+  "profile.email": "メール",
+  "profile.avatar": "アバター",
+  "profile.upload": "画像をアップロード",
+  "profile.uploading": "アップロード中...",
+  "profile.crop": "画像をトリミング",
+  "profile.zoom": "ズーム",
+  "profile.applyCrop": "保存",
+  "profile.loadFailed": "プロフィールの読み込みに失敗しました",
+  "profile.uploadFailed": "アバターの更新に失敗しました",
+
   "common.status": "ステータス",
   "common.trade": "取引",
   "common.tradeMode": "取引形態",

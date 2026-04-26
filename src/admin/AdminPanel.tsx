@@ -11,6 +11,7 @@ import {
 import { useAdminAuth } from "./useAdminAuth";
 import AdminDashboard from "./AdminDashboard";
 import ShipmentEntryForm from "./ShipmentEntryForm";
+import ProfileButton from "../components/ProfileButton";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
@@ -22,6 +23,7 @@ interface AdminPanelProps {
   documents: ShipmentDocument[];
   jobsLoading: boolean;
   onToggleDark: () => void;
+  profileEmail: string;
   onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
 }
@@ -32,6 +34,7 @@ export default function AdminPanel({
   documents,
   jobsLoading,
   onToggleDark,
+  profileEmail,
   onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
@@ -82,6 +85,7 @@ export default function AdminPanel({
                 />
               </span>
             </button>
+            <ProfileButton email={profileEmail} />
             <button
               onClick={onLogout ?? logout}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
