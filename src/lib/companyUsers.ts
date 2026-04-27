@@ -102,3 +102,50 @@ export async function updatePendingCompanyUser(
   const [updatedUser] = (data ?? []) as CompanyUser[];
   return updatedUser;
 }
+
+export async function updateCompanyUserApprovalStatus({
+  superAdminEmail,
+  userId,
+  status,
+}: {
+  superAdminEmail: string;
+  userId: string;
+  status: Extract<CompanyUserApprovalStatus, "approved" | "rejected">;
+}) {
+  const { data, error } = await supabase.rpc(
+    "update_normal_user_approval_status",
+    {
+      super_admin_email: superAdminEmail,
+      target_user_id: userId,
+      next_approval_status: status,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  const [updatedUser] = (data ?? []) as CompanyUser[];
+  if (!updatedUser) {
+    throw new Error("User approval status was not updated.");
+  }
+
+  return updatedUser;
+}
+
+export async function deleteCompanyUser({
+  superAdminEmail,
+  userId,
+}: {
+  superAdminEmail: string;
+  userId: string;
+}) {
+  const { error } = await supabase.rpc("delete_normal_user", {
+    super_admin_email: superAdminEmail,
+    target_user_id: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

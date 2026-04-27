@@ -6,7 +6,9 @@ import {
   CompanyUserForm,
   CompanyUser,
   CompanyUserApprovalStatus,
+  deleteCompanyUser,
   fetchCompanyUsersByAdmin,
+  updateCompanyUserApprovalStatus,
   updatePendingCompanyUser,
 } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
@@ -15,6 +17,7 @@ import SortableTableHeader from "../components/SortableTableHeader";
 
 interface UserRegistrationFormProps {
   adminEmail: string;
+  isSuperAdmin?: boolean;
 }
 
 type SortKey =
@@ -25,9 +28,11 @@ type SortKey =
   | "approval_status"
   | "created_at";
 type SortDirection = "asc" | "desc";
+type UserAction = "approve" | "reject" | "delete";
 
 export default function UserRegistrationForm({
   adminEmail,
+  isSuperAdmin = false,
 }: UserRegistrationFormProps) {
   const [form, setForm] = useState<CompanyUserForm>(defaultCompanyUserForm);
   const [loading, setLoading] = useState(false);
@@ -42,6 +47,11 @@ export default function UserRegistrationForm({
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    user: CompanyUser;
+    action: UserAction;
+  } | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -161,6 +171,77 @@ export default function UserRegistrationForm({
     setSortDirection(nextSortKey === "created_at" ? "desc" : "asc");
   };
 
+  const handleApprovalChange = async (
+    user: CompanyUser,
+    status: "approved" | "rejected",
+  ) => {
+    setActionLoadingId(user.id);
+    try {
+      const updatedUser = await updateCompanyUserApprovalStatus({
+        superAdminEmail: adminEmail,
+        userId: user.id,
+        status,
+      });
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          currentUser.id === updatedUser.id ? updatedUser : currentUser,
+        ),
+      );
+      setSelectedUser((currentUser) =>
+        currentUser?.id === updatedUser.id ? updatedUser : currentUser,
+      );
+      showToast(
+        "success",
+        status === "approved"
+          ? t("admin.userRegistration.approved")
+          : t("admin.userRegistration.rejected"),
+      );
+    } catch {
+      showToast("error", t("admin.userRegistration.approvalFailed"));
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (user: CompanyUser) => {
+    setActionLoadingId(user.id);
+    try {
+      await deleteCompanyUser({
+        superAdminEmail: adminEmail,
+        userId: user.id,
+      });
+      setUsers((currentUsers) =>
+        currentUsers.filter((currentUser) => currentUser.id !== user.id),
+      );
+      setSelectedUser((currentUser) =>
+        currentUser?.id === user.id ? null : currentUser,
+      );
+      showToast("success", t("admin.userRegistration.deleted"));
+    } catch {
+      showToast("error", t("admin.userRegistration.deleteFailed"));
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const confirmPendingAction = async () => {
+    if (!pendingAction) return;
+
+    const { user, action } = pendingAction;
+    setPendingAction(null);
+
+    if (action === "approve") {
+      await handleApprovalChange(user, "approved");
+      return;
+    }
+    if (action === "reject") {
+      await handleApprovalChange(user, "rejected");
+      return;
+    }
+
+    await handleDeleteUser(user);
+  };
+
   return (
     <div className="space-y-6">
       {toast && (
@@ -264,7 +345,11 @@ export default function UserRegistrationForm({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table
+                className={`w-full text-left text-sm ${
+                  isSuperAdmin ? "min-w-[900px]" : "min-w-[760px]"
+                }`}
+              >
                 <thead>
                   <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
                     <SortableTableHeader
@@ -333,6 +418,11 @@ export default function UserRegistrationForm({
                       activeClassName="text-gray-900 dark:text-white"
                       inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
+                    {isSuperAdmin && (
+                      <th className="py-3 pr-4 font-bold">
+                        {t("admin.userRegistration.action")}
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -368,6 +458,29 @@ export default function UserRegistrationForm({
                       <td className="py-4 pr-4 text-gray-500 dark:text-gray-400">
                         {new Date(user.created_at).toLocaleDateString("ja-JP")}
                       </td>
+                      {isSuperAdmin && (
+                        <td className="py-4 pr-4">
+                          <ApprovalButtons
+                            disabled={
+                              actionLoadingId === user.id ||
+                              user.approval_status !== "to_be_approved"
+                            }
+                            deleteDisabled={actionLoadingId === user.id}
+                            onApprove={(event) => {
+                              event.stopPropagation();
+                              setPendingAction({ user, action: "approve" });
+                            }}
+                            onReject={(event) => {
+                              event.stopPropagation();
+                              setPendingAction({ user, action: "reject" });
+                            }}
+                            onDelete={(event) => {
+                              event.stopPropagation();
+                              setPendingAction({ user, action: "delete" });
+                            }}
+                          />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -388,7 +501,21 @@ export default function UserRegistrationForm({
             );
             setSelectedUser(updatedUser);
           }}
+          isSuperAdmin={isSuperAdmin}
+          actionLoading={actionLoadingId === selectedUser.id}
+          onRequestAction={(action) =>
+            setPendingAction({ user: selectedUser, action })
+          }
           onClose={() => setSelectedUser(null)}
+        />
+      )}
+
+      {pendingAction && (
+        <ConfirmActionModal
+          user={pendingAction.user}
+          action={pendingAction.action}
+          onCancel={() => setPendingAction(null)}
+          onConfirm={() => void confirmPendingAction()}
         />
       )}
 
@@ -492,10 +619,16 @@ export default function UserRegistrationForm({
 function UserDetailModal({
   user,
   onSaved,
+  isSuperAdmin,
+  actionLoading,
+  onRequestAction,
   onClose,
 }: {
   user: CompanyUser;
   onSaved: (user: CompanyUser) => void;
+  isSuperAdmin: boolean;
+  actionLoading: boolean;
+  onRequestAction: (action: UserAction) => void;
   onClose: () => void;
 }) {
   const isEditable = user.approval_status === "to_be_approved";
@@ -708,6 +841,17 @@ function UserDetailModal({
         )}
 
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-5 dark:border-gray-800">
+          {isSuperAdmin && (
+            <ApprovalButtons
+              disabled={
+                actionLoading || user.approval_status !== "to_be_approved"
+              }
+              deleteDisabled={actionLoading}
+              onApprove={() => onRequestAction("approve")}
+              onReject={() => onRequestAction("reject")}
+              onDelete={() => onRequestAction("delete")}
+            />
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -727,6 +871,117 @@ function UserDetailModal({
           )}
         </div>
       </form>
+    </div>
+  );
+}
+
+function ApprovalButtons({
+  disabled,
+  deleteDisabled,
+  onApprove,
+  onReject,
+  onDelete,
+}: {
+  disabled: boolean;
+  deleteDisabled: boolean;
+  onApprove: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onReject: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDelete: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onApprove}
+        className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {t("admin.userRegistration.approve")}
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onReject}
+        className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {t("admin.userRegistration.unapprove")}
+      </button>
+      <button
+        type="button"
+        disabled={deleteDisabled}
+        onClick={onDelete}
+        className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {t("common.delete")}
+      </button>
+    </div>
+  );
+}
+
+function ConfirmActionModal({
+  user,
+  action,
+  onCancel,
+  onConfirm,
+}: {
+  user: CompanyUser;
+  action: UserAction;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const actionLabel =
+    action === "approve"
+      ? t("admin.userRegistration.approve")
+      : action === "reject"
+        ? t("admin.userRegistration.unapprove")
+        : t("common.delete");
+  const description =
+    action === "approve"
+      ? t("admin.userRegistration.confirmApprove")
+      : action === "reject"
+        ? t("admin.userRegistration.confirmReject")
+        : t("admin.userRegistration.confirmDelete");
+  const confirmClass =
+    action === "approve"
+      ? "bg-emerald-600 hover:bg-emerald-700"
+      : action === "reject"
+        ? "bg-amber-500 hover:bg-amber-600"
+        : "bg-rose-600 hover:bg-rose-700";
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("admin.userRegistration.confirmTitle", { action: actionLabel })}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {description}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">
+            {user.company_name}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {user.email}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`rounded-lg px-4 py-2 text-sm font-bold text-white transition ${confirmClass}`}
+          >
+            {actionLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

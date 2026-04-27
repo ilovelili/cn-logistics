@@ -48,3 +48,20 @@ export async function createAdminOperator(
     throw error;
   }
 }
+
+export async function deleteAdminOperator({
+  superAdminEmail,
+  operatorId,
+}: {
+  superAdminEmail: string;
+  operatorId: string;
+}) {
+  const { error } = await supabase.rpc("delete_admin_operator", {
+    super_admin_email: superAdminEmail,
+    target_operator_id: operatorId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

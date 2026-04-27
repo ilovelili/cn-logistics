@@ -122,6 +122,7 @@ function MainApp({
         profileEmail={profileEmail}
         profileRole={profileRole}
         onSwitchToUser={onSwitchToUser}
+        onBackToAdmin={onBackToAdmin}
         onLogout={onLogout}
         onRefreshJobs={loadJobs}
       />
@@ -399,7 +400,7 @@ function AppContent({
         setProfileRole(profile.role);
         sessionStorage.setItem("app_profile_role", profile.role);
 
-        if (authRole === "admin") {
+        if (authRole === "admin" && authEmail === adminEmail) {
           setAdminProfileRole(profile.role);
           sessionStorage.setItem("app_admin_profile_role", profile.role);
         }
@@ -413,7 +414,7 @@ function AppContent({
     return () => {
       active = false;
     };
-  }, [authEmail, authRole]);
+  }, [adminEmail, authEmail, authRole]);
 
   const handleLogin = async (email: string, password: string) => {
     const profile = await verifyAppLogin(email, password);
@@ -444,13 +445,16 @@ function AppContent({
     return false;
   };
 
-  const handleSwitchToUser = (email: string) => {
-    setAuthRole("user");
+  const handleSwitchToUser = (email: string, role: AppUserRole = "normal") => {
+    setAuthRole(role === "normal" ? "user" : "admin");
     setAuthEmail(email);
-    setProfileRole("normal");
-    sessionStorage.setItem("app_auth_role", "user");
+    setProfileRole(role);
+    sessionStorage.setItem(
+      "app_auth_role",
+      role === "normal" ? "user" : "admin",
+    );
     sessionStorage.setItem("app_auth_email", email);
-    sessionStorage.setItem("app_profile_role", "normal");
+    sessionStorage.setItem("app_profile_role", role);
   };
 
   const handleBackToAdmin = () => {

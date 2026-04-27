@@ -18,6 +18,7 @@ import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
 import ProfileButton from "../components/ProfileButton";
+import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
 import { AppUserRole } from "../lib/auth";
 import { t } from "../lib/i18n";
@@ -38,7 +39,8 @@ interface AdminPanelProps {
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
-  onSwitchToUser?: (email: string) => void;
+  onSwitchToUser?: (email: string, role?: AppUserRole) => void;
+  onBackToAdmin?: () => void;
   onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
 }
@@ -52,6 +54,7 @@ export default function AdminPanel({
   profileEmail,
   profileRole,
   onSwitchToUser,
+  onBackToAdmin,
   onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
@@ -59,9 +62,17 @@ export default function AdminPanel({
   const [view, setView] = useState<AdminView>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
+  const [switchableOperators, setSwitchableOperators] = useState<
+    AdminOperator[]
+  >([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
   const isSuperAdmin = profileRole === "super_admin";
+
+  useEffect(() => {
+    setView("dashboard");
+    setShipmentEntryCriteria({ kind: "all" });
+  }, [profileEmail, profileRole]);
 
   useEffect(() => {
     if (!onSwitchToUser) return;
@@ -86,6 +97,33 @@ export default function AdminPanel({
       active = false;
     };
   }, [onSwitchToUser, profileEmail]);
+
+  useEffect(() => {
+    if (!onSwitchToUser || !isSuperAdmin) {
+      setSwitchableOperators([]);
+      return;
+    }
+
+    let active = true;
+    async function loadSwitchableOperators() {
+      try {
+        const operators = await fetchAdminOperators(profileEmail);
+        if (active) {
+          setSwitchableOperators(operators);
+        }
+      } catch {
+        if (active) {
+          setSwitchableOperators([]);
+        }
+      }
+    }
+
+    void loadSwitchableOperators();
+
+    return () => {
+      active = false;
+    };
+  }, [isSuperAdmin, onSwitchToUser, profileEmail]);
 
   const navItems = [
     {
@@ -150,17 +188,40 @@ export default function AdminPanel({
                 value=""
                 onChange={(event) => {
                   if (event.target.value) {
-                    onSwitchToUser(event.target.value);
+                    const [role, email] = event.target.value.split(":");
+                    onSwitchToUser(email, role as AppUserRole);
                   }
                 }}
                 className="max-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                <option value="">{t("admin.switch.selectUser")}</option>
-                {switchableUsers.map((user) => (
-                  <option key={user.id} value={user.email}>
-                    {user.company_name}
-                  </option>
-                ))}
+                <option value="">
+                  {isSuperAdmin
+                    ? t("superAdmin.switch.selectAccount")
+                    : t("admin.switch.selectUser")}
+                </option>
+                {isSuperAdmin && switchableOperators.length > 0 && (
+                  <optgroup label={t("superAdmin.switch.adminOperators")}>
+                    {switchableOperators
+                      .filter((operator) => operator.email !== profileEmail)
+                      .map((operator) => (
+                        <option
+                          key={operator.id}
+                          value={`admin:${operator.email}`}
+                        >
+                          {operator.user_name || operator.email}
+                        </option>
+                      ))}
+                  </optgroup>
+                )}
+                {switchableUsers.length > 0 && (
+                  <optgroup label={t("superAdmin.switch.normalUsers")}>
+                    {switchableUsers.map((user) => (
+                      <option key={user.id} value={`normal:${user.email}`}>
+                        {user.company_name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             )}
             <button
@@ -190,7 +251,7 @@ export default function AdminPanel({
 
       <div className="flex flex-1">
         {!sidebarCollapsed && (
-          <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
+          <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 flex flex-col">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -216,6 +277,18 @@ export default function AdminPanel({
                 );
               })}
             </nav>
+            {onBackToAdmin && (
+              <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={onBackToAdmin}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  <ShipWheel className="h-4 w-4" />
+                  {t("superAdmin.switch.backToSuperAdmin")}
+                </button>
+              </div>
+            )}
           </aside>
         )}
 
@@ -240,7 +313,10 @@ export default function AdminPanel({
             />
           )}
           {view === "userRegistration" && (
-            <UserRegistrationForm adminEmail={profileEmail} />
+            <UserRegistrationForm
+              adminEmail={profileEmail}
+              isSuperAdmin={isSuperAdmin}
+            />
           )}
           {view === "adminOperators" && isSuperAdmin && (
             <AdminOperatorManagement superAdminEmail={profileEmail} />

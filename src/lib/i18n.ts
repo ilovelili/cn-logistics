@@ -48,6 +48,7 @@ const ja = {
   "common.download": "ダウンロード",
   "common.approve": "承認",
   "common.reject": "却下",
+  "common.delete": "削除",
   "common.loadingJobs": "案件を読み込み中...",
   "common.loadingDocuments": "書類を読み込み中...",
   "common.noData": "データがありません。",
@@ -220,9 +221,28 @@ const ja = {
   "admin.userRegistration.created": "ユーザーを登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "ユーザー登録に失敗しました",
   "admin.userRegistration.updateFailed": "ユーザー情報の更新に失敗しました",
+  "admin.userRegistration.action": "操作",
+  "admin.userRegistration.approve": "承認",
+  "admin.userRegistration.unapprove": "却下",
+  "admin.userRegistration.approved": "ユーザーを承認しました",
+  "admin.userRegistration.rejected": "ユーザーを却下しました",
+  "admin.userRegistration.approvalFailed": "承認状態の更新に失敗しました",
+  "admin.userRegistration.deleted": "ユーザーを削除しました",
+  "admin.userRegistration.deleteFailed": "ユーザー削除に失敗しました",
+  "admin.userRegistration.confirmTitle": "{action}しますか？",
+  "admin.userRegistration.confirmApprove":
+    "このユーザーを承認すると、通常ユーザーとしてログインできるようになります。",
+  "admin.userRegistration.confirmReject":
+    "このユーザーを却下すると、承認待ち状態に戻せなくなります。",
+  "admin.userRegistration.confirmDelete":
+    "このユーザーを削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
   "superAdmin.nav.feedback": "評価一覧",
+  "superAdmin.switch.selectAccount": "アカウントに切替",
+  "superAdmin.switch.adminOperators": "管理者",
+  "superAdmin.switch.normalUsers": "通常ユーザー",
+  "superAdmin.switch.backToSuperAdmin": "スーパー管理者に戻る",
   "superAdmin.operators.title": "管理者登録",
   "superAdmin.operators.description":
     "出荷案件やユーザーを担当する管理者オペレーターを追加します。",
@@ -239,6 +259,11 @@ const ja = {
   "superAdmin.operators.loadFailed": "管理者一覧の読み込みに失敗しました",
   "superAdmin.operators.created": "管理者を登録しました",
   "superAdmin.operators.createFailed": "管理者登録に失敗しました",
+  "superAdmin.operators.deleted": "管理者を削除しました",
+  "superAdmin.operators.deleteFailed": "管理者削除に失敗しました",
+  "superAdmin.operators.confirmDeleteTitle": "管理者を削除しますか？",
+  "superAdmin.operators.confirmDelete":
+    "この管理者を削除します。削除後はログインや切替先として利用できません。",
   "superAdmin.feedback.title": "評価一覧",
   "superAdmin.feedback.description":
     "顧客からの評価を確認し、管理者オペレーター別の対応品質を把握します。",

@@ -62,9 +62,6 @@ export default function FeedbackReviewPanel({
             <h1 className="text-2xl font-black text-gray-900 dark:text-white">
               {t("superAdmin.feedback.title")}
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {t("superAdmin.feedback.description")}
-            </p>
           </div>
           <div className="rounded-2xl bg-amber-50 px-4 py-3 text-amber-900">
             <div className="text-xs font-bold">
