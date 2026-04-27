@@ -58,12 +58,16 @@ function MainApp({
   onToggleDark,
   profileEmail,
   initialAdminMode = false,
+  onSwitchToUser,
+  onBackToAdmin,
   onLogout,
 }: {
   darkMode: boolean;
   onToggleDark: () => void;
   profileEmail: string;
   initialAdminMode?: boolean;
+  onSwitchToUser?: (email: string) => void;
+  onBackToAdmin?: () => void;
   onLogout: () => void;
 }) {
   const [currentView, setCurrentView] = useState<View>("dashboard");
@@ -113,6 +117,7 @@ function MainApp({
         jobsLoading={jobsLoading}
         onToggleDark={onToggleDark}
         profileEmail={profileEmail}
+        onSwitchToUser={onSwitchToUser}
         onLogout={onLogout}
         onRefreshJobs={loadJobs}
       />
@@ -246,6 +251,17 @@ function MainApp({
             </nav>
 
             <div className="space-y-3 border-t border-white/10 p-4">
+              {onBackToAdmin && (
+                <button
+                  onClick={onBackToAdmin}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  <ShipWheel className="h-5 w-5" />
+                  <span className="text-sm font-bold">
+                    {t("admin.switch.backToAdmin")}
+                  </span>
+                </button>
+              )}
               <button
                 onClick={onLogout}
                 className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
@@ -338,8 +354,11 @@ function AppContent({
   const [authEmail, setAuthEmail] = useState(() => {
     return sessionStorage.getItem("app_auth_email") ?? "";
   });
+  const [adminEmail, setAdminEmail] = useState(() => {
+    return sessionStorage.getItem("app_admin_email") ?? "";
+  });
 
-  const loginUser = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     const profile = await verifyAppLogin(email, password);
     if (profile?.role === "normal") {
       setAuthRole("user");
@@ -349,26 +368,42 @@ function AppContent({
       logoutAdmin();
       return true;
     }
+    if (profile?.role === "admin" || profile?.role === "super_admin") {
+      await loginAdmin(email, password);
+      setAuthRole("admin");
+      setAuthEmail(profile.email);
+      setAdminEmail(profile.email);
+      sessionStorage.setItem("app_auth_role", "admin");
+      sessionStorage.setItem("app_auth_email", profile.email);
+      sessionStorage.setItem("app_admin_email", profile.email);
+      return true;
+    }
     return false;
   };
 
-  const handleAdminLogin = async (email: string, password: string) => {
-    const success = await loginAdmin(email, password);
-    if (success) {
-      setAuthRole("admin");
-      setAuthEmail(email);
-      sessionStorage.setItem("app_auth_role", "admin");
-      sessionStorage.setItem("app_auth_email", email);
-    }
-    return success;
+  const handleSwitchToUser = (email: string) => {
+    setAuthRole("user");
+    setAuthEmail(email);
+    sessionStorage.setItem("app_auth_role", "user");
+    sessionStorage.setItem("app_auth_email", email);
+  };
+
+  const handleBackToAdmin = () => {
+    if (!adminEmail) return;
+    setAuthRole("admin");
+    setAuthEmail(adminEmail);
+    sessionStorage.setItem("app_auth_role", "admin");
+    sessionStorage.setItem("app_auth_email", adminEmail);
   };
 
   const handleLogout = () => {
     logoutAdmin();
     setAuthRole(null);
     setAuthEmail("");
+    setAdminEmail("");
     sessionStorage.removeItem("app_auth_role");
     sessionStorage.removeItem("app_auth_email");
+    sessionStorage.removeItem("app_admin_email");
   };
 
   if (
@@ -376,9 +411,7 @@ function AppContent({
     !authEmail ||
     (authRole === "admin" && !isAdminAuthenticated)
   ) {
-    return (
-      <LoginPage onUserLogin={loginUser} onAdminLogin={handleAdminLogin} />
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
@@ -387,6 +420,10 @@ function AppContent({
       onToggleDark={onToggleDark}
       profileEmail={authEmail}
       initialAdminMode={authRole === "admin"}
+      onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}
+      onBackToAdmin={
+        authRole === "user" && adminEmail ? handleBackToAdmin : undefined
+      }
       onLogout={handleLogout}
     />
   );

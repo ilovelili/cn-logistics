@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FilePlus2,
   LogOut,
@@ -13,6 +13,7 @@ import AdminDashboard from "./AdminDashboard";
 import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import ProfileButton from "../components/ProfileButton";
+import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
@@ -25,6 +26,7 @@ interface AdminPanelProps {
   jobsLoading: boolean;
   onToggleDark: () => void;
   profileEmail: string;
+  onSwitchToUser?: (email: string) => void;
   onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
 }
@@ -36,13 +38,39 @@ export default function AdminPanel({
   jobsLoading,
   onToggleDark,
   profileEmail,
+  onSwitchToUser,
   onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
   const { logout } = useAdminAuth();
   const [view, setView] = useState<AdminView>("dashboard");
+  const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
+
+  useEffect(() => {
+    if (!onSwitchToUser) return;
+
+    let active = true;
+    async function loadSwitchableUsers() {
+      try {
+        const users = await fetchCompanyUsersByAdmin(profileEmail);
+        if (active) {
+          setSwitchableUsers(users);
+        }
+      } catch {
+        if (active) {
+          setSwitchableUsers([]);
+        }
+      }
+    }
+
+    void loadSwitchableUsers();
+
+    return () => {
+      active = false;
+    };
+  }, [onSwitchToUser, profileEmail]);
 
   const navItems = [
     {
@@ -80,6 +108,24 @@ export default function AdminPanel({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {onSwitchToUser && (
+              <select
+                value=""
+                onChange={(event) => {
+                  if (event.target.value) {
+                    onSwitchToUser(event.target.value);
+                  }
+                }}
+                className="max-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                <option value="">{t("admin.switch.selectUser")}</option>
+                {switchableUsers.map((user) => (
+                  <option key={user.id} value={user.email}>
+                    {user.company_name}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               onClick={onToggleDark}
               className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"

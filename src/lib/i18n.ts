@@ -8,10 +8,7 @@ const ja = {
 
   "login.tagline": "出荷管理ポータル",
   "login.portal": "ログイン",
-  "login.userTab": "ユーザーログイン",
-  "login.adminTab": "管理者ログイン",
-  "login.userHeading": "ユーザーログイン",
-  "login.adminHeading": "管理者ログイン",
+  "login.heading": "ログイン",
   "login.invalid": "メールアドレスまたはパスワードが正しくありません",
   "login.submit": "ログイン",
 
@@ -151,6 +148,8 @@ const ja = {
   "admin.dashboard": "管理ダッシュボード",
   "admin.dashboardDescription":
     "出荷案件、通関保留、書類対応状況を管理します。",
+  "admin.switch.selectUser": "ユーザーに切替",
+  "admin.switch.backToAdmin": "管理画面に戻る",
   "admin.nav.dashboard": "ダッシュボード",
   "admin.nav.shipmentEntry": "出荷案件管理",
   "admin.nav.userRegistration": "ユーザー登録",

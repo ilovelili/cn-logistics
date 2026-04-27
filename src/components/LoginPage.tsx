@@ -1,38 +1,16 @@
 import { useState } from "react";
-import {
-  AlertCircle,
-  Lock,
-  Mail,
-  Package,
-  ShieldCheck,
-  ShipWheel,
-  User,
-} from "lucide-react";
+import { AlertCircle, Lock, Mail, ShipWheel } from "lucide-react";
 import { t } from "../lib/i18n";
 
-type LoginMode = "user" | "admin";
-
 interface LoginPageProps {
-  onUserLogin: (email: string, password: string) => Promise<boolean>;
-  onAdminLogin: (email: string, password: string) => Promise<boolean>;
+  onLogin: (email: string, password: string) => Promise<boolean>;
 }
 
-export default function LoginPage({
-  onUserLogin,
-  onAdminLogin,
-}: LoginPageProps) {
-  const [mode, setMode] = useState<LoginMode>("user");
+export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const isAdminMode = mode === "admin";
-
-  const switchMode = (nextMode: LoginMode) => {
-    setMode(nextMode);
-    setError("");
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -40,9 +18,7 @@ export default function LoginPage({
     setLoading(true);
 
     try {
-      const success = isAdminMode
-        ? await onAdminLogin(email, password)
-        : await onUserLogin(email, password);
+      const success = await onLogin(email, password);
 
       if (!success) {
         setError(t("login.invalid"));
@@ -71,50 +47,13 @@ export default function LoginPage({
           </div>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1 dark:bg-gray-800">
-          <button
-            type="button"
-            onClick={() => switchMode("user")}
-            className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
-              !isAdminMode
-                ? "bg-white text-slate-950 shadow-sm dark:bg-gray-950 dark:text-white"
-                : "text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white"
-            }`}
-          >
-            <User className="h-4 w-4" />
-            {t("login.userTab")}
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("admin")}
-            className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
-              isAdminMode
-                ? "bg-white text-slate-950 shadow-sm dark:bg-gray-950 dark:text-white"
-                : "text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white"
-            }`}
-          >
-            <ShieldCheck className="h-4 w-4" />
-            {t("login.adminTab")}
-          </button>
-        </div>
-
         <div className="mb-6 flex items-center gap-3">
-          <div
-            className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-              isAdminMode
-                ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
-                : "bg-cyan-300 text-slate-950"
-            }`}
-          >
-            {isAdminMode ? (
-              <ShieldCheck className="h-5 w-5" />
-            ) : (
-              <Package className="h-5 w-5" />
-            )}
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
+            <Lock className="h-5 w-5" />
           </div>
           <div>
             <h3 className="text-xl font-black text-slate-950 dark:text-white">
-              {isAdminMode ? t("login.adminHeading") : t("login.userHeading")}
+              {t("login.heading")}
             </h3>
           </div>
         </div>

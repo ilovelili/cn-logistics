@@ -456,10 +456,7 @@ export default function UserRegistrationForm({
             />
           </div>
 
-          <div className="mt-6 flex items-center justify-between gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-              {t("admin.userRegistration.status.toBeApproved")}
-            </span>
+          <div className="mt-6 flex justify-end gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
             <button
               type="submit"
               disabled={loading}
