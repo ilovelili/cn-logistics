@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Plus, X } from "lucide-react";
 import { t } from "../lib/i18n";
 import {
   defaultShipmentJobForm,
@@ -32,6 +33,35 @@ export default function ShipmentJobForm({
     value: ShipmentJobFormState[Key],
   ) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateVesselFlightNumber = (index: number, value: string) => {
+    setForm((current) => ({
+      ...current,
+      vessel_flight_numbers: current.vessel_flight_numbers.map((item, itemIndex) =>
+        itemIndex === index ? value : item,
+      ),
+    }));
+  };
+
+  const addVesselFlightNumber = () => {
+    setForm((current) => ({
+      ...current,
+      vessel_flight_numbers: [...current.vessel_flight_numbers, ""],
+    }));
+  };
+
+  const removeVesselFlightNumber = (index: number) => {
+    setForm((current) => {
+      const nextNumbers = current.vessel_flight_numbers.filter(
+        (_, itemIndex) => itemIndex !== index,
+      );
+
+      return {
+        ...current,
+        vessel_flight_numbers: nextNumbers.length > 0 ? nextNumbers : [""],
+      };
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -140,6 +170,13 @@ export default function ShipmentJobForm({
         />
       </div>
 
+      <VesselFlightNumberFields
+        values={form.vessel_flight_numbers}
+        onAdd={addVesselFlightNumber}
+        onRemove={removeVesselFlightNumber}
+        onChange={updateVesselFlightNumber}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUploadField
           label={t("common.documents")}
@@ -193,6 +230,76 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
+}
+
+function VesselFlightNumberFields({
+  values,
+  onAdd,
+  onRemove,
+  onChange,
+}: {
+  values: string[];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onChange: (index: number, value: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("common.vesselFlightNo")}
+        </span>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("form.addVesselFlight")}
+        </button>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {values.map((value, index) => (
+          <label key={index} className="block">
+            <span className="text-xs font-semibold text-slate-500">
+              {formatOrdinal(index + 1)} {t("common.vesselFlightNo")}
+            </span>
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={value}
+                placeholder="ONE HOUSTON 001W / NH110"
+                onChange={(event) => onChange(index, event.target.value)}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+              />
+              <button
+                type="button"
+                disabled={values.length === 1}
+                onClick={() => onRemove(index)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label={t("common.delete")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatOrdinal(value: number) {
+  const suffix =
+    value % 10 === 1 && value % 100 !== 11
+      ? "st"
+      : value % 10 === 2 && value % 100 !== 12
+        ? "nd"
+        : value % 10 === 3 && value % 100 !== 13
+          ? "rd"
+          : "th";
+
+  return `${value}${suffix}`;
 }
 
 function TextField({

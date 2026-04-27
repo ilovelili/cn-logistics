@@ -136,6 +136,10 @@ export default function ShipmentJobDetailModal({
             <DetailCard title={t("jobs.detail.route")}>
               <DetailField label="POL/AOL" value={job.pol_aol} />
               <DetailField label="POD/AOD" value={job.pod_aod} />
+              <DetailField
+                label={t("common.vesselFlightNo")}
+                value={formatVesselFlightNumbers(job.vessel_flight_numbers)}
+              />
               <DetailField label="MBL/MAWB" value={job.mbl_mawb} />
               <DetailField label="HBL/HAWB" value={job.hbl_hawb} />
             </DetailCard>
@@ -180,6 +184,18 @@ export default function ShipmentJobDetailModal({
   );
 }
 
+function formatVesselFlightNumbers(values?: string[] | null) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  if (filteredValues.length === 0) {
+    return null;
+  }
+
+  return filteredValues
+    .map((value, index) => `${index + 1}. ${value}`)
+    .join("\n");
+}
+
 function DetailCard({
   title,
   children,
@@ -207,7 +223,7 @@ function DetailField({
   return (
     <div>
       <div className="text-xs font-bold text-slate-400">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold text-slate-900">
+      <div className="mt-0.5 whitespace-pre-line text-sm font-semibold text-slate-900">
         {value || "-"}
       </div>
     </div>

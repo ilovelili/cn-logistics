@@ -22,14 +22,33 @@ export interface ShipmentJob {
   consignee_name: string | null;
   pol_aol: string | null;
   pod_aod: string | null;
+  vessel_flight_numbers: string[];
   mbl_mawb: string | null;
   hbl_hawb: string | null;
   bl_awb_date: string | null;
   documents: string[];
   internal_documents: string[];
   notes: string | null;
+  tracking_events: ShipmentTrackingEvent[];
   created_at: string;
   updated_at: string;
+}
+
+export interface ShipmentTrackingEvent {
+  id: string;
+  shipment_job_id: string;
+  event_date: string;
+  location: string | null;
+  description: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShipmentTrackingEventForm {
+  event_date: string;
+  location: string;
+  description: string;
 }
 
 export interface ShipmentDocument {
@@ -57,6 +76,7 @@ export interface ShipmentJobForm {
   consignee_name: string;
   pol_aol: string;
   pod_aod: string;
+  vessel_flight_numbers: string[];
   mbl_mawb: string;
   hbl_hawb: string;
   bl_awb_date: string;
@@ -64,6 +84,7 @@ export interface ShipmentJobForm {
   internal_documents: string;
   document_files: File[];
   internal_document_files: File[];
+  tracking_events: ShipmentTrackingEventForm[];
   notes: string;
 }
 
@@ -139,6 +160,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   consignee_name: "",
   pol_aol: "",
   pod_aod: "",
+  vessel_flight_numbers: [""],
   mbl_mawb: "",
   hbl_hawb: "",
   bl_awb_date: "",
@@ -146,6 +168,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   internal_documents: "",
   document_files: [],
   internal_document_files: [],
+  tracking_events: [],
   notes: "",
 };
 
@@ -171,6 +194,10 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     consignee_name: job.consignee_name ?? "",
     pol_aol: job.pol_aol ?? "",
     pod_aod: job.pod_aod ?? "",
+    vessel_flight_numbers:
+      job.vessel_flight_numbers && job.vessel_flight_numbers.length > 0
+        ? job.vessel_flight_numbers
+        : [""],
     mbl_mawb: job.mbl_mawb ?? "",
     hbl_hawb: job.hbl_hawb ?? "",
     bl_awb_date: job.bl_awb_date ?? "",
@@ -178,6 +205,11 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     internal_documents: formatDocumentList(job.internal_documents ?? []),
     document_files: [],
     internal_document_files: [],
+    tracking_events: job.tracking_events?.map((event) => ({
+      event_date: event.event_date,
+      location: event.location ?? "",
+      description: event.description,
+    })) ?? [],
     notes: job.notes ?? "",
   };
 }
@@ -193,6 +225,9 @@ export function formToPayload(form: ShipmentJobForm) {
     consignee_name: form.consignee_name || null,
     pol_aol: form.pol_aol || null,
     pod_aod: form.pod_aod || null,
+    vessel_flight_numbers: form.vessel_flight_numbers
+      .map((value) => value.trim())
+      .filter(Boolean),
     mbl_mawb: form.mbl_mawb || null,
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
@@ -203,16 +238,43 @@ export function formToPayload(form: ShipmentJobForm) {
 }
 
 export async function fetchShipmentJobs(): Promise<ShipmentJob[]> {
-  const { data, error } = await supabase
+  const { data: jobsData, error: jobsError } = await supabase
     .from("shipment_jobs")
     .select("*")
     .order("updated_at", { ascending: false });
+
+  if (jobsError) {
+    throw jobsError;
+  }
+
+  const shipmentJobs = (jobsData ?? []) as Omit<
+    ShipmentJob,
+    "tracking_events"
+  >[];
+  const trackingEvents = await fetchShipmentTrackingEvents();
+  const trackingEventsByJob = groupTrackingEventsByJob(trackingEvents);
+
+  return shipmentJobs.map((job) => ({
+    ...job,
+    tracking_events: trackingEventsByJob[job.id] ?? [],
+  }));
+}
+
+export async function fetchShipmentTrackingEvents(): Promise<
+  ShipmentTrackingEvent[]
+> {
+  const { data, error } = await supabase
+    .from("shipment_tracking_events")
+    .select("*")
+    .order("event_date", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as ShipmentJob[];
+  return (data ?? []) as ShipmentTrackingEvent[];
 }
 
 export async function fetchShipmentDocuments(): Promise<ShipmentDocument[]> {
@@ -241,6 +303,7 @@ export async function createShipmentJob(form: ShipmentJobForm) {
   }
 
   await replaceShipmentDocuments(data.id, form);
+  await replaceShipmentTrackingEvents(data.id, form);
 }
 
 export async function updateShipmentJob(id: string, form: ShipmentJobForm) {
@@ -254,6 +317,7 @@ export async function updateShipmentJob(id: string, form: ShipmentJobForm) {
   }
 
   await replaceShipmentDocuments(id, form);
+  await replaceShipmentTrackingEvents(id, form);
 }
 
 export async function updateShipmentDocumentApproval(

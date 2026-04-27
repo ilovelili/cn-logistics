@@ -37,6 +37,7 @@ const ja = {
   "common.documents": "書類",
   "common.internalDocuments": "社内書類",
   "common.blAwbDate": "BL/AWB日付",
+  "common.vesselFlightNo": "船名/便名 No.",
   "common.workingDaysSpent": "経過営業日",
   "common.feedback": "評価",
   "common.notes": "メモ",
@@ -158,6 +159,7 @@ const ja = {
   "form.selectedFiles": "追加予定",
   "form.noFiles": "ファイルが選択されていません",
   "form.notesPlaceholder": "運用メモ、顧客要望、通関状況など",
+  "form.addVesselFlight": "追加",
 
   "admin.dashboard": "管理ダッシュボード",
   "admin.dashboardDescription":

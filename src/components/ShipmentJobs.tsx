@@ -47,6 +47,7 @@ type SortKey =
   | "consignee_name"
   | "pol_aol"
   | "pod_aod"
+  | "vessel_flight_numbers"
   | "mbl_mawb"
   | "hbl_hawb"
   | "bl_awb_date";
@@ -102,6 +103,7 @@ export default function ShipmentJobs({
         job.consignee_name,
         job.pol_aol,
         job.pod_aod,
+        ...(job.vessel_flight_numbers ?? []),
         job.mbl_mawb,
         job.hbl_hawb,
         ...(job.documents ?? []),
@@ -330,44 +332,46 @@ export default function ShipmentJobs({
         <div className="overflow-x-auto">
           <table
             className={`w-full table-fixed text-left text-sm ${
-              isAdminAuthenticated ? "min-w-[1620px]" : "min-w-[1500px]"
+              isAdminAuthenticated ? "min-w-[2160px]" : "min-w-[1970px]"
             }`}
           >
             <colgroup>
               {isAdminAuthenticated ? (
                 <>
-                  <col className="w-[5%]" />
-                  <col className="w-[6%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[5%]" />
-                  <col className="w-[6%]" />
-                  <col className="w-[5%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[4%]" />
+                  <col className="w-[90px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[145px]" />
+                  <col className="w-[145px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[170px]" />
+                  <col className="w-[135px]" />
+                  <col className="w-[135px]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[170px]" />
+                  <col className="w-[190px]" />
                 </>
               ) : (
                 <>
-                  <col className="w-[5%]" />
-                  <col className="w-[6%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[5%]" />
-                  <col className="w-[6%]" />
-                  <col className="w-[5%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
+                  <col className="w-[90px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[145px]" />
+                  <col className="w-[145px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[170px]" />
+                  <col className="w-[135px]" />
+                  <col className="w-[135px]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[190px]" />
                 </>
               )}
             </colgroup>
@@ -441,6 +445,13 @@ export default function ShipmentJobs({
                 <SortableTableHeader
                   label="POD/AOD"
                   sortKey="pod_aod"
+                  activeSortKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label={t("common.vesselFlightNo")}
+                  sortKey="vessel_flight_numbers"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
@@ -531,6 +542,9 @@ export default function ShipmentJobs({
                   </td>
                   <td className="whitespace-nowrap px-3 py-4">
                     {job.pod_aod || "-"}
+                  </td>
+                  <td className="px-3 py-4 text-xs text-slate-700">
+                    <VesselFlightList values={job.vessel_flight_numbers} />
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 font-mono text-xs">
                     {job.mbl_mawb || "-"}
@@ -677,7 +691,7 @@ function DocumentPills({
           }`}
         >
           <FileText className="h-3 w-3 shrink-0" />
-          <span className="truncate">{document.name}</span>
+          <span className="min-w-0 truncate">{document.name}</span>
         </span>
       ))}
     </div>
@@ -844,6 +858,9 @@ function getSortValue(job: ShipmentJob, sortKey: SortKey) {
     case "consignee_name":
     case "pol_aol":
     case "pod_aod":
+      return job[sortKey] ?? "";
+    case "vessel_flight_numbers":
+      return (job.vessel_flight_numbers ?? []).join(" ");
     case "mbl_mawb":
     case "hbl_hawb":
     case "bl_awb_date":
@@ -853,6 +870,25 @@ function getSortValue(job: ShipmentJob, sortKey: SortKey) {
 
 function formatShortId(id: string) {
   return id.slice(0, 8).toUpperCase();
+}
+
+function VesselFlightList({ values }: { values?: string[] | null }) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  if (filteredValues.length === 0) {
+    return <span>-</span>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {filteredValues.map((value, index) => (
+        <div key={`${value}-${index}`} className="whitespace-nowrap">
+          <span className="font-semibold text-slate-500">{index + 1}.</span>{" "}
+          {value}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function compareSortValues(
@@ -876,6 +912,7 @@ function compareSortValues(
 
   if (
     sortKey === "invoice_number" ||
+    sortKey === "vessel_flight_numbers" ||
     sortKey === "mbl_mawb" ||
     sortKey === "hbl_hawb" ||
     sortKey === "bl_awb_date"
