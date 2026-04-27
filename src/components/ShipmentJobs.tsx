@@ -687,7 +687,7 @@ function DocumentPills({
 function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
   const workingDays = getWorkingDaysSpent(job);
 
-  if (workingDays === null) {
+  if (!workingDays) {
     return <span className="text-slate-400">-</span>;
   }
 

@@ -208,7 +208,7 @@ export default function ShipmentDashboard({
                 <th className="py-3 pr-4">{t("common.invoice")}</th>
                 <th className="py-3 pr-4">{t("common.route")}</th>
                 <th className="py-3 pr-4">{t("common.parties")}</th>
-                <th className="py-3 pr-4">BL/AWB</th>
+                <th className="py-3 pr-4">{t("common.workingDaysSpent")}</th>
                 <th className="py-3">{t("common.documents")}</th>
               </tr>
             </thead>
@@ -243,8 +243,8 @@ export default function ShipmentDashboard({
                   <td className="py-4 pr-4">
                     {job.shipper_name || "-"} / {job.consignee_name || "-"}
                   </td>
-                  <td className="py-4 pr-4 font-mono text-xs">
-                    {job.mbl_mawb || "-"} / {job.hbl_hawb || "-"}
+                  <td className="whitespace-nowrap py-4 pr-4">
+                    <WorkingDaysBadge job={job} />
                   </td>
                   <td className="py-4">
                     {(job.documents?.length ?? 0) +
@@ -277,6 +277,71 @@ function countBy(jobs: ShipmentJob[], getKey: (job: ShipmentJob) => string) {
     counts[key] = (counts[key] ?? 0) + 1;
     return counts;
   }, {});
+}
+
+function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
+  const workingDays = getWorkingDaysSpent(job);
+
+  if (!workingDays) {
+    return <span className="text-slate-400">-</span>;
+  }
+
+  return (
+    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+      {workingDays}営業日
+    </span>
+  );
+}
+
+function getWorkingDaysSpent(job: ShipmentJob) {
+  if (job.status !== "under_process" && job.status !== "completed") {
+    return null;
+  }
+
+  const startDate = parseDate(job.created_at);
+  const endDate =
+    job.status === "completed" ? parseDate(job.updated_at) : new Date();
+
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  return countWorkingDays(startDate, endDate);
+}
+
+function parseDate(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function countWorkingDays(startDate: Date, endDate: Date) {
+  const start = startOfLocalDay(startDate);
+  const end = startOfLocalDay(endDate);
+
+  if (end < start) {
+    return 0;
+  }
+
+  let count = 0;
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) {
+      count += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return count;
+}
+
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function MetricCard({
