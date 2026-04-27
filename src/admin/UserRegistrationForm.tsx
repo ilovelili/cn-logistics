@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowDownUp,
-  CheckCircle,
-  Plus,
-  Save,
-  Search,
-  X,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Plus, Save, Search, X, XCircle } from "lucide-react";
 import {
   createCompanyUser,
   defaultCompanyUserForm,
@@ -19,6 +11,7 @@ import {
 } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
+import SortableTableHeader from "../components/SortableTableHeader";
 
 interface UserRegistrationFormProps {
   adminEmail: string;
@@ -274,47 +267,71 @@ export default function UserRegistrationForm({
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                    <SortableHeader
+                    <SortableTableHeader
                       label="ID"
                       sortKey="id"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
-                    <SortableHeader
+                    <SortableTableHeader
                       label={t("admin.userRegistration.companyName")}
                       sortKey="company_name"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
-                    <SortableHeader
+                    <SortableTableHeader
                       label={t("admin.userRegistration.email")}
                       sortKey="email"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
-                    <SortableHeader
+                    <SortableTableHeader
                       label={t("admin.userRegistration.budget")}
                       sortKey="budget"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
-                    <SortableHeader
+                    <SortableTableHeader
                       label={t("admin.userRegistration.status")}
                       sortKey="approval_status"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
-                    <SortableHeader
+                    <SortableTableHeader
                       label={t("admin.userRegistration.createdAt")}
                       sortKey="created_at"
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className="py-3 pr-4 font-bold"
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
                     />
                   </tr>
                 </thead>
@@ -738,44 +755,6 @@ function DetailItem({
         {value}
       </div>
     </div>
-  );
-}
-
-function SortableHeader({
-  label,
-  sortKey,
-  activeSortKey,
-  direction,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeSortKey: SortKey;
-  direction: SortDirection;
-  onSort: (sortKey: SortKey) => void;
-}) {
-  const isActive = sortKey === activeSortKey;
-
-  return (
-    <th className="py-3 pr-4 font-bold">
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        className="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-      >
-        {label}
-        <ArrowDownUp
-          className={`h-3.5 w-3.5 ${
-            isActive ? "text-cyan-500" : "text-gray-400"
-          }`}
-        />
-        {isActive && (
-          <span className="text-[10px] text-cyan-600 dark:text-cyan-300">
-            {direction === "asc" ? "ASC" : "DESC"}
-          </span>
-        )}
-      </button>
-    </th>
   );
 }
 

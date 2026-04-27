@@ -1,8 +1,5 @@
 import * as React from "react";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Download,
   FileCheck2,
   FileClock,
@@ -20,6 +17,7 @@ import {
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
 import PaginationControls from "./PaginationControls";
+import SortableTableHeader from "./SortableTableHeader";
 
 interface DocumentControlProps {
   jobs: ShipmentJob[];
@@ -283,70 +281,79 @@ export default function DocumentControl({
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <SortHeader
+                <SortableTableHeader
                   label="ID"
                   sortKey="id"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
                 {isAdminAuthenticated && (
-                  <SortHeader
+                  <SortableTableHeader
                     label={t("documents.scope")}
                     sortKey="scope"
                     activeSortKey={sortKey}
                     direction={sortDirection}
                     onSort={handleSort}
+                    className="whitespace-nowrap px-5 py-3"
                   />
                 )}
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.documents")}
                   sortKey="document"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.status")}
                   sortKey="status"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.invoice")}
                   sortKey="invoice"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.parties")}
                   sortKey="parties"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label="BL/AWB"
                   sortKey="blAwb"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.route")}
                   sortKey="route"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("documents.downloadRequest")}
                   sortKey="approval"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
+                  className="whitespace-nowrap px-5 py-3"
                 />
               </tr>
             </thead>
@@ -504,42 +511,6 @@ function getDocumentActionLabel(document: ShipmentDocument) {
     case "approved":
       return t("documents.downloadColumn");
   }
-}
-
-function SortHeader({
-  label,
-  sortKey,
-  activeSortKey,
-  direction,
-  onSort,
-}: {
-  label: string;
-  sortKey: DocumentSortKey;
-  activeSortKey: DocumentSortKey | null;
-  direction: SortDirection;
-  onSort: (sortKey: DocumentSortKey) => void;
-}) {
-  const isActive = activeSortKey === sortKey;
-  const Icon = !isActive
-    ? ArrowUpDown
-    : direction === "asc"
-      ? ArrowUp
-      : ArrowDown;
-
-  return (
-    <th className="whitespace-nowrap px-5 py-3">
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-slate-100 hover:text-slate-900 ${
-          isActive ? "text-slate-950" : ""
-        }`}
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" />
-      </button>
-    </th>
-  );
 }
 
 function MiniStat({

@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   CalendarDays,
   FileText,
   Filter,
@@ -14,6 +11,7 @@ import {
 import ShipmentJobForm from "./ShipmentJobForm";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import PaginationControls from "./PaginationControls";
+import SortableTableHeader from "./SortableTableHeader";
 import { t } from "../lib/i18n";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import {
@@ -312,84 +310,84 @@ export default function ShipmentJobs({
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <SortHeader
+                <SortableTableHeader
                   label="ID"
                   sortKey="id"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.status")}
                   sortKey="status"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.trade")}
                   sortKey="trade"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.invoice")}
                   sortKey="invoice_number"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.transport")}
                   sortKey="transport_mode"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.shipper")}
                   sortKey="shipper_name"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.consignee")}
                   sortKey="consignee_name"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label="POL/AOL"
                   sortKey="pol_aol"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label="POD/AOD"
                   sortKey="pod_aod"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label="MBL/MAWB"
                   sortKey="mbl_mawb"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label="HBL/HAWB"
                   sortKey="hbl_hawb"
                   activeSortKey={sortKey}
                   direction={sortDirection}
                   onSort={handleSort}
                 />
-                <SortHeader
+                <SortableTableHeader
                   label={t("common.blAwbDate")}
                   sortKey="bl_awb_date"
                   activeSortKey={sortKey}
@@ -554,42 +552,6 @@ function FilterSelect({
         ))}
       </select>
     </label>
-  );
-}
-
-function SortHeader({
-  label,
-  sortKey,
-  activeSortKey,
-  direction,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeSortKey: SortKey | null;
-  direction: SortDirection;
-  onSort: (sortKey: SortKey) => void;
-}) {
-  const isActive = activeSortKey === sortKey;
-  const Icon = !isActive
-    ? ArrowUpDown
-    : direction === "asc"
-      ? ArrowUp
-      : ArrowDown;
-
-  return (
-    <th className="whitespace-nowrap px-3 py-3">
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-slate-100 hover:text-slate-900 ${
-          isActive ? "text-slate-950" : ""
-        }`}
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" />
-      </button>
-    </th>
   );
 }
 
