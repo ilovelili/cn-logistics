@@ -11,6 +11,10 @@ export interface ShipmentFeedback {
   updated_at: string;
 }
 
+export interface ShipmentFeedbackReview extends ShipmentFeedback {
+  shipment_invoice_number: string | null;
+}
+
 export async function fetchShipmentFeedbackForUser(
   email: string,
 ): Promise<ShipmentFeedback[]> {
@@ -56,4 +60,18 @@ export async function submitShipmentFeedback({
   }
 
   return result;
+}
+
+export async function fetchAllShipmentFeedback(
+  superAdminEmail: string,
+): Promise<ShipmentFeedbackReview[]> {
+  const { data, error } = await supabase.rpc("list_all_shipment_feedback", {
+    super_admin_email: superAdminEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ShipmentFeedbackReview[];
 }

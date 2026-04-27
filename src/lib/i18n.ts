@@ -53,6 +53,7 @@ const ja = {
   "common.noData": "データがありません。",
   "common.unset": "未設定",
   "common.admin": "管理者",
+  "common.superAdmin": "スーパー管理者",
   "common.logout": "ログアウト",
 
   "status.underProcess": "処理中",
@@ -219,6 +220,35 @@ const ja = {
   "admin.userRegistration.created": "ユーザーを登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "ユーザー登録に失敗しました",
   "admin.userRegistration.updateFailed": "ユーザー情報の更新に失敗しました",
+
+  "superAdmin.nav.adminOperators": "管理者登録",
+  "superAdmin.nav.feedback": "評価一覧",
+  "superAdmin.operators.title": "管理者登録",
+  "superAdmin.operators.description":
+    "出荷案件やユーザーを担当する管理者オペレーターを追加します。",
+  "superAdmin.operators.new": "管理者を追加",
+  "superAdmin.operators.list": "管理者一覧",
+  "superAdmin.operators.email": "メールアドレス",
+  "superAdmin.operators.name": "管理者名",
+  "superAdmin.operators.password": "初期パスワード",
+  "superAdmin.operators.status": "状態",
+  "superAdmin.operators.active": "有効",
+  "superAdmin.operators.inactive": "無効",
+  "superAdmin.operators.noOperators": "管理者はまだ登録されていません。",
+  "superAdmin.operators.searchPlaceholder": "ID、メール、管理者名で検索...",
+  "superAdmin.operators.loadFailed": "管理者一覧の読み込みに失敗しました",
+  "superAdmin.operators.created": "管理者を登録しました",
+  "superAdmin.operators.createFailed": "管理者登録に失敗しました",
+  "superAdmin.feedback.title": "評価一覧",
+  "superAdmin.feedback.description":
+    "顧客からの評価を確認し、管理者オペレーター別の対応品質を把握します。",
+  "superAdmin.feedback.list": "評価履歴",
+  "superAdmin.feedback.average": "平均評価",
+  "superAdmin.feedback.operator": "担当管理者",
+  "superAdmin.feedback.submitter": "評価者",
+  "superAdmin.feedback.noFeedback": "評価はまだありません。",
+  "superAdmin.feedback.searchPlaceholder":
+    "案件、管理者、評価者、理由で検索...",
 
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",

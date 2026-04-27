@@ -5,20 +5,30 @@ import {
   Menu,
   Moon,
   ShipWheel,
+  Star,
   Sun,
   LayoutDashboard,
   UserPlus,
+  ShieldCheck,
 } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
 import AdminDashboard from "./AdminDashboard";
 import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
+import AdminOperatorManagement from "./AdminOperatorManagement";
+import FeedbackReviewPanel from "./FeedbackReviewPanel";
 import ProfileButton from "../components/ProfileButton";
 import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
+import { AppUserRole } from "../lib/auth";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
-type AdminView = "dashboard" | "shipmentEntry" | "userRegistration";
+type AdminView =
+  | "dashboard"
+  | "shipmentEntry"
+  | "userRegistration"
+  | "adminOperators"
+  | "feedbackReview";
 
 interface AdminPanelProps {
   darkMode: boolean;
@@ -27,6 +37,7 @@ interface AdminPanelProps {
   jobsLoading: boolean;
   onToggleDark: () => void;
   profileEmail: string;
+  profileRole: AppUserRole;
   onSwitchToUser?: (email: string) => void;
   onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
@@ -39,6 +50,7 @@ export default function AdminPanel({
   jobsLoading,
   onToggleDark,
   profileEmail,
+  profileRole,
   onSwitchToUser,
   onLogout,
   onRefreshJobs,
@@ -49,6 +61,7 @@ export default function AdminPanel({
   const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
+  const isSuperAdmin = profileRole === "super_admin";
 
   useEffect(() => {
     if (!onSwitchToUser) return;
@@ -90,6 +103,20 @@ export default function AdminPanel({
       label: t("admin.nav.userRegistration"),
       icon: UserPlus,
     },
+    ...(isSuperAdmin
+      ? [
+          {
+            id: "adminOperators" as AdminView,
+            label: t("superAdmin.nav.adminOperators"),
+            icon: ShieldCheck,
+          },
+          {
+            id: "feedbackReview" as AdminView,
+            label: t("superAdmin.nav.feedback"),
+            icon: Star,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -113,7 +140,7 @@ export default function AdminPanel({
                 CN Logistics
               </span>
               <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                {t("common.admin")}
+                {isSuperAdmin ? t("common.superAdmin") : t("common.admin")}
               </span>
             </div>
           </div>
@@ -214,6 +241,12 @@ export default function AdminPanel({
           )}
           {view === "userRegistration" && (
             <UserRegistrationForm adminEmail={profileEmail} />
+          )}
+          {view === "adminOperators" && isSuperAdmin && (
+            <AdminOperatorManagement superAdminEmail={profileEmail} />
+          )}
+          {view === "feedbackReview" && isSuperAdmin && (
+            <FeedbackReviewPanel superAdminEmail={profileEmail} />
           )}
         </main>
       </div>
