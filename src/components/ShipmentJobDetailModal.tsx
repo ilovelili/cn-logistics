@@ -1,4 +1,4 @@
-import { Download, FileText, X } from "lucide-react";
+import { Download, FileText, Star, X } from "lucide-react";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import { t } from "../lib/i18n";
 import {
@@ -17,12 +17,16 @@ import {
 interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
+  feedback?: { rating: number; reason: string | null } | null;
+  onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
 }
 
 export default function ShipmentJobDetailModal({
   job,
   documents,
+  feedback,
+  onOpenFeedback,
   onClose,
 }: ShipmentJobDetailModalProps) {
   const { isAdminAuthenticated } = useAdminAuth();
@@ -66,14 +70,42 @@ export default function ShipmentJobDetailModal({
               {job.shipper_name || "-"} → {job.consignee_name || "-"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label={t("jobs.detail.close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenFeedback && (
+              <button
+                type="button"
+                disabled={Boolean(feedback)}
+                onClick={() => {
+                  if (!feedback) {
+                    onOpenFeedback(job);
+                  }
+                }}
+                className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-black transition ${
+                  feedback
+                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Star
+                  className={`h-4 w-4 ${
+                    feedback ? "text-slate-400" : "text-slate-400"
+                  }`}
+                  fill={feedback ? "currentColor" : "none"}
+                />
+                {feedback
+                  ? t("feedback.ratingValue", { rating: feedback.rating })
+                  : t("feedback.open")}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label={t("jobs.detail.close")}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="max-h-[calc(90vh-92px)] overflow-y-auto p-6">

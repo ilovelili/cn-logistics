@@ -161,6 +161,7 @@ function MainApp({
             jobs={jobs}
             documents={documents}
             loading={jobsLoading}
+            profileEmail={profileEmail}
             onRefresh={loadJobs}
             statusFilter={jobsStatusFilter}
             onStatusFilterChange={setJobsStatusFilter}
