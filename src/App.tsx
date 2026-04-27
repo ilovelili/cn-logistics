@@ -72,6 +72,7 @@ function MainApp({
 }) {
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const showAdminMode = initialAdminMode;
   const [jobs, setJobs] = useState<ShipmentJob[]>([]);
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
@@ -142,6 +143,14 @@ function MainApp({
     setCurrentView("documents");
   };
 
+  const handleSidebarToggle = () => {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      setSidebarCollapsed((collapsed) => !collapsed);
+    } else {
+      setSidebarOpen(true);
+    }
+  };
+
   const renderView = () => {
     switch (currentView) {
       case "dashboard":
@@ -196,9 +205,9 @@ function MainApp({
     <div className="min-h-screen bg-[#f5f2ec] dark:bg-gray-950">
       <div className="flex h-screen overflow-hidden">
         <aside
-          className={`${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transition-transform duration-200 ease-in-out`}
+          className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${
+            sidebarCollapsed ? "lg:hidden" : "lg:translate-x-0"
+          } fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transition-transform duration-200 ease-in-out lg:static`}
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-white/10 p-6">
@@ -285,8 +294,9 @@ function MainApp({
           <header className="border-b border-slate-200 bg-white/80 px-5 py-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
             <div className="flex items-center justify-between">
               <button
-                onClick={() => setSidebarOpen(true)}
-                className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800"
+                onClick={handleSidebarToggle}
+                className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                aria-label="メニューを切り替え"
               >
                 <Menu className="h-6 w-6" />
               </button>

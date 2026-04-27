@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   FilePlus2,
   LogOut,
+  Menu,
   Moon,
   ShipWheel,
   Sun,
@@ -44,6 +45,7 @@ export default function AdminPanel({
 }: AdminPanelProps) {
   const { logout } = useAdminAuth();
   const [view, setView] = useState<AdminView>("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
@@ -95,6 +97,14 @@ export default function AdminPanel({
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+              className="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+              aria-label="メニューを切り替え"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="w-8 h-8 bg-slate-950 dark:bg-white rounded-lg flex items-center justify-center">
               <ShipWheel className="w-4 h-4 text-white dark:text-slate-950" />
             </div>
@@ -152,33 +162,35 @@ export default function AdminPanel({
       </header>
 
       <div className="flex flex-1">
-        <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = view === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (item.id === "shipmentEntry") {
-                      setShipmentEntryCriteria({ kind: "all" });
-                    }
-                    setView(item.id);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
+        {!sidebarCollapsed && (
+          <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = view === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (item.id === "shipmentEntry") {
+                        setShipmentEntryCriteria({ kind: "all" });
+                      }
+                      setView(item.id);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+        )}
 
         <main className="flex-1 p-6 overflow-y-auto">
           {view === "dashboard" && (
