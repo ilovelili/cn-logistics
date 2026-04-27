@@ -64,6 +64,38 @@ export default function ShipmentJobForm({
     });
   };
 
+  const updateTrackingEvent = (
+    index: number,
+    field: keyof ShipmentJobFormState["tracking_events"][number],
+    value: string,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      tracking_events: current.tracking_events.map((event, eventIndex) =>
+        eventIndex === index ? { ...event, [field]: value } : event,
+      ),
+    }));
+  };
+
+  const addTrackingEvent = () => {
+    setForm((current) => ({
+      ...current,
+      tracking_events: [
+        ...current.tracking_events,
+        { event_date: "", location: "", description: "" },
+      ],
+    }));
+  };
+
+  const removeTrackingEvent = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      tracking_events: current.tracking_events.filter(
+        (_, eventIndex) => eventIndex !== index,
+      ),
+    }));
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     await onSubmit(form);
@@ -199,6 +231,13 @@ export default function ShipmentJobForm({
         placeholder={t("form.notesPlaceholder")}
       />
 
+      <TrackingEventFields
+        values={form.tracking_events}
+        onAdd={addTrackingEvent}
+        onRemove={removeTrackingEvent}
+        onChange={updateTrackingEvent}
+      />
+
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
         {onCancel && (
           <button
@@ -230,6 +269,90 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
+}
+
+function TrackingEventFields({
+  values,
+  onAdd,
+  onRemove,
+  onChange,
+}: {
+  values: ShipmentJobFormState["tracking_events"];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onChange: (
+    index: number,
+    field: keyof ShipmentJobFormState["tracking_events"][number],
+    value: string,
+  ) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("tracking.title")}
+        </span>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("tracking.add")}
+        </button>
+      </div>
+      {values.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+          {t("tracking.noEvents")}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {values.map((event, index) => (
+            <div
+              key={index}
+              className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[150px_1fr_2fr_40px]"
+            >
+              <input
+                type="date"
+                value={event.event_date}
+                onChange={(inputEvent) =>
+                  onChange(index, "event_date", inputEvent.target.value)
+                }
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                aria-label={t("tracking.date")}
+              />
+              <input
+                type="text"
+                value={event.location}
+                placeholder={t("tracking.location")}
+                onChange={(inputEvent) =>
+                  onChange(index, "location", inputEvent.target.value)
+                }
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+              />
+              <input
+                type="text"
+                value={event.description}
+                placeholder={t("tracking.description")}
+                onChange={(inputEvent) =>
+                  onChange(index, "description", inputEvent.target.value)
+                }
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+              />
+              <button
+                type="button"
+                onClick={() => onRemove(index)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
+                aria-label={t("common.delete")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function VesselFlightNumberFields({

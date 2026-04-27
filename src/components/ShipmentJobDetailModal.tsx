@@ -1,4 +1,4 @@
-import { Download, FileText, Star, X } from "lucide-react";
+import { CalendarDays, Download, FileText, MapPin, Star, X } from "lucide-react";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import { t } from "../lib/i18n";
 import {
@@ -178,6 +178,8 @@ export default function ShipmentJobDetailModal({
               />
             )}
           </div>
+
+          <TrackingTimeline events={job.tracking_events} />
         </div>
       </div>
     </div>
@@ -227,6 +229,83 @@ function DetailField({
         {value || "-"}
       </div>
     </div>
+  );
+}
+
+function TrackingTimeline({
+  events,
+}: {
+  events: ShipmentJob["tracking_events"];
+}) {
+  const groupedEvents = groupTrackingEventsByDate(events ?? []);
+
+  return (
+    <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
+      <h3 className="mb-4 text-lg font-black text-slate-950">
+        {t("tracking.title")}
+      </h3>
+      {groupedEvents.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-400">
+          {t("tracking.noEvents")}
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {groupedEvents.map(([date, dateEvents]) => (
+            <div key={date} className="relative pl-8">
+              <div className="absolute left-2 top-1 h-full w-px bg-slate-200" />
+              <div className="relative mb-3 flex items-center gap-2">
+                <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                </span>
+                <div className="text-sm font-black text-slate-950">
+                  {new Date(`${date}T00:00:00`).toLocaleDateString("ja-JP", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long",
+                  })}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {dateEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    {event.location && (
+                      <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {event.location}
+                      </div>
+                    )}
+                    <div className="text-sm font-bold text-slate-900">
+                      {event.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function groupTrackingEventsByDate(events: ShipmentJob["tracking_events"]) {
+  const groups = events.reduce<Record<string, ShipmentJob["tracking_events"]>>(
+    (currentGroups, event) => {
+      currentGroups[event.event_date] = [
+        ...(currentGroups[event.event_date] ?? []),
+        event,
+      ];
+      return currentGroups;
+    },
+    {},
+  );
+
+  return Object.entries(groups).sort(([firstDate], [secondDate]) =>
+    secondDate.localeCompare(firstDate),
   );
 }
 

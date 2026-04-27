@@ -58,6 +58,13 @@ const ja = {
   "common.superAdmin": "スーパー管理者",
   "common.logout": "ログアウト",
 
+  "tracking.title": "追跡履歴",
+  "tracking.add": "履歴を追加",
+  "tracking.date": "日付",
+  "tracking.location": "場所",
+  "tracking.description": "発生内容",
+  "tracking.noEvents": "追跡履歴はまだありません。",
+
   "status.underProcess": "処理中",
   "status.customsHold": "通関保留",
   "status.completed": "完了",

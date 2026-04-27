@@ -41,6 +41,7 @@ export interface ShipmentTrackingEvent {
   location: string | null;
   description: string;
   sort_order: number;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -266,6 +267,7 @@ export async function fetchShipmentTrackingEvents(): Promise<
   const { data, error } = await supabase
     .from("shipment_tracking_events")
     .select("*")
+    .is("deleted_at", null)
     .order("event_date", { ascending: false })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
@@ -485,6 +487,55 @@ function buildDocumentPayload(
 
 function documentKey(scope: DocumentScope, name: string) {
   return `${scope}:${name}`;
+}
+
+async function replaceShipmentTrackingEvents(
+  jobId: string,
+  form: ShipmentJobForm,
+) {
+  const nextEvents = form.tracking_events
+    .map((event, index) => ({
+      shipment_job_id: jobId,
+      event_date: event.event_date,
+      location: event.location.trim() || null,
+      description: event.description.trim(),
+      sort_order: index,
+    }))
+    .filter((event) => event.event_date && event.description);
+
+  const { error: deleteError } = await supabase
+    .from("shipment_tracking_events")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("shipment_job_id", jobId);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  if (!nextEvents.length) {
+    return;
+  }
+
+  const { error: insertError } = await supabase
+    .from("shipment_tracking_events")
+    .insert(nextEvents);
+
+  if (insertError) {
+    throw insertError;
+  }
+}
+
+function groupTrackingEventsByJob(events: ShipmentTrackingEvent[]) {
+  return events.reduce<Record<string, ShipmentTrackingEvent[]>>(
+    (groups, event) => {
+      groups[event.shipment_job_id] = [
+        ...(groups[event.shipment_job_id] ?? []),
+        event,
+      ];
+      return groups;
+    },
+    {},
+  );
 }
 
 function getDocumentNames(form: ShipmentJobForm, scope: DocumentScope) {
