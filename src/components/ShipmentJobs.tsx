@@ -106,6 +106,11 @@ export default function ShipmentJobs({
         ...(job.vessel_flight_numbers ?? []),
         job.mbl_mawb,
         job.hbl_hawb,
+        ...((job.tracking_events ?? []).flatMap((event) => [
+          event.event_date,
+          event.location,
+          event.description,
+        ])),
         ...(job.documents ?? []),
         ...(job.internal_documents ?? []),
       ]
@@ -489,19 +494,19 @@ export default function ShipmentJobs({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedJobs.map((job) => (
-                <tr
-                  key={job.id}
-                  tabIndex={0}
-                  role="button"
-                  onClick={() => setSelectedJob(job)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedJob(job);
-                    }
-                  }}
-                  className="cursor-pointer align-top transition hover:bg-slate-50/80 focus:bg-slate-50 focus:outline-none"
-                >
+                  <tr
+                    key={job.id}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => setSelectedJob(job)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedJob(job);
+                      }
+                    }}
+                    className="cursor-pointer align-top transition hover:bg-slate-50/80 focus:bg-slate-50 focus:outline-none"
+                  >
                   <td className="py-4 pl-3 pr-5 font-mono text-xs font-bold text-slate-500">
                     <span title={job.id}>{formatShortId(job.id)}</span>
                   </td>
@@ -575,7 +580,7 @@ export default function ShipmentJobs({
                       />
                     </td>
                   )}
-                </tr>
+                  </tr>
               ))}
             </tbody>
           </table>

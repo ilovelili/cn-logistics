@@ -52,6 +52,16 @@ export interface ShipmentTrackingEventForm {
   description: string;
 }
 
+export interface ShipmentTrackingEventTemplate {
+  id: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ShipmentDocument {
   id: string;
   shipment_job_id: string;
@@ -277,6 +287,23 @@ export async function fetchShipmentTrackingEvents(): Promise<
   }
 
   return (data ?? []) as ShipmentTrackingEvent[];
+}
+
+export async function fetchShipmentTrackingEventTemplates(): Promise<
+  ShipmentTrackingEventTemplate[]
+> {
+  const { data, error } = await supabase
+    .from("shipment_tracking_event_templates")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ShipmentTrackingEventTemplate[];
 }
 
 export async function fetchShipmentDocuments(): Promise<ShipmentDocument[]> {

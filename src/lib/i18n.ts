@@ -60,6 +60,7 @@ const ja = {
 
   "tracking.title": "追跡履歴",
   "tracking.add": "履歴を追加",
+  "tracking.addDefaultFlow": "標準フローを追加",
   "tracking.date": "日付",
   "tracking.location": "場所",
   "tracking.description": "発生内容",

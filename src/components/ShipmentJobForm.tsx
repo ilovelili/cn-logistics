@@ -3,8 +3,10 @@ import { Plus, X } from "lucide-react";
 import { t } from "../lib/i18n";
 import {
   defaultShipmentJobForm,
+  fetchShipmentTrackingEventTemplates,
   ShipmentJob,
   ShipmentJobForm as ShipmentJobFormState,
+  ShipmentTrackingEventTemplate,
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
@@ -27,6 +29,29 @@ export default function ShipmentJobForm({
   onSubmit,
 }: ShipmentJobFormProps) {
   const [form, setForm] = useShipmentForm(job);
+  const [trackingTemplates, setTrackingTemplates] = React.useState<
+    ShipmentTrackingEventTemplate[]
+  >([]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    fetchShipmentTrackingEventTemplates()
+      .then((templates) => {
+        if (active) {
+          setTrackingTemplates(templates);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setTrackingTemplates([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const updateField = <Key extends keyof ShipmentJobFormState>(
     key: Key,
@@ -38,8 +63,8 @@ export default function ShipmentJobForm({
   const updateVesselFlightNumber = (index: number, value: string) => {
     setForm((current) => ({
       ...current,
-      vessel_flight_numbers: current.vessel_flight_numbers.map((item, itemIndex) =>
-        itemIndex === index ? value : item,
+      vessel_flight_numbers: current.vessel_flight_numbers.map(
+        (item, itemIndex) => (itemIndex === index ? value : item),
       ),
     }));
   };
@@ -83,6 +108,20 @@ export default function ShipmentJobForm({
       tracking_events: [
         ...current.tracking_events,
         { event_date: "", location: "", description: "" },
+      ],
+    }));
+  };
+
+  const addDefaultTrackingFlow = () => {
+    setForm((current) => ({
+      ...current,
+      tracking_events: [
+        ...current.tracking_events,
+        ...trackingTemplates.map((template) => ({
+          event_date: "",
+          location: "",
+          description: template.description,
+        })),
       ],
     }));
   };
@@ -234,6 +273,8 @@ export default function ShipmentJobForm({
       <TrackingEventFields
         values={form.tracking_events}
         onAdd={addTrackingEvent}
+        onAddDefaultFlow={addDefaultTrackingFlow}
+        canAddDefaultFlow={trackingTemplates.length > 0}
         onRemove={removeTrackingEvent}
         onChange={updateTrackingEvent}
       />
@@ -274,11 +315,15 @@ function useShipmentForm(job?: ShipmentJob | null) {
 function TrackingEventFields({
   values,
   onAdd,
+  onAddDefaultFlow,
+  canAddDefaultFlow,
   onRemove,
   onChange,
 }: {
   values: ShipmentJobFormState["tracking_events"];
   onAdd: () => void;
+  onAddDefaultFlow: () => void;
+  canAddDefaultFlow: boolean;
   onRemove: (index: number) => void;
   onChange: (
     index: number,
@@ -292,14 +337,25 @@ function TrackingEventFields({
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
           {t("tracking.title")}
         </span>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t("tracking.add")}
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            disabled={!canAddDefaultFlow}
+            onClick={onAddDefaultFlow}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("tracking.addDefaultFlow")}
+          </button>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("tracking.add")}
+          </button>
+        </div>
       </div>
       {values.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">

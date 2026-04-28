@@ -161,6 +161,8 @@ export default function ShipmentJobDetailModal({
             </DetailCard>
           </div>
 
+          <TrackingTimeline events={job.tracking_events} />
+
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <DocumentSection
               title={t("common.documents")}
@@ -178,8 +180,6 @@ export default function ShipmentJobDetailModal({
               />
             )}
           </div>
-
-          <TrackingTimeline events={job.tracking_events} />
         </div>
       </div>
     </div>
