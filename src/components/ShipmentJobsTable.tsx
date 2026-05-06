@@ -1,9 +1,13 @@
 import {
   CalendarDays,
   FileText,
+  GripVertical,
   MoreHorizontal,
+  RotateCcw,
+  Settings,
   ShipWheel,
 } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
   ShipmentDocument,
@@ -35,6 +39,26 @@ export type ShipmentJobsTableSortKey =
   | "mbl_mawb"
   | "hbl_hawb"
   | "bl_awb_date";
+
+type ShipmentJobsTableColumnId =
+  | ShipmentJobsTableSortKey
+  | "documents"
+  | "internal_documents";
+
+interface ShipmentJobsTableColumn {
+  id: ShipmentJobsTableColumnId;
+  label: string;
+  width: number;
+  sortKey?: ShipmentJobsTableSortKey;
+  render: (job: ShipmentJob) => ReactNode;
+}
+
+interface ShipmentJobsTableColumnSettings {
+  order: ShipmentJobsTableColumnId[];
+  hidden: ShipmentJobsTableColumnId[];
+}
+
+const columnSettingsStorageKey = "shipment_jobs_table_columns";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -79,6 +103,98 @@ export default function ShipmentJobsTable({
   onPageChange,
   onPageSizeChange,
 }: ShipmentJobsTableProps) {
+  const columns = useMemo(
+    () => buildColumns(documentsByJob, adminTheme, showInternalDocuments),
+    [adminTheme, documentsByJob, showInternalDocuments],
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [draggingColumnId, setDraggingColumnId] =
+    useState<ShipmentJobsTableColumnId | null>(null);
+  const [columnSettings, setColumnSettings] =
+    useState<ShipmentJobsTableColumnSettings>(readColumnSettings);
+
+  const orderedColumns = useMemo(() => {
+    const knownColumnIds = new Set(columns.map((column) => column.id));
+    const configuredColumns = columnSettings.order
+      .filter((columnId) => knownColumnIds.has(columnId))
+      .map((columnId) => columns.find((column) => column.id === columnId))
+      .filter((column): column is ShipmentJobsTableColumn => Boolean(column));
+    const missingColumns = columns.filter(
+      (column) => !columnSettings.order.includes(column.id),
+    );
+
+    return [...configuredColumns, ...missingColumns];
+  }, [columnSettings.order, columns]);
+
+  const visibleColumns = orderedColumns.filter(
+    (column) => !columnSettings.hidden.includes(column.id),
+  );
+  const visibleColumnIds = new Set(visibleColumns.map((column) => column.id));
+  const tableMinWidth = visibleColumns.reduce(
+    (total, column) => total + column.width,
+    0,
+  );
+
+  useEffect(() => {
+    localStorage.setItem(
+      columnSettingsStorageKey,
+      JSON.stringify(columnSettings),
+    );
+  }, [columnSettings]);
+
+  const handleColumnVisibilityChange = (
+    columnId: ShipmentJobsTableColumnId,
+    checked: boolean,
+  ) => {
+    setColumnSettings((current) => {
+      if (!checked && visibleColumns.length <= 1) {
+        return current;
+      }
+
+      const nextHidden = checked
+        ? current.hidden.filter((hiddenColumnId) => hiddenColumnId !== columnId)
+        : [...new Set([...current.hidden, columnId])];
+
+      return {
+        ...current,
+        hidden: nextHidden,
+      };
+    });
+  };
+
+  const handleColumnDrop = (targetColumnId: ShipmentJobsTableColumnId) => {
+    if (!draggingColumnId || draggingColumnId === targetColumnId) {
+      setDraggingColumnId(null);
+      return;
+    }
+
+    setColumnSettings((current) => {
+      const nextOrder = orderedColumns.map((column) => column.id);
+      const fromIndex = nextOrder.indexOf(draggingColumnId);
+      const toIndex = nextOrder.indexOf(targetColumnId);
+
+      if (fromIndex === -1 || toIndex === -1) {
+        return current;
+      }
+
+      nextOrder.splice(fromIndex, 1);
+      nextOrder.splice(toIndex, 0, draggingColumnId);
+
+      return {
+        ...current,
+        order: nextOrder,
+      };
+    });
+    setDraggingColumnId(null);
+  };
+
+  const resetColumnSettings = () => {
+    setColumnSettings({
+      order: columns.map((column) => column.id),
+      hidden: [],
+    });
+  };
+
   return (
     <section
       className={`overflow-hidden border bg-white shadow-sm ${
@@ -126,31 +242,89 @@ export default function ShipmentJobsTable({
             </p>
           </div>
         </div>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen((open) => !open)}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+              adminTheme
+                ? "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+            aria-label="列設定"
+            title="列設定"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+
+          {settingsOpen && (
+            <div
+              className="absolute right-0 top-12 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-xl dark:border-gray-800 dark:bg-gray-900"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="font-bold text-slate-900 dark:text-white">
+                  列設定
+                </div>
+                <button
+                  type="button"
+                  onClick={resetColumnSettings}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  リセット
+                </button>
+              </div>
+              <div className="max-h-80 space-y-1 overflow-y-auto">
+                {orderedColumns.map((column) => (
+                  <div
+                    key={column.id}
+                    draggable
+                    onDragStart={() => setDraggingColumnId(column.id)}
+                    onDragEnd={() => setDraggingColumnId(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => handleColumnDrop(column.id)}
+                    className={`flex cursor-grab items-center gap-2 rounded-xl border px-2 py-2 active:cursor-grabbing ${
+                      draggingColumnId === column.id
+                        ? "border-cyan-200 bg-cyan-50 dark:border-cyan-900 dark:bg-cyan-950/30"
+                        : "border-transparent hover:bg-slate-50 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <GripVertical className="h-4 w-4 shrink-0 text-slate-400" />
+                    <label className="flex min-w-0 flex-1 items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumnIds.has(column.id)}
+                        onChange={(event) =>
+                          handleColumnVisibilityChange(
+                            column.id,
+                            event.target.checked,
+                          )
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-slate-950"
+                      />
+                      <span className="min-w-0 truncate font-semibold text-slate-700 dark:text-gray-200">
+                        {column.label}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <table
-          className={`w-full table-fixed text-left text-sm ${
-            showInternalDocuments ? "min-w-[2160px]" : "min-w-[1970px]"
-          }`}
+          className="w-full table-fixed text-left text-sm"
+          style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
         >
           <colgroup>
-            <col className="w-[90px]" />
-            <col className="w-[120px]" />
-            <col className="w-[130px]" />
-            <col className="w-[100px]" />
-            <col className="w-[120px]" />
-            <col className="w-[100px]" />
-            <col className="w-[145px]" />
-            <col className="w-[145px]" />
-            <col className="w-[130px]" />
-            <col className="w-[130px]" />
-            <col className="w-[170px]" />
-            <col className="w-[135px]" />
-            <col className="w-[135px]" />
-            <col className="w-[150px]" />
-            {showInternalDocuments && <col className="w-[170px]" />}
-            <col className="w-[190px]" />
+            {visibleColumns.map((column) => (
+              <col key={column.id} style={{ width: `${column.width}px` }} />
+            ))}
           </colgroup>
           <thead
             className={`text-xs uppercase tracking-[0.14em] text-slate-500 ${
@@ -160,113 +334,26 @@ export default function ShipmentJobsTable({
             }`}
           >
             <tr>
-              <SortableTableHeader
-                label="ID"
-                sortKey="id"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-                className="whitespace-nowrap py-3 pl-3 pr-5"
-              />
-              <SortableTableHeader
-                label={t("common.status")}
-                sortKey="status"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-                className="whitespace-nowrap py-3 pl-5 pr-3"
-              />
-              <SortableTableHeader
-                label={t("common.workingDaysSpent")}
-                sortKey="working_days"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.trade")}
-                sortKey="trade"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.invoice")}
-                sortKey="invoice_number"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.transport")}
-                sortKey="transport_mode"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.shipper")}
-                sortKey="shipper_name"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.consignee")}
-                sortKey="consignee_name"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label="POL/AOL"
-                sortKey="pol_aol"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label="POD/AOD"
-                sortKey="pod_aod"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.vesselFlightNo")}
-                sortKey="vessel_flight_numbers"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label="MBL/MAWB"
-                sortKey="mbl_mawb"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label="HBL/HAWB"
-                sortKey="hbl_hawb"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <SortableTableHeader
-                label={t("common.blAwbDate")}
-                sortKey="bl_awb_date"
-                activeSortKey={sortKey}
-                direction={sortDirection}
-                onSort={onSort}
-              />
-              <th className="whitespace-nowrap px-3 py-3">
-                {t("common.documents")}
-              </th>
-              {showInternalDocuments && (
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.internalDocuments")}
-                </th>
+              {visibleColumns.map((column, index) =>
+                column.sortKey ? (
+                  <SortableTableHeader
+                    key={column.id}
+                    label={column.label}
+                    sortKey={column.sortKey}
+                    activeSortKey={sortKey}
+                    direction={sortDirection}
+                    onSort={onSort}
+                    className={
+                      index === 0
+                        ? "whitespace-nowrap py-3 pl-3 pr-5"
+                        : "whitespace-nowrap px-3 py-3"
+                    }
+                  />
+                ) : (
+                  <th key={column.id} className="whitespace-nowrap px-3 py-3">
+                    {column.label}
+                  </th>
+                ),
               )}
             </tr>
           </thead>
@@ -297,141 +384,11 @@ export default function ShipmentJobsTable({
                       : "hover:bg-slate-50/80 focus:bg-slate-50"
                 }`}
               >
-                <td className="py-4 pl-3 pr-5 font-mono text-xs font-bold text-slate-500">
-                  <span title={job.id}>{formatShipmentJobShortId(job.id)}</span>
-                </td>
-                <td className="py-4 pl-5 pr-3">
-                  <span
-                    className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
-                  >
-                    {statusLabels[job.status]}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-4">
-                  <WorkingDaysBadge job={job} />
-                </td>
-                <td className="px-3 py-4">
-                  <div
-                    className={`whitespace-nowrap font-bold ${
-                      adminTheme
-                        ? "text-slate-900 dark:text-white"
-                        : "text-slate-900"
-                    }`}
-                  >
-                    {tradeModeLabels[job.trade_mode]}
-                  </div>
-                  <div
-                    className={`whitespace-nowrap text-xs ${
-                      adminTheme
-                        ? "text-slate-500 dark:text-gray-400"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    {job.trade_term || "-"}
-                  </div>
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 font-mono ${
-                    adminTheme
-                      ? "text-slate-900 dark:text-white"
-                      : "text-slate-900"
-                  }`}
-                >
-                  {job.invoice_number || "-"}
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 ${
-                    adminTheme ? "text-slate-700 dark:text-gray-300" : ""
-                  }`}
-                >
-                  {job.transport_mode
-                    ? transportModeLabels[job.transport_mode]
-                    : "-"}
-                </td>
-                <td
-                  className={`px-3 py-4 font-medium ${
-                    adminTheme
-                      ? "text-slate-900 dark:text-white"
-                      : "text-slate-900"
-                  }`}
-                >
-                  {job.shipper_name || "-"}
-                </td>
-                <td
-                  className={`px-3 py-4 font-medium ${
-                    adminTheme
-                      ? "text-slate-900 dark:text-white"
-                      : "text-slate-900"
-                  }`}
-                >
-                  {job.consignee_name || "-"}
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 ${
-                    adminTheme ? "text-slate-700 dark:text-gray-300" : ""
-                  }`}
-                >
-                  {job.pol_aol || "-"}
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 ${
-                    adminTheme ? "text-slate-700 dark:text-gray-300" : ""
-                  }`}
-                >
-                  {job.pod_aod || "-"}
-                </td>
-                <td
-                  className={`px-3 py-4 text-xs ${
-                    adminTheme
-                      ? "text-slate-700 dark:text-gray-300"
-                      : "text-slate-700"
-                  }`}
-                >
-                  <VesselFlightList values={job.vessel_flight_numbers} />
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 font-mono text-xs ${
-                    adminTheme ? "text-slate-700 dark:text-gray-300" : ""
-                  }`}
-                >
-                  {job.mbl_mawb || "-"}
-                </td>
-                <td
-                  className={`whitespace-nowrap px-3 py-4 font-mono text-xs ${
-                    adminTheme ? "text-slate-700 dark:text-gray-300" : ""
-                  }`}
-                >
-                  {job.hbl_hawb || "-"}
-                </td>
-                <td className="px-3 py-4">
-                  <div
-                    className={`flex items-center gap-2 whitespace-nowrap ${
-                      adminTheme
-                        ? "text-slate-700 dark:text-gray-300"
-                        : "text-slate-700"
-                    }`}
-                  >
-                    <CalendarDays className="h-4 w-4 text-slate-400" />
-                    {job.bl_awb_date || "-"}
-                  </div>
-                </td>
-                <td className="px-3 py-4">
-                  <DocumentPills
-                    documents={documentsByJob[job.id]?.filter(
-                      (document) => document.scope === "customer",
-                    )}
-                  />
-                </td>
-                {showInternalDocuments && (
-                  <td className="px-3 py-4">
-                    <DocumentPills
-                      documents={documentsByJob[job.id]?.filter(
-                        (document) => document.scope === "internal",
-                      )}
-                      muted
-                    />
+                {visibleColumns.map((column) => (
+                  <td key={column.id} className="px-3 py-4">
+                    {column.render(job)}
                   </td>
-                )}
+                ))}
               </tr>
             ))}
           </tbody>
@@ -466,6 +423,244 @@ export default function ShipmentJobsTable({
       />
     </section>
   );
+}
+
+function buildColumns(
+  documentsByJob: Record<string, ShipmentDocument[]>,
+  adminTheme: boolean,
+  showInternalDocuments: boolean,
+): ShipmentJobsTableColumn[] {
+  const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
+  const strongText = adminTheme
+    ? "text-slate-900 dark:text-white"
+    : "text-slate-900";
+
+  const columns: ShipmentJobsTableColumn[] = [
+    {
+      id: "id",
+      label: "ID",
+      width: 90,
+      sortKey: "id",
+      render: (job) => (
+        <span
+          title={job.id}
+          className="font-mono text-xs font-bold text-slate-500"
+        >
+          {formatShipmentJobShortId(job.id)}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      label: t("common.status"),
+      width: 120,
+      sortKey: "status",
+      render: (job) => (
+        <span
+          className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
+        >
+          {statusLabels[job.status]}
+        </span>
+      ),
+    },
+    {
+      id: "working_days",
+      label: t("common.workingDaysSpent"),
+      width: 130,
+      sortKey: "working_days",
+      render: (job) => <WorkingDaysBadge job={job} />,
+    },
+    {
+      id: "trade",
+      label: t("common.trade"),
+      width: 100,
+      sortKey: "trade",
+      render: (job) => (
+        <>
+          <div className={`whitespace-nowrap font-bold ${strongText}`}>
+            {tradeModeLabels[job.trade_mode]}
+          </div>
+          <div
+            className={`whitespace-nowrap text-xs ${
+              adminTheme
+                ? "text-slate-500 dark:text-gray-400"
+                : "text-slate-500"
+            }`}
+          >
+            {job.trade_term || "-"}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: "invoice_number",
+      label: t("common.invoice"),
+      width: 120,
+      sortKey: "invoice_number",
+      render: (job) => (
+        <span className={`whitespace-nowrap font-mono ${strongText}`}>
+          {job.invoice_number || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "transport_mode",
+      label: t("common.transport"),
+      width: 100,
+      sortKey: "transport_mode",
+      render: (job) => (
+        <span className={`whitespace-nowrap ${mutedText}`}>
+          {job.transport_mode ? transportModeLabels[job.transport_mode] : "-"}
+        </span>
+      ),
+    },
+    {
+      id: "shipper_name",
+      label: t("common.shipper"),
+      width: 145,
+      sortKey: "shipper_name",
+      render: (job) => (
+        <span className={`font-medium ${strongText}`}>
+          {job.shipper_name || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "consignee_name",
+      label: t("common.consignee"),
+      width: 145,
+      sortKey: "consignee_name",
+      render: (job) => (
+        <span className={`font-medium ${strongText}`}>
+          {job.consignee_name || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "pol_aol",
+      label: "POL/AOL",
+      width: 130,
+      sortKey: "pol_aol",
+      render: (job) => (
+        <span className={`whitespace-nowrap ${mutedText}`}>
+          {job.pol_aol || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "pod_aod",
+      label: "POD/AOD",
+      width: 130,
+      sortKey: "pod_aod",
+      render: (job) => (
+        <span className={`whitespace-nowrap ${mutedText}`}>
+          {job.pod_aod || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "vessel_flight_numbers",
+      label: t("common.vesselFlightNo"),
+      width: 170,
+      sortKey: "vessel_flight_numbers",
+      render: (job) => (
+        <div
+          className={`text-xs ${
+            adminTheme ? "text-slate-700 dark:text-gray-300" : "text-slate-700"
+          }`}
+        >
+          <VesselFlightList values={job.vessel_flight_numbers} />
+        </div>
+      ),
+    },
+    {
+      id: "mbl_mawb",
+      label: "MBL/MAWB",
+      width: 135,
+      sortKey: "mbl_mawb",
+      render: (job) => (
+        <span className={`whitespace-nowrap font-mono text-xs ${mutedText}`}>
+          {job.mbl_mawb || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "hbl_hawb",
+      label: "HBL/HAWB",
+      width: 135,
+      sortKey: "hbl_hawb",
+      render: (job) => (
+        <span className={`whitespace-nowrap font-mono text-xs ${mutedText}`}>
+          {job.hbl_hawb || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "bl_awb_date",
+      label: t("common.blAwbDate"),
+      width: 150,
+      sortKey: "bl_awb_date",
+      render: (job) => (
+        <div
+          className={`flex items-center gap-2 whitespace-nowrap ${
+            adminTheme ? "text-slate-700 dark:text-gray-300" : "text-slate-700"
+          }`}
+        >
+          <CalendarDays className="h-4 w-4 text-slate-400" />
+          {job.bl_awb_date || "-"}
+        </div>
+      ),
+    },
+    {
+      id: "documents",
+      label: t("common.documents"),
+      width: 190,
+      render: (job) => (
+        <DocumentPills
+          documents={documentsByJob[job.id]?.filter(
+            (document) => document.scope === "customer",
+          )}
+        />
+      ),
+    },
+  ];
+
+  if (showInternalDocuments) {
+    columns.push({
+      id: "internal_documents",
+      label: t("common.internalDocuments"),
+      width: 170,
+      render: (job) => (
+        <DocumentPills
+          documents={documentsByJob[job.id]?.filter(
+            (document) => document.scope === "internal",
+          )}
+          muted
+        />
+      ),
+    });
+  }
+
+  return columns;
+}
+
+function readColumnSettings(): ShipmentJobsTableColumnSettings {
+  try {
+    const value = localStorage.getItem(columnSettingsStorageKey);
+    if (!value) {
+      return { order: [], hidden: [] };
+    }
+
+    const parsed = JSON.parse(
+      value,
+    ) as Partial<ShipmentJobsTableColumnSettings>;
+    return {
+      order: Array.isArray(parsed.order) ? parsed.order : [],
+      hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
+    };
+  } catch {
+    return { order: [], hidden: [] };
+  }
 }
 
 function DocumentPills({
