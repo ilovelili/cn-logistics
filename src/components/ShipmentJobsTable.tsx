@@ -1,13 +1,10 @@
 import {
   CalendarDays,
   FileText,
-  GripVertical,
   MoreHorizontal,
-  RotateCcw,
-  Settings,
   ShipWheel,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
   ShipmentDocument,
@@ -19,6 +16,8 @@ import {
 } from "../lib/shipmentJobs";
 import PaginationControls from "./PaginationControls";
 import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
+import TableColumnSettingsButton from "./TableColumnSettings";
+import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
   formatShipmentJobShortId,
   getShipmentJobWorkingDays,
@@ -51,11 +50,6 @@ interface ShipmentJobsTableColumn {
   width: number;
   sortKey?: ShipmentJobsTableSortKey;
   render: (job: ShipmentJob) => ReactNode;
-}
-
-interface ShipmentJobsTableColumnSettings {
-  order: ShipmentJobsTableColumnId[];
-  hidden: ShipmentJobsTableColumnId[];
 }
 
 const columnSettingsStorageKey = "shipment_jobs_table_columns";
@@ -107,93 +101,29 @@ export default function ShipmentJobsTable({
     () => buildColumns(documentsByJob, adminTheme, showInternalDocuments),
     [adminTheme, documentsByJob, showInternalDocuments],
   );
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [draggingColumnId, setDraggingColumnId] =
-    useState<ShipmentJobsTableColumnId | null>(null);
-  const [columnSettings, setColumnSettings] =
-    useState<ShipmentJobsTableColumnSettings>(readColumnSettings);
-
-  const orderedColumns = useMemo(() => {
-    const knownColumnIds = new Set(columns.map((column) => column.id));
-    const configuredColumns = columnSettings.order
-      .filter((columnId) => knownColumnIds.has(columnId))
-      .map((columnId) => columns.find((column) => column.id === columnId))
-      .filter((column): column is ShipmentJobsTableColumn => Boolean(column));
-    const missingColumns = columns.filter(
-      (column) => !columnSettings.order.includes(column.id),
-    );
-
-    return [...configuredColumns, ...missingColumns];
-  }, [columnSettings.order, columns]);
-
-  const visibleColumns = orderedColumns.filter(
-    (column) => !columnSettings.hidden.includes(column.id),
+  const {
+    orderedColumns,
+    visibleColumns,
+    visibleColumnIds,
+    setColumnVisibility,
+    moveColumn,
+    resetColumns,
+  } = useTableColumnSettings(
+    columnSettingsStorageKey,
+    columns.map((column) => ({ id: column.id, label: column.label })),
   );
-  const visibleColumnIds = new Set(visibleColumns.map((column) => column.id));
+  const columnsById = new Map(columns.map((column) => [column.id, column]));
+  const visibleTableColumns = visibleColumns
+    .map((column) => columnsById.get(column.id))
+    .filter((column): column is ShipmentJobsTableColumn => Boolean(column));
+  const orderedColumnConfigs = orderedColumns.map((column) => ({
+    id: column.id,
+    label: column.label,
+  }));
   const tableMinWidth = visibleColumns.reduce(
-    (total, column) => total + column.width,
+    (total, column) => total + (columnsById.get(column.id)?.width ?? 0),
     0,
   );
-
-  useEffect(() => {
-    localStorage.setItem(
-      columnSettingsStorageKey,
-      JSON.stringify(columnSettings),
-    );
-  }, [columnSettings]);
-
-  const handleColumnVisibilityChange = (
-    columnId: ShipmentJobsTableColumnId,
-    checked: boolean,
-  ) => {
-    setColumnSettings((current) => {
-      if (!checked && visibleColumns.length <= 1) {
-        return current;
-      }
-
-      const nextHidden = checked
-        ? current.hidden.filter((hiddenColumnId) => hiddenColumnId !== columnId)
-        : [...new Set([...current.hidden, columnId])];
-
-      return {
-        ...current,
-        hidden: nextHidden,
-      };
-    });
-  };
-
-  const handleColumnDrop = (targetColumnId: ShipmentJobsTableColumnId) => {
-    if (!draggingColumnId || draggingColumnId === targetColumnId) {
-      setDraggingColumnId(null);
-      return;
-    }
-
-    setColumnSettings((current) => {
-      const nextOrder = orderedColumns.map((column) => column.id);
-      const fromIndex = nextOrder.indexOf(draggingColumnId);
-      const toIndex = nextOrder.indexOf(targetColumnId);
-
-      if (fromIndex === -1 || toIndex === -1) {
-        return current;
-      }
-
-      nextOrder.splice(fromIndex, 1);
-      nextOrder.splice(toIndex, 0, draggingColumnId);
-
-      return {
-        ...current,
-        order: nextOrder,
-      };
-    });
-    setDraggingColumnId(null);
-  };
-
-  const resetColumnSettings = () => {
-    setColumnSettings({
-      order: columns.map((column) => column.id),
-      hidden: [],
-    });
-  };
 
   return (
     <section
@@ -242,78 +172,14 @@ export default function ShipmentJobsTable({
             </p>
           </div>
         </div>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((open) => !open)}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-              adminTheme
-                ? "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                : "border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
-            aria-label="列設定"
-            title="列設定"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-
-          {settingsOpen && (
-            <div
-              className="absolute right-0 top-12 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-xl dark:border-gray-800 dark:bg-gray-900"
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="font-bold text-slate-900 dark:text-white">
-                  列設定
-                </div>
-                <button
-                  type="button"
-                  onClick={resetColumnSettings}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  リセット
-                </button>
-              </div>
-              <div className="max-h-80 space-y-1 overflow-y-auto">
-                {orderedColumns.map((column) => (
-                  <div
-                    key={column.id}
-                    draggable
-                    onDragStart={() => setDraggingColumnId(column.id)}
-                    onDragEnd={() => setDraggingColumnId(null)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => handleColumnDrop(column.id)}
-                    className={`flex cursor-grab items-center gap-2 rounded-xl border px-2 py-2 active:cursor-grabbing ${
-                      draggingColumnId === column.id
-                        ? "border-cyan-200 bg-cyan-50 dark:border-cyan-900 dark:bg-cyan-950/30"
-                        : "border-transparent hover:bg-slate-50 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    <GripVertical className="h-4 w-4 shrink-0 text-slate-400" />
-                    <label className="flex min-w-0 flex-1 items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={visibleColumnIds.has(column.id)}
-                        onChange={(event) =>
-                          handleColumnVisibilityChange(
-                            column.id,
-                            event.target.checked,
-                          )
-                        }
-                        className="h-4 w-4 rounded border-slate-300 text-slate-950"
-                      />
-                      <span className="min-w-0 truncate font-semibold text-slate-700 dark:text-gray-200">
-                        {column.label}
-                      </span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <TableColumnSettingsButton
+          columns={orderedColumnConfigs}
+          visibleColumnIds={visibleColumnIds}
+          onVisibilityChange={setColumnVisibility}
+          onMoveColumn={moveColumn}
+          onReset={resetColumns}
+          adminTheme={adminTheme}
+        />
       </div>
 
       <div className="overflow-x-auto">
@@ -322,7 +188,7 @@ export default function ShipmentJobsTable({
           style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
         >
           <colgroup>
-            {visibleColumns.map((column) => (
+            {visibleTableColumns.map((column) => (
               <col key={column.id} style={{ width: `${column.width}px` }} />
             ))}
           </colgroup>
@@ -334,7 +200,7 @@ export default function ShipmentJobsTable({
             }`}
           >
             <tr>
-              {visibleColumns.map((column, index) =>
+              {visibleTableColumns.map((column, index) =>
                 column.sortKey ? (
                   <SortableTableHeader
                     key={column.id}
@@ -384,7 +250,7 @@ export default function ShipmentJobsTable({
                       : "hover:bg-slate-50/80 focus:bg-slate-50"
                 }`}
               >
-                {visibleColumns.map((column) => (
+                {visibleTableColumns.map((column) => (
                   <td key={column.id} className="px-3 py-4">
                     {column.render(job)}
                   </td>
@@ -642,25 +508,6 @@ function buildColumns(
   }
 
   return columns;
-}
-
-function readColumnSettings(): ShipmentJobsTableColumnSettings {
-  try {
-    const value = localStorage.getItem(columnSettingsStorageKey);
-    if (!value) {
-      return { order: [], hidden: [] };
-    }
-
-    const parsed = JSON.parse(
-      value,
-    ) as Partial<ShipmentJobsTableColumnSettings>;
-    return {
-      order: Array.isArray(parsed.order) ? parsed.order : [],
-      hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
-    };
-  } catch {
-    return { order: [], hidden: [] };
-  }
 }
 
 function DocumentPills({

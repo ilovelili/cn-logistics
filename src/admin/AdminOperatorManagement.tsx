@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Plus,
-  Save,
-  Search,
-  ShieldCheck,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { Plus, Save, Search, ShieldCheck, Trash2, XCircle } from "lucide-react";
 import {
   AdminOperator,
   createAdminOperator,
@@ -16,6 +9,8 @@ import {
 } from "../lib/adminOperators";
 import { t } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
+import TableColumnSettingsButton from "../components/TableColumnSettings";
+import { useTableColumnSettings } from "../components/useTableColumnSettings";
 
 interface AdminOperatorManagementProps {
   superAdminEmail: string;
@@ -23,6 +18,15 @@ interface AdminOperatorManagementProps {
 
 type SortKey = "id" | "email" | "user_name" | "is_active" | "created_at";
 type SortDirection = "asc" | "desc";
+type OperatorColumnId = SortKey | "action";
+
+interface OperatorTableColumn {
+  id: OperatorColumnId;
+  label: string;
+  width: number;
+  sortKey?: SortKey;
+  render: (operator: AdminOperator) => React.ReactNode;
+}
 
 export default function AdminOperatorManagement({
   superAdminEmail,
@@ -85,7 +89,8 @@ export default function AdminOperatorManagement({
 
       if (sortKey === "created_at") {
         return (
-          (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) *
+          (new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime()) *
           direction
         );
       }
@@ -142,6 +147,110 @@ export default function AdminOperatorManagement({
       setDeletingId(null);
     }
   };
+
+  const columns = useMemo<OperatorTableColumn[]>(
+    () => [
+      {
+        id: "id",
+        label: "ID",
+        width: 110,
+        sortKey: "id",
+        render: (operator) => (
+          <span className="font-mono text-xs text-gray-500">
+            {operator.id.slice(0, 8).toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        id: "email",
+        label: t("superAdmin.operators.email"),
+        width: 240,
+        sortKey: "email",
+        render: (operator) => (
+          <span className="font-bold text-gray-900 dark:text-white">
+            {operator.email}
+          </span>
+        ),
+      },
+      {
+        id: "user_name",
+        label: t("superAdmin.operators.name"),
+        width: 180,
+        sortKey: "user_name",
+        render: (operator) => (
+          <span className="text-gray-700 dark:text-gray-300">
+            {operator.user_name || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "is_active",
+        label: t("superAdmin.operators.status"),
+        width: 150,
+        sortKey: "is_active",
+        render: (operator) => (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {operator.is_active
+              ? t("superAdmin.operators.active")
+              : t("superAdmin.operators.inactive")}
+          </span>
+        ),
+      },
+      {
+        id: "created_at",
+        label: t("admin.userRegistration.createdAt"),
+        width: 140,
+        sortKey: "created_at",
+        render: (operator) => (
+          <span className="text-gray-500">
+            {new Date(operator.created_at).toLocaleDateString("ja-JP")}
+          </span>
+        ),
+      },
+      {
+        id: "action",
+        label: t("admin.userRegistration.action"),
+        width: 130,
+        render: (operator) => (
+          <button
+            type="button"
+            disabled={deletingId === operator.id}
+            onClick={() => setDeleteTarget(operator)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-xs font-black text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t("common.delete")}
+          </button>
+        ),
+      },
+    ],
+    [deletingId],
+  );
+
+  const {
+    orderedColumns,
+    visibleColumns,
+    visibleColumnIds,
+    setColumnVisibility,
+    moveColumn,
+    resetColumns,
+  } = useTableColumnSettings(
+    "admin_operators_table_columns",
+    columns.map((column) => ({ id: column.id, label: column.label })),
+  );
+  const columnsById = new Map(columns.map((column) => [column.id, column]));
+  const visibleTableColumns = visibleColumns
+    .map((column) => columnsById.get(column.id))
+    .filter((column): column is OperatorTableColumn => Boolean(column));
+  const orderedColumnConfigs = orderedColumns.map((column) => ({
+    id: column.id,
+    label: column.label,
+  }));
+  const tableMinWidth = visibleTableColumns.reduce(
+    (total, column) => total + column.width,
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -230,110 +339,91 @@ export default function AdminOperatorManagement({
           <h2 className="text-lg font-black text-gray-900 dark:text-white">
             {t("superAdmin.operators.list")}
           </h2>
-          <label className="relative block w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("superAdmin.operators.searchPlaceholder")}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <label className="relative block w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("superAdmin.operators.searchPlaceholder")}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+              />
+            </label>
+            <TableColumnSettingsButton
+              columns={orderedColumnConfigs}
+              visibleColumnIds={visibleColumnIds}
+              onVisibilityChange={setColumnVisibility}
+              onMoveColumn={moveColumn}
+              onReset={resetColumns}
+              adminTheme
             />
-          </label>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table
+            className="w-full table-fixed text-left text-sm"
+            style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+          >
+            <colgroup>
+              {visibleTableColumns.map((column) => (
+                <col key={column.id} style={{ width: `${column.width}px` }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                <OperatorSortableHeader
-                  label="ID"
-                  sortKey="id"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={changeSort}
-                />
-                <OperatorSortableHeader
-                  label={t("superAdmin.operators.email")}
-                  sortKey="email"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={changeSort}
-                />
-                <OperatorSortableHeader
-                  label={t("superAdmin.operators.name")}
-                  sortKey="user_name"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={changeSort}
-                />
-                <OperatorSortableHeader
-                  label={t("superAdmin.operators.status")}
-                  sortKey="is_active"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={changeSort}
-                />
-                <OperatorSortableHeader
-                  label={t("admin.userRegistration.createdAt")}
-                  sortKey="created_at"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={changeSort}
-                />
-                <th className="py-3 pl-4 text-right">
-                  {t("admin.userRegistration.action")}
-                </th>
+                {visibleTableColumns.map((column) =>
+                  column.sortKey ? (
+                    <OperatorSortableHeader
+                      key={column.id}
+                      label={column.label}
+                      sortKey={column.sortKey}
+                      activeSortKey={sortKey}
+                      direction={sortDirection}
+                      onSort={changeSort}
+                    />
+                  ) : (
+                    <th key={column.id} className="py-3 pl-4 text-right">
+                      {column.label}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td className="py-8 text-center text-gray-500" colSpan={6}>
+                  <td
+                    className="py-8 text-center text-gray-500"
+                    colSpan={visibleTableColumns.length}
+                  >
                     {t("common.loadingDocuments")}
                   </td>
                 </tr>
               ) : filteredOperators.length === 0 ? (
                 <tr>
-                  <td className="py-8 text-center text-gray-500" colSpan={6}>
+                  <td
+                    className="py-8 text-center text-gray-500"
+                    colSpan={visibleTableColumns.length}
+                  >
                     {t("superAdmin.operators.noOperators")}
                   </td>
                 </tr>
               ) : (
                 sortedOperators.map((operator) => (
                   <tr key={operator.id}>
-                    <td className="py-4 pr-4 font-mono text-xs text-gray-500">
-                      {operator.id.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="py-4 pr-4 font-bold text-gray-900 dark:text-white">
-                      {operator.email}
-                    </td>
-                    <td className="py-4 pr-4 text-gray-700 dark:text-gray-300">
-                      {operator.user_name || "-"}
-                    </td>
-                    <td className="py-4 pr-4">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        {operator.is_active
-                          ? t("superAdmin.operators.active")
-                          : t("superAdmin.operators.inactive")}
-                      </span>
-                    </td>
-                    <td className="py-4 text-gray-500">
-                      {new Date(operator.created_at).toLocaleDateString(
-                        "ja-JP",
-                      )}
-                    </td>
-                    <td className="py-4 pl-4 text-right">
-                      <button
-                        type="button"
-                        disabled={deletingId === operator.id}
-                        onClick={() => setDeleteTarget(operator)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-xs font-black text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    {visibleTableColumns.map((column) => (
+                      <td
+                        key={column.id}
+                        className={
+                          column.id === "action"
+                            ? "py-4 pl-4 text-right"
+                            : "py-4 pr-4"
+                        }
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {t("common.delete")}
-                      </button>
-                    </td>
+                        {column.render(operator)}
+                      </td>
+                    ))}
                   </tr>
                 ))
               )}

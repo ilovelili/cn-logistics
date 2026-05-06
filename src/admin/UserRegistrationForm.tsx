@@ -14,6 +14,8 @@ import {
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
+import TableColumnSettingsButton from "../components/TableColumnSettings";
+import { useTableColumnSettings } from "../components/useTableColumnSettings";
 
 interface UserRegistrationFormProps {
   adminEmail: string;
@@ -28,7 +30,16 @@ type SortKey =
   | "approval_status"
   | "created_at";
 type SortDirection = "asc" | "desc";
+type UserColumnId = SortKey | "action";
 type UserAction = "approve" | "reject" | "delete";
+
+interface UserTableColumn {
+  id: UserColumnId;
+  label: string;
+  width: number;
+  sortKey?: SortKey;
+  render: (user: CompanyUser) => React.ReactNode;
+}
 
 export default function UserRegistrationForm({
   adminEmail,
@@ -242,6 +253,127 @@ export default function UserRegistrationForm({
     await handleDeleteUser(user);
   };
 
+  const columns = useMemo<UserTableColumn[]>(() => {
+    const userColumns: UserTableColumn[] = [
+      {
+        id: "id",
+        label: "ID",
+        width: 110,
+        sortKey: "id",
+        render: (user) => (
+          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+            {user.id.slice(0, 8)}
+          </span>
+        ),
+      },
+      {
+        id: "company_name",
+        label: t("admin.userRegistration.companyName"),
+        width: 180,
+        sortKey: "company_name",
+        render: (user) => (
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {user.company_name}
+          </span>
+        ),
+      },
+      {
+        id: "email",
+        label: t("admin.userRegistration.email"),
+        width: 220,
+        sortKey: "email",
+        render: (user) => (
+          <span className="text-gray-600 dark:text-gray-300">{user.email}</span>
+        ),
+      },
+      {
+        id: "budget",
+        label: t("admin.userRegistration.budget"),
+        width: 140,
+        sortKey: "budget",
+        render: (user) => (
+          <span className="text-gray-600 dark:text-gray-300">
+            {Number(user.budget).toLocaleString()}{" "}
+            {t("admin.userRegistration.budgetUnit")}
+          </span>
+        ),
+      },
+      {
+        id: "approval_status",
+        label: t("admin.userRegistration.status"),
+        width: 160,
+        sortKey: "approval_status",
+        render: (user) => <StatusBadge status={user.approval_status} />,
+      },
+      {
+        id: "created_at",
+        label: t("admin.userRegistration.createdAt"),
+        width: 140,
+        sortKey: "created_at",
+        render: (user) => (
+          <span className="text-gray-500 dark:text-gray-400">
+            {new Date(user.created_at).toLocaleDateString("ja-JP")}
+          </span>
+        ),
+      },
+    ];
+
+    if (isSuperAdmin) {
+      userColumns.push({
+        id: "action",
+        label: t("admin.userRegistration.action"),
+        width: 220,
+        render: (user) => (
+          <ApprovalButtons
+            disabled={
+              actionLoadingId === user.id ||
+              user.approval_status !== "to_be_approved"
+            }
+            deleteDisabled={actionLoadingId === user.id}
+            onApprove={(event) => {
+              event.stopPropagation();
+              setPendingAction({ user, action: "approve" });
+            }}
+            onReject={(event) => {
+              event.stopPropagation();
+              setPendingAction({ user, action: "reject" });
+            }}
+            onDelete={(event) => {
+              event.stopPropagation();
+              setPendingAction({ user, action: "delete" });
+            }}
+          />
+        ),
+      });
+    }
+
+    return userColumns;
+  }, [actionLoadingId, isSuperAdmin]);
+
+  const {
+    orderedColumns,
+    visibleColumns,
+    visibleColumnIds,
+    setColumnVisibility,
+    moveColumn,
+    resetColumns,
+  } = useTableColumnSettings(
+    "admin_user_registration_table_columns",
+    columns.map((column) => ({ id: column.id, label: column.label })),
+  );
+  const columnsById = new Map(columns.map((column) => [column.id, column]));
+  const visibleTableColumns = visibleColumns
+    .map((column) => columnsById.get(column.id))
+    .filter((column): column is UserTableColumn => Boolean(column));
+  const orderedColumnConfigs = orderedColumns.map((column) => ({
+    id: column.id,
+    label: column.label,
+  }));
+  const tableMinWidth = visibleTableColumns.reduce(
+    (total, column) => total + column.width,
+    0,
+  );
+
   return (
     <div className="space-y-6">
       {toast && (
@@ -281,15 +413,25 @@ export default function UserRegistrationForm({
 
       {!showCreateForm && (
         <section className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="font-semibold text-gray-900 dark:text-white">
               {t("admin.userRegistration.dashboard")}
             </h3>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {t("admin.userRegistration.count", {
-                count: filteredUsers.length,
-              })}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                {t("admin.userRegistration.count", {
+                  count: filteredUsers.length,
+                })}
+              </span>
+              <TableColumnSettingsButton
+                columns={orderedColumnConfigs}
+                visibleColumnIds={visibleColumnIds}
+                onVisibilityChange={setColumnVisibility}
+                onMoveColumn={moveColumn}
+                onReset={resetColumns}
+                adminTheme
+              />
+            </div>
           </div>
 
           <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
@@ -346,82 +488,38 @@ export default function UserRegistrationForm({
           ) : (
             <div className="overflow-x-auto">
               <table
-                className={`w-full text-left text-sm ${
-                  isSuperAdmin ? "min-w-[900px]" : "min-w-[760px]"
-                }`}
+                className="w-full table-fixed text-left text-sm"
+                style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
               >
+                <colgroup>
+                  {visibleTableColumns.map((column) => (
+                    <col
+                      key={column.id}
+                      style={{ width: `${column.width}px` }}
+                    />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                    <SortableTableHeader
-                      label="ID"
-                      sortKey="id"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    <SortableTableHeader
-                      label={t("admin.userRegistration.companyName")}
-                      sortKey="company_name"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    <SortableTableHeader
-                      label={t("admin.userRegistration.email")}
-                      sortKey="email"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    <SortableTableHeader
-                      label={t("admin.userRegistration.budget")}
-                      sortKey="budget"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    <SortableTableHeader
-                      label={t("admin.userRegistration.status")}
-                      sortKey="approval_status"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    <SortableTableHeader
-                      label={t("admin.userRegistration.createdAt")}
-                      sortKey="created_at"
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className="py-3 pr-4 font-bold"
-                      buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                      activeClassName="text-gray-900 dark:text-white"
-                      inactiveClassName="text-gray-500 dark:text-gray-400"
-                    />
-                    {isSuperAdmin && (
-                      <th className="py-3 pr-4 font-bold">
-                        {t("admin.userRegistration.action")}
-                      </th>
+                    {visibleTableColumns.map((column) =>
+                      column.sortKey ? (
+                        <SortableTableHeader
+                          key={column.id}
+                          label={column.label}
+                          sortKey={column.sortKey}
+                          activeSortKey={sortKey}
+                          direction={sortDirection}
+                          onSort={changeSort}
+                          className="py-3 pr-4 font-bold"
+                          buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                          activeClassName="text-gray-900 dark:text-white"
+                          inactiveClassName="text-gray-500 dark:text-gray-400"
+                        />
+                      ) : (
+                        <th key={column.id} className="py-3 pr-4 font-bold">
+                          {column.label}
+                        </th>
+                      ),
                     )}
                   </tr>
                 </thead>
@@ -439,48 +537,11 @@ export default function UserRegistrationForm({
                       }}
                       className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none dark:border-gray-800 dark:hover:bg-gray-800/60 dark:focus:bg-gray-800/60"
                     >
-                      <td className="py-4 pr-4 font-mono text-xs text-gray-500 dark:text-gray-400">
-                        {user.id.slice(0, 8)}
-                      </td>
-                      <td className="py-4 pr-4 font-semibold text-gray-900 dark:text-white">
-                        {user.company_name}
-                      </td>
-                      <td className="py-4 pr-4 text-gray-600 dark:text-gray-300">
-                        {user.email}
-                      </td>
-                      <td className="py-4 pr-4 text-gray-600 dark:text-gray-300">
-                        {Number(user.budget).toLocaleString()}{" "}
-                        {t("admin.userRegistration.budgetUnit")}
-                      </td>
-                      <td className="py-4 pr-4">
-                        <StatusBadge status={user.approval_status} />
-                      </td>
-                      <td className="py-4 pr-4 text-gray-500 dark:text-gray-400">
-                        {new Date(user.created_at).toLocaleDateString("ja-JP")}
-                      </td>
-                      {isSuperAdmin && (
-                        <td className="py-4 pr-4">
-                          <ApprovalButtons
-                            disabled={
-                              actionLoadingId === user.id ||
-                              user.approval_status !== "to_be_approved"
-                            }
-                            deleteDisabled={actionLoadingId === user.id}
-                            onApprove={(event) => {
-                              event.stopPropagation();
-                              setPendingAction({ user, action: "approve" });
-                            }}
-                            onReject={(event) => {
-                              event.stopPropagation();
-                              setPendingAction({ user, action: "reject" });
-                            }}
-                            onDelete={(event) => {
-                              event.stopPropagation();
-                              setPendingAction({ user, action: "delete" });
-                            }}
-                          />
+                      {visibleTableColumns.map((column) => (
+                        <td key={column.id} className="py-4 pr-4">
+                          {column.render(user)}
                         </td>
-                      )}
+                      ))}
                     </tr>
                   ))}
                 </tbody>

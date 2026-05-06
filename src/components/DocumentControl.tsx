@@ -18,6 +18,8 @@ import {
 } from "../lib/shipmentJobs";
 import PaginationControls from "./PaginationControls";
 import SortableTableHeader from "./SortableTableHeader";
+import TableColumnSettingsButton from "./TableColumnSettings";
+import { useTableColumnSettings } from "./useTableColumnSettings";
 
 interface DocumentControlProps {
   jobs: ShipmentJob[];
@@ -45,7 +47,16 @@ type DocumentSortKey =
   | "blAwb"
   | "route";
 type SortDirection = "asc" | "desc";
+type DocumentColumnId = DocumentSortKey;
 export type DocumentApprovalFilter = "all" | "approved";
+
+interface DocumentColumn {
+  id: DocumentColumnId;
+  label: string;
+  width: number;
+  sortKey: DocumentSortKey;
+  render: (row: DocumentRow) => React.ReactNode;
+}
 
 export default function DocumentControl({
   jobs,
@@ -187,15 +198,169 @@ export default function DocumentControl({
     setSortDirection("asc");
   };
 
-  const handleDownloadRequest = async (document: ShipmentDocument) => {
-    setRequestingDocumentId(document.id);
-    try {
-      await updateShipmentDocumentApproval(document.id, "pending");
-      await onRefresh();
-    } finally {
-      setRequestingDocumentId(null);
+  const handleDownloadRequest = React.useCallback(
+    async (document: ShipmentDocument) => {
+      setRequestingDocumentId(document.id);
+      try {
+        await updateShipmentDocumentApproval(document.id, "pending");
+        await onRefresh();
+      } finally {
+        setRequestingDocumentId(null);
+      }
+    },
+    [onRefresh],
+  );
+
+  const columns = React.useMemo<DocumentColumn[]>(() => {
+    const documentColumns: DocumentColumn[] = [
+      {
+        id: "id",
+        label: "ID",
+        width: 96,
+        sortKey: "id",
+        render: (row) => (
+          <span
+            title={row.document.id}
+            className="font-mono text-xs font-bold text-slate-500"
+          >
+            {formatShortId(row.document.id)}
+          </span>
+        ),
+      },
+      {
+        id: "document",
+        label: t("common.documents"),
+        width: isAdminAuthenticated ? 180 : 220,
+        sortKey: "document",
+        render: (row) => (
+          <span className="font-semibold text-slate-950">
+            {row.document.name}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        label: t("common.status"),
+        width: 120,
+        sortKey: "status",
+        render: (row) => (
+          <span
+            className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[row.job.status]}`}
+          >
+            {statusLabels[row.job.status]}
+          </span>
+        ),
+      },
+      {
+        id: "invoice",
+        label: t("common.invoice"),
+        width: 130,
+        sortKey: "invoice",
+        render: (row) => (
+          <span className="font-mono">{row.job.invoice_number || "-"}</span>
+        ),
+      },
+      {
+        id: "parties",
+        label: t("common.parties"),
+        width: isAdminAuthenticated ? 220 : 240,
+        sortKey: "parties",
+        render: (row) => (
+          <>
+            {row.job.shipper_name || "-"} / {row.job.consignee_name || "-"}
+          </>
+        ),
+      },
+      {
+        id: "blAwb",
+        label: "BL/AWB",
+        width: 180,
+        sortKey: "blAwb",
+        render: (row) => (
+          <span className="font-mono text-xs">
+            {row.job.mbl_mawb || "-"} / {row.job.hbl_hawb || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "route",
+        label: t("common.route"),
+        width: 180,
+        sortKey: "route",
+        render: (row) => (
+          <>
+            {row.job.pol_aol || "-"} → {row.job.pod_aod || "-"}
+          </>
+        ),
+      },
+      {
+        id: "approval",
+        label: t("documents.downloadRequest"),
+        width: 160,
+        sortKey: "approval",
+        render: (row) => (
+          <DocumentActionButton
+            row={row}
+            requesting={requestingDocumentId === row.document.id}
+            onRequest={handleDownloadRequest}
+          />
+        ),
+      },
+    ];
+
+    if (isAdminAuthenticated) {
+      documentColumns.splice(1, 0, {
+        id: "scope",
+        label: t("documents.scope"),
+        width: 130,
+        sortKey: "scope",
+        render: (row) => (
+          <span
+            className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
+              row.document.scope === "internal"
+                ? "bg-slate-100 text-slate-700"
+                : "bg-cyan-50 text-cyan-800"
+            }`}
+          >
+            {row.document.scope === "internal" ? (
+              <LockKeyhole className="h-3.5 w-3.5" />
+            ) : (
+              <FileCheck2 className="h-3.5 w-3.5" />
+            )}
+            {row.document.scope === "internal"
+              ? t("documents.internal")
+              : t("documents.customer")}
+          </span>
+        ),
+      });
     }
-  };
+
+    return documentColumns;
+  }, [handleDownloadRequest, isAdminAuthenticated, requestingDocumentId]);
+
+  const {
+    orderedColumns,
+    visibleColumns,
+    visibleColumnIds,
+    setColumnVisibility,
+    moveColumn,
+    resetColumns,
+  } = useTableColumnSettings(
+    "document_control_table_columns",
+    columns.map((column) => ({ id: column.id, label: column.label })),
+  );
+  const columnsById = new Map(columns.map((column) => [column.id, column]));
+  const visibleTableColumns = visibleColumns
+    .map((column) => columnsById.get(column.id))
+    .filter((column): column is DocumentColumn => Boolean(column));
+  const orderedColumnConfigs = orderedColumns.map((column) => ({
+    id: column.id,
+    label: column.label,
+  }));
+  const tableMinWidth = visibleTableColumns.reduce(
+    (total, column) => total + column.width,
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -242,171 +407,56 @@ export default function DocumentControl({
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="font-black text-slate-950">
-            {t("documents.register")}
-          </h2>
-          <p className="text-sm text-slate-500">
-            {t("documents.count", { count: sortedRows.length })}
-          </p>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="font-black text-slate-950">
+              {t("documents.register")}
+            </h2>
+            <p className="text-sm text-slate-500">
+              {t("documents.count", { count: sortedRows.length })}
+            </p>
+          </div>
+          <TableColumnSettingsButton
+            columns={orderedColumnConfigs}
+            visibleColumnIds={visibleColumnIds}
+            onVisibilityChange={setColumnVisibility}
+            onMoveColumn={moveColumn}
+            onReset={resetColumns}
+          />
         </div>
         <div className="overflow-x-auto">
           <table
-            className={`w-full table-fixed text-left text-sm ${
-              isAdminAuthenticated ? "min-w-[1240px]" : "min-w-[1100px]"
-            }`}
+            className="w-full table-fixed text-left text-sm"
+            style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
           >
             <colgroup>
-              <col className="w-[96px]" />
-              {isAdminAuthenticated && <col className="w-[130px]" />}
-              <col
-                className={isAdminAuthenticated ? "w-[180px]" : "w-[220px]"}
-              />
-              <col className="w-[120px]" />
-              <col className="w-[130px]" />
-              <col
-                className={isAdminAuthenticated ? "w-[220px]" : "w-[240px]"}
-              />
-              <col className="w-[180px]" />
-              <col className="w-[180px]" />
-              <col className="w-[160px]" />
+              {visibleTableColumns.map((column) => (
+                <col key={column.id} style={{ width: `${column.width}px` }} />
+              ))}
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
               <tr>
-                <SortableTableHeader
-                  label="ID"
-                  sortKey="id"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                {isAdminAuthenticated && (
+                {visibleTableColumns.map((column) => (
                   <SortableTableHeader
-                    label={t("documents.scope")}
-                    sortKey="scope"
+                    key={column.id}
+                    label={column.label}
+                    sortKey={column.sortKey}
                     activeSortKey={sortKey}
                     direction={sortDirection}
                     onSort={handleSort}
                     className="whitespace-nowrap px-5 py-3"
                   />
-                )}
-                <SortableTableHeader
-                  label={t("common.documents")}
-                  sortKey="document"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label={t("common.status")}
-                  sortKey="status"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label={t("common.invoice")}
-                  sortKey="invoice"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label={t("common.parties")}
-                  sortKey="parties"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label="BL/AWB"
-                  sortKey="blAwb"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label={t("common.route")}
-                  sortKey="route"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
-                <SortableTableHeader
-                  label={t("documents.downloadRequest")}
-                  sortKey="approval"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap px-5 py-3"
-                />
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedRows.map((row) => (
                 <tr key={row.id} className="transition hover:bg-slate-50/80">
-                  <td className="px-5 py-4 font-mono text-xs font-bold text-slate-500">
-                    <span title={row.document.id}>
-                      {formatShortId(row.document.id)}
-                    </span>
-                  </td>
-                  {isAdminAuthenticated && (
-                    <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
-                          row.document.scope === "internal"
-                            ? "bg-slate-100 text-slate-700"
-                            : "bg-cyan-50 text-cyan-800"
-                        }`}
-                      >
-                        {row.document.scope === "internal" ? (
-                          <LockKeyhole className="h-3.5 w-3.5" />
-                        ) : (
-                          <FileCheck2 className="h-3.5 w-3.5" />
-                        )}
-                        {row.document.scope === "internal"
-                          ? t("documents.internal")
-                          : t("documents.customer")}
-                      </span>
+                  {visibleTableColumns.map((column) => (
+                    <td key={column.id} className="px-5 py-4">
+                      {column.render(row)}
                     </td>
-                  )}
-                  <td className="px-5 py-4 font-semibold text-slate-950">
-                    {row.document.name}
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[row.job.status]}`}
-                    >
-                      {statusLabels[row.job.status]}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 font-mono">
-                    {row.job.invoice_number || "-"}
-                  </td>
-                  <td className="px-5 py-4">
-                    {row.job.shipper_name || "-"} /{" "}
-                    {row.job.consignee_name || "-"}
-                  </td>
-                  <td className="px-5 py-4 font-mono text-xs">
-                    {row.job.mbl_mawb || "-"} / {row.job.hbl_hawb || "-"}
-                  </td>
-                  <td className="px-5 py-4">
-                    {row.job.pol_aol || "-"} → {row.job.pod_aod || "-"}
-                  </td>
-                  <td className="px-5 py-4">
-                    <DocumentActionButton
-                      row={row}
-                      requesting={requestingDocumentId === row.document.id}
-                      onRequest={handleDownloadRequest}
-                    />
-                  </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
