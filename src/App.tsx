@@ -68,7 +68,7 @@ function MainApp({
   profileEmail: string;
   profileRole: AppUserRole;
   initialAdminMode?: boolean;
-  onSwitchToUser?: (email: string) => void;
+  onSwitchToUser?: (email: string, role?: AppUserRole) => void;
   onBackToAdmin?: () => void;
   onLogout: () => void;
 }) {
@@ -481,6 +481,10 @@ function AppContent({
     sessionStorage.removeItem("app_admin_profile_role");
   };
 
+  const isSwitchedFromAdmin =
+    Boolean(adminEmail) &&
+    authEmail.toLowerCase() !== adminEmail.toLowerCase();
+
   if (
     !authRole ||
     !authEmail ||
@@ -497,9 +501,7 @@ function AppContent({
       profileRole={profileRole}
       initialAdminMode={authRole === "admin"}
       onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}
-      onBackToAdmin={
-        authRole === "user" && adminEmail ? handleBackToAdmin : undefined
-      }
+      onBackToAdmin={isSwitchedFromAdmin ? handleBackToAdmin : undefined}
       onLogout={handleLogout}
     />
   );
