@@ -177,9 +177,6 @@ export default function DocumentControl({
     }
   }, [currentPage, pageCount]);
 
-  const internalCount = rows.filter(
-    (row) => row.document.scope === "internal",
-  ).length;
   const handleSort = (nextSortKey: DocumentSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -212,11 +209,6 @@ export default function DocumentControl({
               {t("documents.description")}
             </p>
           </div>
-          {isAdminAuthenticated && (
-            <div className="grid grid-cols-1 gap-3 text-center">
-              <MiniStat label={t("documents.internal")} value={internalCount} />
-            </div>
-          )}
         </div>
       </div>
 
@@ -511,31 +503,6 @@ function getDocumentActionLabel(document: ShipmentDocument) {
     case "approved":
       return t("documents.downloadColumn");
   }
-}
-
-function MiniStat({
-  label,
-  value,
-  warn = false,
-}: {
-  label: string;
-  value: number;
-  warn?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl px-4 py-3 ${warn ? "bg-amber-50" : "bg-slate-50"}`}
-    >
-      <div
-        className={`text-2xl font-black ${warn ? "text-amber-700" : "text-slate-950"}`}
-      >
-        {value}
-      </div>
-      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-        {label}
-      </div>
-    </div>
-  );
 }
 
 function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {

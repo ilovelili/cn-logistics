@@ -1,19 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  FileText,
-  Filter,
-  MoreHorizontal,
-  Plus,
-  Search,
-  ShipWheel,
-  Star,
-  X,
-} from "lucide-react";
+import { Filter, Plus, Search, Star, X } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
-import PaginationControls from "./PaginationControls";
-import SortableTableHeader from "./SortableTableHeader";
+import ShipmentJobsTable, {
+  ShipmentJobsTableSortKey,
+} from "./ShipmentJobsTable";
+import {
+  buildShipmentJobDocumentsByJob,
+  buildShipmentJobSearchText,
+  compareShipmentJobSortValues,
+  formatShipmentJobShortId,
+  getShipmentJobSortValue,
+} from "./shipmentJobsTableUtils";
+import { SortDirection } from "./SortableTableHeader";
 import { t } from "../lib/i18n";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import {
@@ -23,36 +22,14 @@ import {
 } from "../lib/shipmentFeedback";
 import {
   createShipmentJob,
-  getDocumentsForJob,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
-  statusBadgeClasses,
-  statusLabels,
   statusOptions,
-  tradeModeLabels,
   tradeModeOptions,
-  transportModeLabels,
   transportModeOptions,
 } from "../lib/shipmentJobs";
 
-type SortKey =
-  | "id"
-  | "status"
-  | "working_days"
-  | "trade"
-  | "invoice_number"
-  | "transport_mode"
-  | "shipper_name"
-  | "consignee_name"
-  | "pol_aol"
-  | "pod_aod"
-  | "vessel_flight_numbers"
-  | "mbl_mawb"
-  | "hbl_hawb"
-  | "bl_awb_date";
-
-type SortDirection = "asc" | "desc";
 type StatusFilter = ShipmentStatus | "all";
 
 interface ShipmentJobsProps {
@@ -80,7 +57,7 @@ export default function ShipmentJobs({
   const [transportFilter, setTransportFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortKey, setSortKey] = useState<ShipmentJobsTableSortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -95,31 +72,9 @@ export default function ShipmentJobs({
     const normalizedQuery = query.trim().toLowerCase();
 
     return jobs.filter((job) => {
-      const searchable = [
-        job.id,
-        formatShortId(job.id),
-        job.invoice_number,
-        job.shipper_name,
-        job.consignee_name,
-        job.pol_aol,
-        job.pod_aod,
-        ...(job.vessel_flight_numbers ?? []),
-        job.mbl_mawb,
-        job.hbl_hawb,
-        ...((job.tracking_events ?? []).flatMap((event) => [
-          event.event_date,
-          event.location,
-          event.description,
-        ])),
-        ...(job.documents ?? []),
-        ...(job.internal_documents ?? []),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
       const matchesQuery =
-        !normalizedQuery || searchable.includes(normalizedQuery);
+        !normalizedQuery ||
+        buildShipmentJobSearchText(job).includes(normalizedQuery);
       const matchesStatus =
         statusFilter === "all" || job.status === statusFilter;
       const matchesTrade =
@@ -135,9 +90,9 @@ export default function ShipmentJobs({
     if (!sortKey) return filteredJobs;
 
     return [...filteredJobs].sort((first, second) =>
-      compareSortValues(
-        getSortValue(first, sortKey),
-        getSortValue(second, sortKey),
+      compareShipmentJobSortValues(
+        getShipmentJobSortValue(first, sortKey),
+        getShipmentJobSortValue(second, sortKey),
         sortDirection,
         sortKey,
       ),
@@ -155,9 +110,7 @@ export default function ShipmentJobs({
   const visibleTo = Math.min(pageStartIndex + pageSize, sortedJobs.length);
 
   const documentsByJob = useMemo(() => {
-    return Object.fromEntries(
-      jobs.map((job) => [job.id, getDocumentsForJob(documents, job.id)]),
-    ) as Record<string, ShipmentDocument[]>;
+    return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
 
   useEffect(() => {
@@ -225,7 +178,7 @@ export default function ShipmentJobs({
     }
   };
 
-  const handleSort = (nextSortKey: SortKey) => {
+  const handleSort = (nextSortKey: ShipmentJobsTableSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
       return;
@@ -316,297 +269,25 @@ export default function ShipmentJobs({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <ShipWheel className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-black text-slate-950">{t("jobs.list")}</h2>
-              <p className="text-sm text-slate-500">
-                {t("jobs.count", {
-                  total: jobs.length,
-                  filtered: sortedJobs.length,
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table
-            className={`w-full table-fixed text-left text-sm ${
-              isAdminAuthenticated ? "min-w-[2160px]" : "min-w-[1970px]"
-            }`}
-          >
-            <colgroup>
-              {isAdminAuthenticated ? (
-                <>
-                  <col className="w-[90px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[145px]" />
-                  <col className="w-[145px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[170px]" />
-                  <col className="w-[135px]" />
-                  <col className="w-[135px]" />
-                  <col className="w-[150px]" />
-                  <col className="w-[170px]" />
-                  <col className="w-[190px]" />
-                </>
-              ) : (
-                <>
-                  <col className="w-[90px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[145px]" />
-                  <col className="w-[145px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[170px]" />
-                  <col className="w-[135px]" />
-                  <col className="w-[135px]" />
-                  <col className="w-[150px]" />
-                  <col className="w-[190px]" />
-                </>
-              )}
-            </colgroup>
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
-              <tr>
-                <SortableTableHeader
-                  label="ID"
-                  sortKey="id"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap py-3 pl-3 pr-5"
-                />
-                <SortableTableHeader
-                  label={t("common.status")}
-                  sortKey="status"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                  className="whitespace-nowrap py-3 pl-5 pr-3"
-                />
-                <SortableTableHeader
-                  label={t("common.workingDaysSpent")}
-                  sortKey="working_days"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.trade")}
-                  sortKey="trade"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.invoice")}
-                  sortKey="invoice_number"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.transport")}
-                  sortKey="transport_mode"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.shipper")}
-                  sortKey="shipper_name"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.consignee")}
-                  sortKey="consignee_name"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="POL/AOL"
-                  sortKey="pol_aol"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="POD/AOD"
-                  sortKey="pod_aod"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.vesselFlightNo")}
-                  sortKey="vessel_flight_numbers"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="MBL/MAWB"
-                  sortKey="mbl_mawb"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="HBL/HAWB"
-                  sortKey="hbl_hawb"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t("common.blAwbDate")}
-                  sortKey="bl_awb_date"
-                  activeSortKey={sortKey}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-                <th className="whitespace-nowrap px-3 py-3">
-                  {t("common.documents")}
-                </th>
-                {isAdminAuthenticated && (
-                  <th className="whitespace-nowrap px-3 py-3">
-                    {t("common.internalDocuments")}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {paginatedJobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    tabIndex={0}
-                    role="button"
-                    onClick={() => setSelectedJob(job)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedJob(job);
-                      }
-                    }}
-                    className="cursor-pointer align-top transition hover:bg-slate-50/80 focus:bg-slate-50 focus:outline-none"
-                  >
-                  <td className="py-4 pl-3 pr-5 font-mono text-xs font-bold text-slate-500">
-                    <span title={job.id}>{formatShortId(job.id)}</span>
-                  </td>
-                  <td className="py-4 pl-5 pr-3">
-                    <span
-                      className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
-                    >
-                      {statusLabels[job.status]}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4">
-                    <WorkingDaysBadge job={job} />
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="whitespace-nowrap font-bold text-slate-900">
-                      {tradeModeLabels[job.trade_mode]}
-                    </div>
-                    <div className="whitespace-nowrap text-xs text-slate-500">
-                      {job.trade_term || "-"}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 font-mono text-slate-900">
-                    {job.invoice_number || "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4">
-                    {job.transport_mode
-                      ? transportModeLabels[job.transport_mode]
-                      : "-"}
-                  </td>
-                  <td className="px-3 py-4 font-medium text-slate-900">
-                    {job.shipper_name || "-"}
-                  </td>
-                  <td className="px-3 py-4 font-medium text-slate-900">
-                    {job.consignee_name || "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4">
-                    {job.pol_aol || "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4">
-                    {job.pod_aod || "-"}
-                  </td>
-                  <td className="px-3 py-4 text-xs text-slate-700">
-                    <VesselFlightList values={job.vessel_flight_numbers} />
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 font-mono text-xs">
-                    {job.mbl_mawb || "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 font-mono text-xs">
-                    {job.hbl_hawb || "-"}
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="flex items-center gap-2 whitespace-nowrap text-slate-700">
-                      <CalendarDays className="h-4 w-4 text-slate-400" />
-                      {job.bl_awb_date || "-"}
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <DocumentPills
-                      documents={documentsByJob[job.id]?.filter(
-                        (document) => document.scope === "customer",
-                      )}
-                    />
-                  </td>
-                  {isAdminAuthenticated && (
-                    <td className="px-3 py-4">
-                      <DocumentPills
-                        documents={documentsByJob[job.id]?.filter(
-                          (document) => document.scope === "internal",
-                        )}
-                        muted
-                      />
-                    </td>
-                  )}
-                  </tr>
-              ))}
-            </tbody>
-          </table>
-          {!loading && sortedJobs.length === 0 && (
-            <div className="py-16 text-center text-slate-500">
-              <MoreHorizontal className="mx-auto mb-3 h-8 w-8" />
-              {t("jobs.noMatches")}
-            </div>
-          )}
-          {loading && (
-            <div className="py-16 text-center text-slate-500">
-              {t("common.loadingJobs")}
-            </div>
-          )}
-        </div>
-        <PaginationControls
-          currentPage={safeCurrentPage}
-          pageCount={pageCount}
-          pageSize={pageSize}
-          total={sortedJobs.length}
-          visibleFrom={visibleFrom}
-          visibleTo={visibleTo}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-        />
-      </section>
+      <ShipmentJobsTable
+        totalJobs={jobs.length}
+        sortedJobs={sortedJobs}
+        paginatedJobs={paginatedJobs}
+        documentsByJob={documentsByJob}
+        loading={loading}
+        showInternalDocuments={isAdminAuthenticated}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        currentPage={safeCurrentPage}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        visibleFrom={visibleFrom}
+        visibleTo={visibleTo}
+        onSort={handleSort}
+        onSelectJob={setSelectedJob}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+      />
       <ShipmentJobDetailModal
         job={selectedJob}
         documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
@@ -675,48 +356,6 @@ function FilterSelect({
   );
 }
 
-function DocumentPills({
-  documents,
-  muted = false,
-}: {
-  documents?: ShipmentDocument[];
-  muted?: boolean;
-}) {
-  if (!documents?.length) {
-    return <span className="text-slate-400">-</span>;
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      {documents.map((document) => (
-        <span
-          key={document.id}
-          className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-            muted ? "bg-slate-100 text-slate-600" : "bg-cyan-50 text-cyan-800"
-          }`}
-        >
-          <FileText className="h-3 w-3 shrink-0" />
-          <span className="min-w-0 truncate">{document.name}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
-  const workingDays = getWorkingDaysSpent(job);
-
-  if (!workingDays) {
-    return <span className="text-slate-400">-</span>;
-  }
-
-  return (
-    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-      {workingDays}営業日
-    </span>
-  );
-}
-
 function FeedbackModal({
   job,
   initialFeedback,
@@ -745,7 +384,8 @@ function FeedbackModal({
     return null;
   }
 
-  const title = job.invoice_number || job.mbl_mawb || formatShortId(job.id);
+  const title =
+    job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
 
   return (
     <div
@@ -844,162 +484,4 @@ function FeedbackModal({
       </div>
     </div>
   );
-}
-
-function getSortValue(job: ShipmentJob, sortKey: SortKey) {
-  switch (sortKey) {
-    case "id":
-      return job.id;
-    case "status":
-      return statusLabels[job.status];
-    case "working_days":
-      return getWorkingDaysSpent(job)?.toString() ?? "";
-    case "trade":
-      return `${tradeModeLabels[job.trade_mode]} ${job.trade_term ?? ""}`;
-    case "transport_mode":
-      return job.transport_mode ? transportModeLabels[job.transport_mode] : "";
-    case "invoice_number":
-    case "shipper_name":
-    case "consignee_name":
-    case "pol_aol":
-    case "pod_aod":
-      return job[sortKey] ?? "";
-    case "vessel_flight_numbers":
-      return (job.vessel_flight_numbers ?? []).join(" ");
-    case "mbl_mawb":
-    case "hbl_hawb":
-    case "bl_awb_date":
-      return job[sortKey] ?? "";
-  }
-}
-
-function formatShortId(id: string) {
-  return id.slice(0, 8).toUpperCase();
-}
-
-function VesselFlightList({ values }: { values?: string[] | null }) {
-  const filteredValues = values?.filter(Boolean) ?? [];
-
-  if (filteredValues.length === 0) {
-    return <span>-</span>;
-  }
-
-  return (
-    <div className="space-y-1">
-      {filteredValues.map((value, index) => (
-        <div key={`${value}-${index}`} className="whitespace-nowrap">
-          <span className="font-semibold text-slate-500">{index + 1}.</span>{" "}
-          {value}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function compareSortValues(
-  first: string,
-  second: string,
-  direction: SortDirection,
-  sortKey: SortKey,
-) {
-  if (sortKey === "working_days") {
-    const firstNumber = first ? Number(first) : Number.NaN;
-    const secondNumber = second ? Number(second) : Number.NaN;
-
-    if (Number.isNaN(firstNumber) && Number.isNaN(secondNumber)) return 0;
-    if (Number.isNaN(firstNumber)) return 1;
-    if (Number.isNaN(secondNumber)) return -1;
-
-    return direction === "asc"
-      ? firstNumber - secondNumber
-      : secondNumber - firstNumber;
-  }
-
-  if (
-    sortKey === "invoice_number" ||
-    sortKey === "vessel_flight_numbers" ||
-    sortKey === "mbl_mawb" ||
-    sortKey === "hbl_hawb" ||
-    sortKey === "bl_awb_date"
-  ) {
-    return compareNonPinnedValues(first, second, direction);
-  }
-
-  const firstIsEmpty = first.trim() === "";
-  const secondIsEmpty = second.trim() === "";
-
-  if (firstIsEmpty && secondIsEmpty) return 0;
-  if (firstIsEmpty) return 1;
-  if (secondIsEmpty) return -1;
-
-  const comparison = first.localeCompare(second, "ja-JP", {
-    numeric: true,
-    sensitivity: "base",
-  });
-
-  return direction === "asc" ? comparison : -comparison;
-}
-
-function getWorkingDaysSpent(job: ShipmentJob) {
-  if (job.status !== "under_process" && job.status !== "completed") {
-    return null;
-  }
-
-  const startDate = parseDate(job.created_at);
-  const endDate =
-    job.status === "completed" ? parseDate(job.updated_at) : new Date();
-
-  if (!startDate || !endDate) {
-    return null;
-  }
-
-  return countWorkingDays(startDate, endDate);
-}
-
-function parseDate(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function countWorkingDays(startDate: Date, endDate: Date) {
-  const start = startOfLocalDay(startDate);
-  const end = startOfLocalDay(endDate);
-
-  if (end < start) {
-    return 0;
-  }
-
-  let count = 0;
-  const cursor = new Date(start);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-}
-
-function startOfLocalDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function compareNonPinnedValues(
-  first: string,
-  second: string,
-  direction: SortDirection,
-) {
-  const comparison = first.localeCompare(second, "ja-JP", {
-    numeric: true,
-    sensitivity: "base",
-  });
-
-  return direction === "asc" ? comparison : -comparison;
 }

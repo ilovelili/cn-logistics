@@ -1,26 +1,36 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   CheckCircle,
   Edit3,
+  Filter,
   Plus,
   Search,
-  ShipWheel,
+  X,
   XCircle,
 } from "lucide-react";
 import ShipmentJobForm from "../components/ShipmentJobForm";
+import ShipmentJobsTable, {
+  ShipmentJobsTableSortKey,
+} from "../components/ShipmentJobsTable";
+import {
+  buildShipmentJobDocumentsByJob,
+  buildShipmentJobSearchText,
+  compareShipmentJobSortValues,
+  getShipmentJobSortValue,
+} from "../components/shipmentJobsTableUtils";
+import { SortDirection } from "../components/SortableTableHeader";
 import { t } from "../lib/i18n";
 import {
   createShipmentJob,
   documentApprovalClasses,
   documentApprovalLabels,
-  getDocumentsForJob,
   DocumentApprovalStatus,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
-  statusBadgeClasses,
-  statusLabels,
   statusOptions,
+  tradeModeOptions,
+  transportModeOptions,
   updateShipmentDocumentApproval,
   updateShipmentJob,
 } from "../lib/shipmentJobs";
@@ -47,15 +57,21 @@ export default function ShipmentEntryForm({
   const [statusFilter, setStatusFilter] = useState<ShipmentStatus | "all">(
     "all",
   );
+  const [tradeFilter, setTradeFilter] = useState("all");
+  const [transportFilter, setTransportFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<ShipmentJobsTableSortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const results = useMemo(() => {
+  const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const pendingApprovalJobIds = new Set(
       documents
@@ -83,33 +99,53 @@ export default function ShipmentEntryForm({
         return job.status === statusFilter;
       })
       .filter((job) => {
-        if (!normalizedQuery) return true;
-        return [
-          job.invoice_number,
-          job.shipper_name,
-          job.consignee_name,
-          job.mbl_mawb,
-          job.hbl_hawb,
-          job.pol_aol,
-          job.pod_aod,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
+        if (tradeFilter === "all") return true;
+        return job.trade_mode === tradeFilter;
       })
-      .slice(0, 8);
-  }, [criteria, documents, jobs, query, statusFilter]);
+      .filter((job) => {
+        if (transportFilter === "all") return true;
+        return job.transport_mode === transportFilter;
+      })
+      .filter((job) => {
+        if (!normalizedQuery) return true;
+        return buildShipmentJobSearchText(job).includes(normalizedQuery);
+      });
+  }, [
+    criteria,
+    documents,
+    jobs,
+    query,
+    statusFilter,
+    tradeFilter,
+    transportFilter,
+  ]);
 
-  const criteriaLabel = (() => {
-    if (criteria.kind === "status") {
-      return statusLabels[criteria.status];
-    }
-    if (criteria.kind === "documentApproval") {
-      return documentApprovalLabels[criteria.approvalStatus];
-    }
-    return t("admin.entry.filter.all");
-  })();
+  const sortedJobs = useMemo(() => {
+    if (!sortKey) return filteredJobs;
+
+    return [...filteredJobs].sort((first, second) =>
+      compareShipmentJobSortValues(
+        getShipmentJobSortValue(first, sortKey),
+        getShipmentJobSortValue(second, sortKey),
+        sortDirection,
+        sortKey,
+      ),
+    );
+  }, [filteredJobs, sortDirection, sortKey]);
+
+  const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
+  const safeCurrentPage = Math.min(currentPage, pageCount);
+  const pageStartIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedJobs = sortedJobs.slice(
+    pageStartIndex,
+    pageStartIndex + pageSize,
+  );
+  const visibleFrom = sortedJobs.length ? pageStartIndex + 1 : 0;
+  const visibleTo = Math.min(pageStartIndex + pageSize, sortedJobs.length);
+
+  const documentsByJob = useMemo(() => {
+    return buildShipmentJobDocumentsByJob(jobs, documents);
+  }, [documents, jobs]);
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -121,13 +157,34 @@ export default function ShipmentEntryForm({
     setSelectedJob(null);
     setQuery("");
     setStatusFilter(criteria.kind === "status" ? criteria.status : "all");
+    setTradeFilter("all");
+    setTransportFilter("all");
+    setCurrentPage(1);
   }, [criteria]);
 
   useEffect(() => {
-    if (!selectedJob || !results.some((job) => job.id === selectedJob.id)) {
-      setSelectedJob(results[0] ?? null);
+    if (selectedJob && !sortedJobs.some((job) => job.id === selectedJob.id)) {
+      setSelectedJob(null);
     }
-  }, [results, selectedJob]);
+  }, [selectedJob, sortedJobs]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    pageSize,
+    query,
+    sortDirection,
+    sortKey,
+    statusFilter,
+    tradeFilter,
+    transportFilter,
+  ]);
+
+  useEffect(() => {
+    if (currentPage > pageCount) {
+      setCurrentPage(pageCount);
+    }
+  }, [currentPage, pageCount]);
 
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
@@ -179,6 +236,16 @@ export default function ShipmentEntryForm({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (nextSortKey: ShipmentJobsTableSortKey) => {
+    if (sortKey === nextSortKey) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortKey(nextSortKey);
+    setSortDirection("asc");
   };
 
   return (
@@ -235,103 +302,81 @@ export default function ShipmentEntryForm({
       </div>
 
       {mode === "update" && (
-        <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-          <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 h-fit">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                {t("admin.entry.findJob")}
-              </h3>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                {criteriaLabel}
-              </span>
-            </div>
-            <div className="mb-4 space-y-3">
+        <div className="space-y-6">
+          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t("admin.entry.searchPlaceholder")}
-                  className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder={t("jobs.searchPlaceholder")}
+                  className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
                 />
               </div>
-              <select
+              <FilterSelect
+                icon={<Filter className="h-4 w-4" />}
                 value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value as ShipmentStatus | "all");
-                  setSelectedJob(null);
-                }}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="all">{t("jobs.filter.allStatus")}</option>
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2 max-h-[560px] overflow-y-auto">
-              {results.map((job) => (
-                <button
-                  key={job.id}
-                  onClick={() => setSelectedJob(job)}
-                  className={`w-full rounded-xl border p-3 text-left transition ${
-                    selectedJob?.id === job.id
-                      ? "border-blue-300 bg-blue-50 dark:bg-blue-950/40"
-                      : "border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">
-                        {job.invoice_number ||
-                          job.mbl_mawb ||
-                          t("admin.entry.untitledJob")}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {job.shipper_name || "-"} → {job.consignee_name || "-"}
-                      </div>
-                    </div>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${statusBadgeClasses[job.status]}`}
-                    >
-                      {statusLabels[job.status]}
-                    </span>
-                  </div>
-                </button>
-              ))}
+                onChange={(value) =>
+                  setStatusFilter(value as ShipmentStatus | "all")
+                }
+                options={[
+                  { value: "all", label: t("jobs.filter.allStatus") },
+                  ...statusOptions,
+                ]}
+              />
+              <FilterSelect
+                value={tradeFilter}
+                onChange={setTradeFilter}
+                options={[
+                  { value: "all", label: t("jobs.filter.allTrade") },
+                  ...tradeModeOptions,
+                ]}
+              />
+              <FilterSelect
+                value={transportFilter}
+                onChange={setTransportFilter}
+                options={[
+                  { value: "all", label: t("jobs.filter.allTransport") },
+                  ...transportModeOptions,
+                ]}
+              />
             </div>
           </section>
 
-          <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-            {selectedJob ? (
-              <>
-                <ShipmentJobForm
-                  key={selectedJob.id}
-                  job={selectedJob}
-                  submitLabel={t("common.update")}
-                  loading={loading}
-                  onSubmit={handleUpdate}
-                />
-                <DocumentApprovalPanel
-                  documents={getDocumentsForJob(documents, selectedJob.id)}
-                  loading={loading}
-                  onApprove={(document) =>
-                    handleDocumentApproval(document, "approved")
-                  }
-                  onReject={(document) =>
-                    handleDocumentApproval(document, "rejected")
-                  }
-                />
-              </>
-            ) : (
-              <div className="flex min-h-[380px] flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400">
-                <ShipWheel className="mb-4 h-10 w-10" />
-                <p>{t("admin.entry.selectJob")}</p>
-              </div>
-            )}
-          </section>
+          <ShipmentJobsTable
+            totalJobs={jobs.length}
+            sortedJobs={sortedJobs}
+            paginatedJobs={paginatedJobs}
+            documentsByJob={documentsByJob}
+            loading={false}
+            selectedJobId={selectedJob?.id}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            currentPage={safeCurrentPage}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            visibleFrom={visibleFrom}
+            visibleTo={visibleTo}
+            adminTheme
+            onSort={handleSort}
+            onSelectJob={setSelectedJob}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
+          <AdminShipmentJobModal
+            job={selectedJob}
+            documents={selectedJob ? documentsByJob[selectedJob.id] : []}
+            loading={loading}
+            onClose={() => setSelectedJob(null)}
+            onSubmit={handleUpdate}
+            onApprove={(document) =>
+              handleDocumentApproval(document, "approved")
+            }
+            onReject={(document) =>
+              handleDocumentApproval(document, "rejected")
+            }
+          />
         </div>
       )}
 
@@ -344,6 +389,77 @@ export default function ShipmentEntryForm({
           />
         </section>
       )}
+    </div>
+  );
+}
+
+function AdminShipmentJobModal({
+  job,
+  documents,
+  loading,
+  onClose,
+  onSubmit,
+  onApprove,
+  onReject,
+}: {
+  job: ShipmentJob | null;
+  documents: ShipmentDocument[];
+  loading: boolean;
+  onClose: () => void;
+  onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
+  onApprove: (document: ShipmentDocument) => void;
+  onReject: (document: ShipmentDocument) => void;
+}) {
+  if (!job) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("admin.entry.title")}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-gray-900"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {job.invoice_number || job.mbl_mawb || t("admin.entry.title")}
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {job.shipper_name || "-"} → {job.consignee_name || "-"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            aria-label={t("jobs.detail.close")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(90vh-92px)] overflow-y-auto p-6">
+          <ShipmentJobForm
+            key={job.id}
+            job={job}
+            submitLabel={t("common.update")}
+            loading={loading}
+            onSubmit={onSubmit}
+          />
+          <DocumentApprovalPanel
+            documents={documents}
+            loading={loading}
+            onApprove={onApprove}
+            onReject={onReject}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -434,5 +550,40 @@ function DocumentApprovalPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function FilterSelect({
+  icon,
+  value,
+  options,
+  onChange,
+}: {
+  icon?: ReactNode;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="relative block">
+      {icon && (
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          {icon}
+        </span>
+      )}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`w-full rounded-xl border border-gray-300 bg-white py-2.5 pr-3 text-sm font-medium text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800 ${
+          icon ? "pl-10" : "pl-3"
+        }`}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
