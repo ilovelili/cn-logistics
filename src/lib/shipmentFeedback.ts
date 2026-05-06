@@ -6,6 +6,10 @@ export interface ShipmentFeedback {
   submitter_email: string;
   admin_operator_email: string | null;
   rating: number;
+  attitude_rating: number;
+  speed_rating: number;
+  accuracy_rating: number;
+  price_rating: number;
   reason: string | null;
   created_at: string;
   updated_at: string;
@@ -35,18 +39,27 @@ export async function fetchShipmentFeedbackForUser(
 export async function submitShipmentFeedback({
   shipmentJobId,
   submitterEmail,
-  rating,
+  attitudeRating,
+  speedRating,
+  accuracyRating,
+  priceRating,
   reason,
 }: {
   shipmentJobId: string;
   submitterEmail: string;
-  rating: number;
+  attitudeRating: number;
+  speedRating: number;
+  accuracyRating: number;
+  priceRating: number;
   reason: string;
 }): Promise<ShipmentFeedback> {
   const { data, error } = await supabase.rpc("submit_shipment_feedback", {
     feedback_shipment_job_id: shipmentJobId,
     feedback_submitter_email: submitterEmail,
-    feedback_rating: rating,
+    feedback_attitude_rating: attitudeRating,
+    feedback_speed_rating: speedRating,
+    feedback_accuracy_rating: accuracyRating,
+    feedback_price_rating: priceRating,
     feedback_reason: reason,
   });
 
@@ -74,4 +87,19 @@ export async function fetchAllShipmentFeedback(
   }
 
   return (data ?? []) as ShipmentFeedbackReview[];
+}
+
+export function getShipmentFeedbackSummaryRating(
+  feedback: Pick<
+    ShipmentFeedback,
+    "attitude_rating" | "speed_rating" | "accuracy_rating" | "price_rating"
+  >,
+) {
+  return (
+    (feedback.attitude_rating +
+      feedback.speed_rating +
+      feedback.accuracy_rating +
+      feedback.price_rating) /
+    4
+  );
 }

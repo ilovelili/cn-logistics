@@ -1,6 +1,17 @@
-import { CalendarDays, Download, FileText, MapPin, Star, X } from "lucide-react";
+import {
+  CalendarDays,
+  Download,
+  FileText,
+  MapPin,
+  Star,
+  X,
+} from "lucide-react";
 import { useAdminAuth } from "../admin/useAdminAuth";
 import { t } from "../lib/i18n";
+import {
+  getShipmentFeedbackSummaryRating,
+  ShipmentFeedback,
+} from "../lib/shipmentFeedback";
 import {
   documentApprovalClasses,
   documentApprovalLabels,
@@ -17,7 +28,7 @@ import {
 interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
-  feedback?: { rating: number; reason: string | null } | null;
+  feedback?: ShipmentFeedback | null;
   onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
 }
@@ -93,7 +104,10 @@ export default function ShipmentJobDetailModal({
                   fill={feedback ? "currentColor" : "none"}
                 />
                 {feedback
-                  ? t("feedback.ratingValue", { rating: feedback.rating })
+                  ? t("feedback.ratingValue", {
+                      rating:
+                        getShipmentFeedbackSummaryRating(feedback).toFixed(1),
+                    })
                   : t("feedback.open")}
               </button>
             )}

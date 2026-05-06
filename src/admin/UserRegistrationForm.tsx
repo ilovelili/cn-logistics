@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle, Plus, Save, Search, X, XCircle } from "lucide-react";
+import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import {
   createCompanyUser,
   defaultCompanyUserForm,
@@ -9,6 +10,7 @@ import {
   deleteCompanyUser,
   fetchCompanyUsersByAdmin,
   updateCompanyUserApprovalStatus,
+  updateCompanyUserAdminAssignments,
   updatePendingCompanyUser,
 } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
@@ -30,7 +32,7 @@ type SortKey =
   | "approval_status"
   | "created_at";
 type SortDirection = "asc" | "desc";
-type UserColumnId = SortKey | "action";
+type UserColumnId = SortKey | "admins" | "action";
 type UserAction = "approve" | "reject" | "delete";
 
 interface UserTableColumn {
@@ -51,6 +53,7 @@ export default function UserRegistrationForm({
   const [addressLoading, setAddressLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [users, setUsers] = useState<CompanyUser[]>([]);
+  const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     CompanyUserApprovalStatus | "all"
@@ -92,6 +95,33 @@ export default function UserRegistrationForm({
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      setAdminOperators([]);
+      return;
+    }
+
+    let active = true;
+    async function loadAdminOperators() {
+      try {
+        const operators = await fetchAdminOperators(adminEmail);
+        if (active) {
+          setAdminOperators(operators);
+        }
+      } catch {
+        if (active) {
+          setAdminOperators([]);
+        }
+      }
+    }
+
+    void loadAdminOperators();
+
+    return () => {
+      active = false;
+    };
+  }, [adminEmail, isSuperAdmin]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -145,6 +175,10 @@ export default function UserRegistrationForm({
         user.company_address,
         user.telephone,
         user.contact_person,
+        ...(user.admin_assignments ?? []).flatMap((assignment) => [
+          assignment.email,
+          assignment.user_name,
+        ]),
       ]
         .filter(Boolean)
         .join(" ")
@@ -258,7 +292,7 @@ export default function UserRegistrationForm({
       {
         id: "id",
         label: "ID",
-        width: 110,
+        width: 120,
         sortKey: "id",
         render: (user) => (
           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
@@ -269,10 +303,13 @@ export default function UserRegistrationForm({
       {
         id: "company_name",
         label: t("admin.userRegistration.companyName"),
-        width: 180,
+        width: 220,
         sortKey: "company_name",
         render: (user) => (
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span
+            className="block truncate font-semibold text-gray-900 dark:text-white"
+            title={user.company_name}
+          >
             {user.company_name}
           </span>
         ),
@@ -280,19 +317,24 @@ export default function UserRegistrationForm({
       {
         id: "email",
         label: t("admin.userRegistration.email"),
-        width: 220,
+        width: 380,
         sortKey: "email",
         render: (user) => (
-          <span className="text-gray-600 dark:text-gray-300">{user.email}</span>
+          <span
+            className="block truncate text-gray-600 dark:text-gray-300"
+            title={user.email}
+          >
+            {user.email}
+          </span>
         ),
       },
       {
         id: "budget",
         label: t("admin.userRegistration.budget"),
-        width: 140,
+        width: 170,
         sortKey: "budget",
         render: (user) => (
-          <span className="text-gray-600 dark:text-gray-300">
+          <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
             {Number(user.budget).toLocaleString()}{" "}
             {t("admin.userRegistration.budgetUnit")}
           </span>
@@ -308,10 +350,10 @@ export default function UserRegistrationForm({
       {
         id: "created_at",
         label: t("admin.userRegistration.createdAt"),
-        width: 140,
+        width: 150,
         sortKey: "created_at",
         render: (user) => (
-          <span className="text-gray-500 dark:text-gray-400">
+          <span className="whitespace-nowrap text-gray-500 dark:text-gray-400">
             {new Date(user.created_at).toLocaleDateString("ja-JP")}
           </span>
         ),
@@ -320,9 +362,17 @@ export default function UserRegistrationForm({
 
     if (isSuperAdmin) {
       userColumns.push({
+        id: "admins",
+        label: t("admin.userRegistration.assignedAdmins"),
+        width: 300,
+        render: (user) => (
+          <AssignedAdminsSummary assignments={user.admin_assignments ?? []} />
+        ),
+      });
+      userColumns.push({
         id: "action",
         label: t("admin.userRegistration.action"),
-        width: 220,
+        width: 240,
         render: (user) => (
           <ApprovalButtons
             disabled={
@@ -538,7 +588,10 @@ export default function UserRegistrationForm({
                       className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none dark:border-gray-800 dark:hover:bg-gray-800/60 dark:focus:bg-gray-800/60"
                     >
                       {visibleTableColumns.map((column) => (
-                        <td key={column.id} className="py-4 pr-4">
+                        <td
+                          key={column.id}
+                          className="overflow-hidden py-4 pr-4"
+                        >
                           {column.render(user)}
                         </td>
                       ))}
@@ -564,9 +617,19 @@ export default function UserRegistrationForm({
           }}
           isSuperAdmin={isSuperAdmin}
           actionLoading={actionLoadingId === selectedUser.id}
+          adminOperators={adminOperators}
+          superAdminEmail={adminEmail}
           onRequestAction={(action) =>
             setPendingAction({ user: selectedUser, action })
           }
+          onAssignmentsSaved={(updatedUser) => {
+            setUsers((currentUsers) =>
+              currentUsers.map((user) =>
+                user.id === updatedUser.id ? updatedUser : user,
+              ),
+            );
+            setSelectedUser(updatedUser);
+          }}
           onClose={() => setSelectedUser(null)}
         />
       )}
@@ -682,14 +745,20 @@ function UserDetailModal({
   onSaved,
   isSuperAdmin,
   actionLoading,
+  adminOperators,
+  superAdminEmail,
   onRequestAction,
+  onAssignmentsSaved,
   onClose,
 }: {
   user: CompanyUser;
   onSaved: (user: CompanyUser) => void;
   isSuperAdmin: boolean;
   actionLoading: boolean;
+  adminOperators: AdminOperator[];
+  superAdminEmail: string;
   onRequestAction: (action: UserAction) => void;
+  onAssignmentsSaved: (user: CompanyUser) => void;
   onClose: () => void;
 }) {
   const isEditable = user.approval_status === "to_be_approved";
@@ -704,8 +773,23 @@ function UserDetailModal({
     notes: user.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
+  const [assignmentsSaving, setAssignmentsSaving] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
   const [error, setError] = useState("");
+  const [assignmentError, setAssignmentError] = useState("");
+  const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(() =>
+    (user.admin_assignments ?? []).map(
+      (assignment) => assignment.admin_user_id,
+    ),
+  );
+
+  useEffect(() => {
+    setSelectedAdminIds(
+      (user.admin_assignments ?? []).map(
+        (assignment) => assignment.admin_user_id,
+      ),
+    );
+  }, [user.admin_assignments, user.id]);
 
   const updateField = (field: keyof CompanyUserForm, value: string) => {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
@@ -746,6 +830,32 @@ function UserDetailModal({
     }
   };
 
+  const toggleAdminAssignment = (adminUserId: string) => {
+    setSelectedAdminIds((currentIds) =>
+      currentIds.includes(adminUserId)
+        ? currentIds.filter((currentId) => currentId !== adminUserId)
+        : [...currentIds, adminUserId],
+    );
+  };
+
+  const handleSaveAssignments = async () => {
+    setAssignmentsSaving(true);
+    setAssignmentError("");
+
+    try {
+      const updatedUser = await updateCompanyUserAdminAssignments({
+        superAdminEmail,
+        userId: user.id,
+        adminUserIds: selectedAdminIds,
+      });
+      onAssignmentsSaved(updatedUser);
+    } catch {
+      setAssignmentError(t("admin.userRegistration.assignmentUpdateFailed"));
+    } finally {
+      setAssignmentsSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4">
       <form
@@ -773,6 +883,66 @@ function UserDetailModal({
         <div className="mb-6">
           <StatusBadge status={user.approval_status} />
         </div>
+
+        {isSuperAdmin && (
+          <section className="mb-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h4 className="font-bold text-gray-900 dark:text-white">
+                  {t("admin.userRegistration.assignedAdmins")}
+                </h4>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t("admin.userRegistration.assignedAdminsDescription")}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={assignmentsSaving}
+                onClick={() => void handleSaveAssignments()}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+              >
+                <Save className="h-4 w-4" />
+                {assignmentsSaving ? t("common.saving") : t("common.save")}
+              </button>
+            </div>
+
+            {adminOperators.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                {t("superAdmin.operators.noOperators")}
+              </div>
+            ) : (
+              <div className="grid gap-2 md:grid-cols-2">
+                {adminOperators.map((operator) => (
+                  <label
+                    key={operator.id}
+                    className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAdminIds.includes(operator.id)}
+                      onChange={() => toggleAdminAssignment(operator.id)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-gray-900 dark:text-white">
+                        {operator.user_name || operator.email}
+                      </span>
+                      <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                        {operator.email}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {assignmentError && (
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                {assignmentError}
+              </div>
+            )}
+          </section>
+        )}
 
         {isEditable ? (
           <div className="grid gap-5 md:grid-cols-2">
@@ -975,6 +1145,32 @@ function ApprovalButtons({
       >
         {t("common.delete")}
       </button>
+    </div>
+  );
+}
+
+function AssignedAdminsSummary({
+  assignments,
+}: {
+  assignments: NonNullable<CompanyUser["admin_assignments"]>;
+}) {
+  if (assignments.length === 0) {
+    return <span className="text-sm text-gray-400">-</span>;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      {assignments.map((assignment) => (
+        <span
+          key={assignment.admin_user_id}
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          title={assignment.email}
+        >
+          <span className="min-w-0 truncate">
+            {assignment.user_name || assignment.email}
+          </span>
+        </span>
+      ))}
     </div>
   );
 }

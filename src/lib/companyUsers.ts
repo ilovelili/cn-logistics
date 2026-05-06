@@ -30,6 +30,15 @@ export interface CompanyUser {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  admin_assignments?: CompanyUserAdminAssignment[];
+}
+
+export interface CompanyUserAdminAssignment {
+  admin_user_id: string;
+  email: string;
+  user_name: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const defaultCompanyUserForm: CompanyUserForm = {
@@ -148,4 +157,34 @@ export async function deleteCompanyUser({
   if (error) {
     throw error;
   }
+}
+
+export async function updateCompanyUserAdminAssignments({
+  superAdminEmail,
+  userId,
+  adminUserIds,
+}: {
+  superAdminEmail: string;
+  userId: string;
+  adminUserIds: string[];
+}) {
+  const { data, error } = await supabase.rpc(
+    "update_normal_user_admin_assignments",
+    {
+      super_admin_email: superAdminEmail,
+      target_user_id: userId,
+      admin_user_ids: adminUserIds,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  const [updatedUser] = (data ?? []) as CompanyUser[];
+  if (!updatedUser) {
+    throw new Error("User admin assignments were not updated.");
+  }
+
+  return updatedUser;
 }

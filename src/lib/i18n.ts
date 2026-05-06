@@ -111,6 +111,11 @@ const ja = {
   "feedback.open": "評価を入力",
   "feedback.close": "評価を閉じる",
   "feedback.rating": "評価",
+  "feedback.attitude": "対応態度",
+  "feedback.speed": "スピード",
+  "feedback.accuracy": "正確性",
+  "feedback.price": "価格",
+  "feedback.summary": "総合評価",
   "feedback.star": "{count}つ星",
   "feedback.ratingValue": "{rating} / 5",
   "feedback.reason": "理由",
@@ -231,6 +236,11 @@ const ja = {
   "admin.userRegistration.created": "ユーザーを登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "ユーザー登録に失敗しました",
   "admin.userRegistration.updateFailed": "ユーザー情報の更新に失敗しました",
+  "admin.userRegistration.assignedAdmins": "担当管理者",
+  "admin.userRegistration.assignedAdminsDescription":
+    "このユーザーを担当する管理者を複数選択できます。",
+  "admin.userRegistration.assignmentUpdateFailed":
+    "担当管理者の更新に失敗しました",
   "admin.userRegistration.action": "操作",
   "admin.userRegistration.approve": "承認",
   "admin.userRegistration.unapprove": "却下",

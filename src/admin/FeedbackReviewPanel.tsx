@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Star } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
+  getShipmentFeedbackSummaryRating,
   ShipmentFeedbackReview,
 } from "../lib/shipmentFeedback";
 import { t } from "../lib/i18n";
@@ -16,7 +17,11 @@ type FeedbackColumnId =
   | "invoice"
   | "operator"
   | "submitter"
-  | "rating"
+  | "total_rating"
+  | "attitude_rating"
+  | "speed_rating"
+  | "accuracy_rating"
+  | "price_rating"
   | "reason"
   | "created_at";
 
@@ -69,7 +74,10 @@ export default function FeedbackReviewPanel({
   const averageRating =
     feedback.length === 0
       ? 0
-      : feedback.reduce((sum, item) => sum + item.rating, 0) / feedback.length;
+      : feedback.reduce(
+          (sum, item) => sum + getShipmentFeedbackSummaryRating(item),
+          0,
+        ) / feedback.length;
 
   const columns = useMemo<FeedbackTableColumn[]>(
     () => [
@@ -105,15 +113,36 @@ export default function FeedbackReviewPanel({
         ),
       },
       {
-        id: "rating",
-        label: t("common.feedback"),
+        id: "total_rating",
+        label: t("feedback.summary"),
         width: 140,
         render: (item) => (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800">
-            <Star className="h-3.5 w-3.5" fill="currentColor" />
-            {item.rating} / 5
-          </span>
+          <RatingPill value={getShipmentFeedbackSummaryRating(item)} />
         ),
+      },
+      {
+        id: "attitude_rating",
+        label: t("feedback.attitude"),
+        width: 120,
+        render: (item) => <RatingPill value={item.attitude_rating} />,
+      },
+      {
+        id: "speed_rating",
+        label: t("feedback.speed"),
+        width: 120,
+        render: (item) => <RatingPill value={item.speed_rating} />,
+      },
+      {
+        id: "accuracy_rating",
+        label: t("feedback.accuracy"),
+        width: 120,
+        render: (item) => <RatingPill value={item.accuracy_rating} />,
+      },
+      {
+        id: "price_rating",
+        label: t("feedback.price"),
+        width: 120,
+        render: (item) => <RatingPill value={item.price_rating} />,
       },
       {
         id: "reason",
@@ -248,7 +277,7 @@ export default function FeedbackReviewPanel({
                 </tr>
               ) : (
                 filteredFeedback.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={`${item.id}-${item.admin_operator_email ?? "none"}`}>
                     {visibleTableColumns.map((column) => (
                       <td key={column.id} className="py-4 pr-4">
                         {column.render(item)}
@@ -262,5 +291,16 @@ export default function FeedbackReviewPanel({
         </div>
       </section>
     </div>
+  );
+}
+
+function RatingPill({ value }: { value: number }) {
+  const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800">
+      <Star className="h-3.5 w-3.5" fill="currentColor" />
+      {displayValue} / 5
+    </span>
   );
 }

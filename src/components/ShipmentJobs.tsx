@@ -32,6 +32,13 @@ import {
 
 type StatusFilter = ShipmentStatus | "all";
 
+type FeedbackRatings = {
+  attitudeRating: number;
+  speedRating: number;
+  accuracyRating: number;
+  priceRating: number;
+};
+
 interface ShipmentJobsProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
@@ -307,7 +314,10 @@ export default function ShipmentJobs({
             const savedFeedback = await submitShipmentFeedback({
               shipmentJobId: jobId,
               submitterEmail: profileEmail,
-              rating: feedback.rating,
+              attitudeRating: feedback.attitudeRating,
+              speedRating: feedback.speedRating,
+              accuracyRating: feedback.accuracyRating,
+              priceRating: feedback.priceRating,
               reason: feedback.reason,
             });
             setFeedbackByJob((currentFeedback) => ({
@@ -364,19 +374,21 @@ function FeedbackModal({
   onSubmit,
 }: {
   job: ShipmentJob | null;
-  initialFeedback?: { rating: number; reason: string | null } | null;
+  initialFeedback?: ShipmentFeedback | null;
   saving: boolean;
   onClose: () => void;
   onSubmit: (
     jobId: string,
-    feedback: { rating: number; reason: string },
+    feedback: FeedbackRatings & { reason: string },
   ) => Promise<void>;
 }) {
-  const [rating, setRating] = useState(initialFeedback?.rating ?? 0);
+  const [ratings, setRatings] = useState<FeedbackRatings>(() =>
+    getInitialFeedbackRatings(initialFeedback),
+  );
   const [reason, setReason] = useState(initialFeedback?.reason ?? "");
 
   useEffect(() => {
-    setRating(initialFeedback?.rating ?? 0);
+    setRatings(getInitialFeedbackRatings(initialFeedback));
     setReason(initialFeedback?.reason ?? "");
   }, [initialFeedback, job?.id]);
 
@@ -386,6 +398,44 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
+  const summaryRating =
+    (ratings.attitudeRating +
+      ratings.speedRating +
+      ratings.accuracyRating +
+      ratings.priceRating) /
+    4;
+  const isComplete = Object.values(ratings).every((rating) => rating > 0);
+  const feedbackCategories = [
+    {
+      key: "attitudeRating" as const,
+      label: t("feedback.attitude"),
+      value: ratings.attitudeRating,
+    },
+    {
+      key: "speedRating" as const,
+      label: t("feedback.speed"),
+      value: ratings.speedRating,
+    },
+    {
+      key: "accuracyRating" as const,
+      label: t("feedback.accuracy"),
+      value: ratings.accuracyRating,
+    },
+    {
+      key: "priceRating" as const,
+      label: t("feedback.price"),
+      value: ratings.priceRating,
+    },
+  ];
+  const setCategoryRating = (
+    key: keyof FeedbackRatings,
+    ratingValue: number,
+  ) => {
+    setRatings((currentRatings) => ({
+      ...currentRatings,
+      [key]: ratingValue,
+    }));
+  };
 
   return (
     <div
@@ -420,35 +470,34 @@ function FeedbackModal({
           className="space-y-6 p-6"
           onSubmit={(event) => {
             event.preventDefault();
-            if (rating === 0) return;
-            void onSubmit(job.id, { rating, reason: reason.trim() });
+            if (!isComplete) return;
+            void onSubmit(job.id, { ...ratings, reason: reason.trim() });
           }}
         >
-          <div>
-            <div className="text-sm font-black text-slate-950">
-              {t("feedback.rating")}
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className={`rounded-2xl p-2 transition hover:bg-amber-50 ${
-                    star <= rating ? "text-amber-400" : "text-slate-300"
-                  }`}
-                  aria-label={t("feedback.star", { count: star })}
-                >
-                  <Star
-                    className="h-8 w-8"
-                    fill={star <= rating ? "currentColor" : "none"}
-                  />
-                </button>
-              ))}
-              <span className="ml-2 text-sm font-bold text-slate-500">
-                {rating ? t("feedback.ratingValue", { rating }) : "-"}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 text-amber-900">
+              <span className="text-sm font-black">
+                {t("feedback.summary")}
+              </span>
+              <span className="inline-flex items-center gap-1 text-sm font-black">
+                <Star className="h-4 w-4" fill="currentColor" />
+                {isComplete
+                  ? t("feedback.ratingValue", {
+                      rating: summaryRating.toFixed(1),
+                    })
+                  : "-"}
               </span>
             </div>
+            {feedbackCategories.map((category) => (
+              <StarRatingInput
+                key={category.key}
+                label={category.label}
+                value={category.value}
+                onChange={(ratingValue) =>
+                  setCategoryRating(category.key, ratingValue)
+                }
+              />
+            ))}
           </div>
 
           <label className="block">
@@ -474,13 +523,62 @@ function FeedbackModal({
             </button>
             <button
               type="submit"
-              disabled={rating === 0 || saving}
+              disabled={!isComplete || saving}
               className="rounded-2xl bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? t("common.saving") : t("feedback.submit")}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function getInitialFeedbackRatings(
+  feedback?: ShipmentFeedback | null,
+): FeedbackRatings {
+  const fallbackRating = feedback?.rating ?? 0;
+  return {
+    attitudeRating: feedback?.attitude_rating ?? fallbackRating,
+    speedRating: feedback?.speed_rating ?? fallbackRating,
+    accuracyRating: feedback?.accuracy_rating ?? fallbackRating,
+    priceRating: feedback?.price_rating ?? fallbackRating,
+  };
+}
+
+function StarRatingInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (rating: number) => void;
+}) {
+  return (
+    <div>
+      <div className="text-sm font-black text-slate-950">{label}</div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className={`rounded-2xl p-2 transition hover:bg-amber-50 ${
+              star <= value ? "text-amber-400" : "text-slate-300"
+            }`}
+            aria-label={`${label}: ${t("feedback.star", { count: star })}`}
+          >
+            <Star
+              className="h-7 w-7"
+              fill={star <= value ? "currentColor" : "none"}
+            />
+          </button>
+        ))}
+        <span className="ml-1 text-sm font-bold text-slate-500">
+          {value ? t("feedback.ratingValue", { rating: value }) : "-"}
+        </span>
       </div>
     </div>
   );
