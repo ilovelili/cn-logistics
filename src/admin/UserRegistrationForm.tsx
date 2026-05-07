@@ -292,7 +292,7 @@ export default function UserRegistrationForm({
       {
         id: "id",
         label: "ID",
-        width: 120,
+        width: isSuperAdmin ? 7 : 12,
         sortKey: "id",
         render: (user) => (
           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
@@ -303,7 +303,7 @@ export default function UserRegistrationForm({
       {
         id: "company_name",
         label: t("admin.userRegistration.companyName"),
-        width: 220,
+        width: isSuperAdmin ? 16 : 24,
         sortKey: "company_name",
         render: (user) => (
           <span
@@ -314,10 +314,24 @@ export default function UserRegistrationForm({
           </span>
         ),
       },
+      ...(isSuperAdmin
+        ? [
+            {
+              id: "admins" as const,
+              label: t("admin.userRegistration.assignedAdmins"),
+              width: 14,
+              render: (user: CompanyUser) => (
+                <AssignedAdminsSummary
+                  assignments={user.admin_assignments ?? []}
+                />
+              ),
+            },
+          ]
+        : []),
       {
         id: "email",
         label: t("admin.userRegistration.email"),
-        width: 380,
+        width: isSuperAdmin ? 18 : 32,
         sortKey: "email",
         render: (user) => (
           <span
@@ -331,7 +345,7 @@ export default function UserRegistrationForm({
       {
         id: "budget",
         label: t("admin.userRegistration.budget"),
-        width: 170,
+        width: isSuperAdmin ? 10 : 12,
         sortKey: "budget",
         render: (user) => (
           <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
@@ -343,14 +357,14 @@ export default function UserRegistrationForm({
       {
         id: "approval_status",
         label: t("admin.userRegistration.status"),
-        width: 160,
+        width: isSuperAdmin ? 9 : 11,
         sortKey: "approval_status",
         render: (user) => <StatusBadge status={user.approval_status} />,
       },
       {
         id: "created_at",
         label: t("admin.userRegistration.createdAt"),
-        width: 150,
+        width: 9,
         sortKey: "created_at",
         render: (user) => (
           <span className="whitespace-nowrap text-gray-500 dark:text-gray-400">
@@ -362,17 +376,9 @@ export default function UserRegistrationForm({
 
     if (isSuperAdmin) {
       userColumns.push({
-        id: "admins",
-        label: t("admin.userRegistration.assignedAdmins"),
-        width: 300,
-        render: (user) => (
-          <AssignedAdminsSummary assignments={user.admin_assignments ?? []} />
-        ),
-      });
-      userColumns.push({
         id: "action",
         label: t("admin.userRegistration.action"),
-        width: 240,
+        width: 17,
         render: (user) => (
           <ApprovalButtons
             disabled={
@@ -408,7 +414,7 @@ export default function UserRegistrationForm({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "admin_user_registration_table_columns",
+    "admin_user_registration_table_columns_v2",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -419,7 +425,7 @@ export default function UserRegistrationForm({
     id: column.id,
     label: column.label,
   }));
-  const tableMinWidth = visibleTableColumns.reduce(
+  const visibleColumnWeight = visibleTableColumns.reduce(
     (total, column) => total + column.width,
     0,
   );
@@ -536,16 +542,18 @@ export default function UserRegistrationForm({
               {t("admin.userRegistration.noMatches")}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-hidden">
               <table
                 className="w-full table-fixed text-left text-sm"
-                style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+                style={{ minWidth: "320px" }}
               >
                 <colgroup>
                   {visibleTableColumns.map((column) => (
                     <col
                       key={column.id}
-                      style={{ width: `${column.width}px` }}
+                      style={{
+                        width: `${(column.width / visibleColumnWeight) * 100}%`,
+                      }}
                     />
                   ))}
                 </colgroup>
@@ -1120,12 +1128,12 @@ function ApprovalButtons({
   onDelete: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-nowrap gap-1.5">
       <button
         type="button"
         disabled={disabled}
         onClick={onApprove}
-        className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="whitespace-nowrap rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("admin.userRegistration.approve")}
       </button>
@@ -1133,7 +1141,7 @@ function ApprovalButtons({
         type="button"
         disabled={disabled}
         onClick={onReject}
-        className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+        className="whitespace-nowrap rounded-lg bg-amber-500 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("admin.userRegistration.unapprove")}
       </button>
@@ -1141,7 +1149,7 @@ function ApprovalButtons({
         type="button"
         disabled={deleteDisabled}
         onClick={onDelete}
-        className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="whitespace-nowrap rounded-lg bg-rose-600 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("common.delete")}
       </button>

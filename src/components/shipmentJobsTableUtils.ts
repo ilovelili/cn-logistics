@@ -13,6 +13,7 @@ export function buildShipmentJobSearchText(job: ShipmentJob) {
   return [
     job.id,
     formatShipmentJobShortId(job.id),
+    job.company_name,
     job.invoice_number,
     job.shipper_name,
     job.consignee_name,
@@ -41,6 +42,8 @@ export function getShipmentJobSortValue(
   switch (sortKey) {
     case "id":
       return job.id;
+    case "company_name":
+      return job.company_name ?? "";
     case "status":
       return statusLabels[job.status];
     case "working_days":

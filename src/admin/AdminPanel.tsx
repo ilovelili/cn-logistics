@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FilePlus2,
   LogOut,
@@ -68,6 +68,13 @@ export default function AdminPanel({
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
   const isSuperAdmin = profileRole === "super_admin";
+  const companyNames = useMemo(
+    () =>
+      [...new Set(switchableUsers.map((user) => user.company_name))]
+        .filter(Boolean)
+        .sort((first, second) => first.localeCompare(second, "ja-JP")),
+    [switchableUsers],
+  );
 
   useEffect(() => {
     setView("dashboard");
@@ -75,8 +82,6 @@ export default function AdminPanel({
   }, [profileEmail, profileRole]);
 
   useEffect(() => {
-    if (!onSwitchToUser) return;
-
     let active = true;
     async function loadSwitchableUsers() {
       try {
@@ -96,7 +101,7 @@ export default function AdminPanel({
     return () => {
       active = false;
     };
-  }, [onSwitchToUser, profileEmail]);
+  }, [profileEmail]);
 
   useEffect(() => {
     if (!onSwitchToUser || !isSuperAdmin) {
@@ -170,9 +175,6 @@ export default function AdminPanel({
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-slate-950 dark:bg-white rounded-lg flex items-center justify-center">
-              <ShipWheel className="w-4 h-4 text-white dark:text-slate-950" />
-            </div>
             <div>
               <span className="font-bold text-gray-900 dark:text-white">
                 CN Logistics
@@ -308,6 +310,7 @@ export default function AdminPanel({
             <ShipmentEntryForm
               jobs={jobs}
               documents={documents}
+              companyNames={companyNames}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />

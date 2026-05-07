@@ -2,7 +2,6 @@ import {
   CalendarDays,
   FileText,
   MoreHorizontal,
-  ShipWheel,
 } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { t } from "../lib/i18n";
@@ -25,6 +24,7 @@ import {
 
 export type ShipmentJobsTableSortKey =
   | "id"
+  | "company_name"
   | "status"
   | "working_days"
   | "trade"
@@ -52,7 +52,7 @@ interface ShipmentJobsTableColumn {
   render: (job: ShipmentJob) => ReactNode;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v2";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -140,16 +140,7 @@ export default function ShipmentJobsTable({
             : "border-slate-200"
         }`}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className={`flex h-10 w-10 items-center justify-center ${
-              adminTheme
-                ? "rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                : "rounded-2xl bg-slate-100 text-slate-700"
-            }`}
-          >
-            <ShipWheel className="h-5 w-5" />
-          </div>
+        <div className="flex items-center">
           <div>
             <h2
               className={`font-black ${
@@ -209,6 +200,19 @@ export default function ShipmentJobsTable({
                     activeSortKey={sortKey}
                     direction={sortDirection}
                     onSort={onSort}
+                    buttonClassName={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition ${
+                      adminTheme
+                        ? "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-gray-800 dark:hover:text-white"
+                        : "hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                    activeClassName={
+                      adminTheme
+                        ? "text-slate-950 dark:text-white"
+                        : "text-slate-950"
+                    }
+                    inactiveClassName={
+                      adminTheme ? "text-slate-500 dark:text-gray-400" : ""
+                    }
                     className={
                       index === 0
                         ? "whitespace-nowrap py-3 pl-3 pr-5"
@@ -313,6 +317,20 @@ function buildColumns(
           className="font-mono text-xs font-bold text-slate-500"
         >
           {formatShipmentJobShortId(job.id)}
+        </span>
+      ),
+    },
+    {
+      id: "company_name",
+      label: t("common.companyName"),
+      width: 150,
+      sortKey: "company_name",
+      render: (job) => (
+        <span
+          className={`block truncate font-semibold ${strongText}`}
+          title={job.company_name ?? undefined}
+        >
+          {job.company_name || "-"}
         </span>
       ),
     },

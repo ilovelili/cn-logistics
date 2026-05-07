@@ -13,6 +13,7 @@ export type DocumentApprovalStatus =
 
 export interface ShipmentJob {
   id: string;
+  company_name: string | null;
   status: ShipmentStatus;
   trade_mode: TradeMode;
   trade_term: string | null;
@@ -78,6 +79,7 @@ export interface ShipmentDocument {
 }
 
 export interface ShipmentJobForm {
+  company_name: string;
   status: ShipmentStatus;
   trade_mode: TradeMode;
   trade_term: string;
@@ -162,6 +164,7 @@ export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
 };
 
 export const defaultShipmentJobForm: ShipmentJobForm = {
+  company_name: "",
   status: "under_process",
   trade_mode: "export",
   trade_term: "CIF",
@@ -196,6 +199,7 @@ export function formatDocumentList(documents: string[]): string {
 
 export function jobToForm(job: ShipmentJob): ShipmentJobForm {
   return {
+    company_name: job.company_name ?? "",
     status: job.status,
     trade_mode: job.trade_mode,
     trade_term: job.trade_term ?? "",
@@ -227,6 +231,7 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
 
 export function formToPayload(form: ShipmentJobForm) {
   return {
+    company_name: form.company_name || null,
     status: form.status,
     trade_mode: form.trade_mode,
     trade_term: form.trade_term || null,

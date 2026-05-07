@@ -15,6 +15,7 @@ import {
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
+  companyOptions?: string[];
   submitLabel: string;
   loading?: boolean;
   onCancel?: () => void;
@@ -23,6 +24,7 @@ interface ShipmentJobFormProps {
 
 export default function ShipmentJobForm({
   job,
+  companyOptions = [],
   submitLabel,
   loading = false,
   onCancel,
@@ -146,6 +148,28 @@ export default function ShipmentJobForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {companyOptions.length > 0 ? (
+          <SelectField
+            label={t("common.companyName")}
+            value={form.company_name}
+            disabled={Boolean(job)}
+            onChange={(value) => updateField("company_name", value)}
+            options={[
+              { value: "", label: t("form.selectCompany") },
+              ...companyOptions.map((companyName) => ({
+                value: companyName,
+                label: companyName,
+              })),
+            ]}
+          />
+        ) : (
+          <TextField
+            label={t("common.companyName")}
+            value={form.company_name}
+            disabled={Boolean(job)}
+            onChange={(value) => updateField("company_name", value)}
+          />
+        )}
         <SelectField
           label={t("form.status")}
           value={form.status}
@@ -486,12 +510,14 @@ function TextField({
   value,
   placeholder,
   type = "text",
+  disabled = false,
   onChange,
 }: {
   label: string;
   value: string;
   placeholder?: string;
   type?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -503,8 +529,9 @@ function TextField({
         type={type}
         value={value}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       />
     </label>
   );
@@ -514,11 +541,13 @@ function SelectField({
   label,
   value,
   options,
+  disabled = false,
   onChange,
 }: {
   label: string;
   value: string;
   options: { value: string; label: string }[];
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -528,8 +557,9 @@ function SelectField({
       </span>
       <select
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

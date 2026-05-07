@@ -24,6 +24,7 @@ const ja = {
   "profile.uploadFailed": "アバターの更新に失敗しました",
 
   "common.status": "ステータス",
+  "common.companyName": "会社名",
   "common.trade": "取引",
   "common.tradeMode": "取引形態",
   "common.tradeTerm": "取引条件",
@@ -97,7 +98,8 @@ const ja = {
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
-    "ID、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
+    "ID、会社名、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
+  "jobs.filter.allCompanies": "すべての会社",
   "jobs.filter.allStatus": "すべてのステータス",
   "jobs.filter.allTrade": "すべての取引",
   "jobs.filter.allTransport": "すべての輸送",
@@ -165,6 +167,7 @@ const ja = {
   "form.invoice": "インボイス#",
   "form.shipper": "荷主",
   "form.consignee": "荷受人",
+  "form.selectCompany": "会社を選択",
   "form.selectFiles": "ファイルを選択",
   "form.uploadHelp":
     "PDF、画像、Excelなどの書類ファイルをアップロードできます。",
@@ -181,7 +184,7 @@ const ja = {
   "admin.switch.backToAdmin": "管理画面に戻る",
   "admin.nav.dashboard": "ダッシュボード",
   "admin.nav.shipmentEntry": "出荷案件管理",
-  "admin.nav.userRegistration": "ユーザー登録",
+  "admin.nav.userRegistration": "会社登録",
   "admin.entry.title": "出荷案件管理",
   "admin.entry.updateExisting": "既存案件を更新",
   "admin.entry.createNew": "新規作成",
@@ -203,12 +206,12 @@ const ja = {
   "admin.documents.rejected": "書類を却下しました",
   "admin.documents.updateFailed": "書類承認の更新に失敗しました",
 
-  "admin.userRegistration.title": "ユーザー登録",
-  "admin.userRegistration.dashboard": "登録ユーザー一覧",
-  "admin.userRegistration.newUser": "新規ユーザー作成",
-  "admin.userRegistration.noUsers": "登録済みユーザーはまだありません。",
+  "admin.userRegistration.title": "会社登録",
+  "admin.userRegistration.dashboard": "登録会社一覧",
+  "admin.userRegistration.newUser": "新規会社登録",
+  "admin.userRegistration.noUsers": "登録済み会社はまだありません。",
   "admin.userRegistration.noMatches":
-    "現在の条件に一致するユーザーはありません。",
+    "現在の条件に一致する会社はありません。",
   "admin.userRegistration.count": "{count}件",
   "admin.userRegistration.searchPlaceholder":
     "ID、会社名、メール、郵便番号、住所、電話番号、担当者で検索...",
@@ -232,30 +235,30 @@ const ja = {
   "admin.userRegistration.zipcodeLookupFailed":
     "郵便番号から住所を取得できませんでした",
   "admin.userRegistration.loadFailed":
-    "登録済みユーザーの読み込みに失敗しました",
-  "admin.userRegistration.created": "ユーザーを登録しました。承認待ちです。",
-  "admin.userRegistration.createFailed": "ユーザー登録に失敗しました",
-  "admin.userRegistration.updateFailed": "ユーザー情報の更新に失敗しました",
+    "登録済み会社の読み込みに失敗しました",
+  "admin.userRegistration.created": "会社を登録しました。承認待ちです。",
+  "admin.userRegistration.createFailed": "会社登録に失敗しました",
+  "admin.userRegistration.updateFailed": "会社情報の更新に失敗しました",
   "admin.userRegistration.assignedAdmins": "担当管理者",
   "admin.userRegistration.assignedAdminsDescription":
-    "このユーザーを担当する管理者を複数選択できます。",
+    "担当する管理者を複数選択できます。",
   "admin.userRegistration.assignmentUpdateFailed":
     "担当管理者の更新に失敗しました",
   "admin.userRegistration.action": "操作",
   "admin.userRegistration.approve": "承認",
   "admin.userRegistration.unapprove": "却下",
-  "admin.userRegistration.approved": "ユーザーを承認しました",
-  "admin.userRegistration.rejected": "ユーザーを却下しました",
+  "admin.userRegistration.approved": "会社を承認しました",
+  "admin.userRegistration.rejected": "会社を却下しました",
   "admin.userRegistration.approvalFailed": "承認状態の更新に失敗しました",
-  "admin.userRegistration.deleted": "ユーザーを削除しました",
-  "admin.userRegistration.deleteFailed": "ユーザー削除に失敗しました",
+  "admin.userRegistration.deleted": "会社を削除しました",
+  "admin.userRegistration.deleteFailed": "会社削除に失敗しました",
   "admin.userRegistration.confirmTitle": "{action}しますか？",
   "admin.userRegistration.confirmApprove":
-    "このユーザーを承認すると、通常ユーザーとしてログインできるようになります。",
+    "この会社を承認すると、登録メールアドレスでログインできるようになります。",
   "admin.userRegistration.confirmReject":
-    "このユーザーを却下すると、承認待ち状態に戻せなくなります。",
+    "この会社を却下すると、承認待ち状態に戻せなくなります。",
   "admin.userRegistration.confirmDelete":
-    "このユーザーを削除します。この操作は取り消せません。",
+    "この会社を削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
   "superAdmin.nav.feedback": "評価一覧",

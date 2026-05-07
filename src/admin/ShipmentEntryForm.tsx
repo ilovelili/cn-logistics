@@ -43,6 +43,7 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
+  companyNames?: string[];
   criteria?: ShipmentEntryCriteria;
   onRefresh: () => Promise<void>;
 }
@@ -50,6 +51,7 @@ interface ShipmentEntryFormProps {
 export default function ShipmentEntryForm({
   jobs,
   documents,
+  companyNames = [],
   criteria = { kind: "all" },
   onRefresh,
 }: ShipmentEntryFormProps) {
@@ -59,6 +61,7 @@ export default function ShipmentEntryForm({
   );
   const [tradeFilter, setTradeFilter] = useState("all");
   const [transportFilter, setTransportFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
@@ -107,10 +110,15 @@ export default function ShipmentEntryForm({
         return job.transport_mode === transportFilter;
       })
       .filter((job) => {
+        if (companyFilter === "all") return true;
+        return job.company_name === companyFilter;
+      })
+      .filter((job) => {
         if (!normalizedQuery) return true;
         return buildShipmentJobSearchText(job).includes(normalizedQuery);
       });
   }, [
+    companyFilter,
     criteria,
     documents,
     jobs,
@@ -157,6 +165,7 @@ export default function ShipmentEntryForm({
     setSelectedJob(null);
     setQuery("");
     setStatusFilter(criteria.kind === "status" ? criteria.status : "all");
+    setCompanyFilter("all");
     setTradeFilter("all");
     setTransportFilter("all");
     setCurrentPage(1);
@@ -172,6 +181,7 @@ export default function ShipmentEntryForm({
     setCurrentPage(1);
   }, [
     pageSize,
+    companyFilter,
     query,
     sortDirection,
     sortKey,
@@ -304,7 +314,7 @@ export default function ShipmentEntryForm({
       {mode === "update" && (
         <div className="space-y-6">
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_180px_180px_180px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -314,6 +324,17 @@ export default function ShipmentEntryForm({
                   className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
                 />
               </div>
+              <FilterSelect
+                value={companyFilter}
+                onChange={setCompanyFilter}
+                options={[
+                  { value: "all", label: t("jobs.filter.allCompanies") },
+                  ...companyNames.map((companyName) => ({
+                    value: companyName,
+                    label: companyName,
+                  })),
+                ]}
+              />
               <FilterSelect
                 icon={<Filter className="h-4 w-4" />}
                 value={statusFilter}
@@ -370,6 +391,7 @@ export default function ShipmentEntryForm({
             loading={loading}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
+            companyOptions={companyNames}
             onApprove={(document) =>
               handleDocumentApproval(document, "approved")
             }
@@ -383,6 +405,7 @@ export default function ShipmentEntryForm({
       {mode === "create" && (
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
+            companyOptions={companyNames}
             submitLabel={t("common.create")}
             loading={loading}
             onSubmit={handleCreate}
@@ -397,6 +420,7 @@ function AdminShipmentJobModal({
   job,
   documents,
   loading,
+  companyOptions,
   onClose,
   onSubmit,
   onApprove,
@@ -405,6 +429,7 @@ function AdminShipmentJobModal({
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
   loading: boolean;
+  companyOptions: string[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   onApprove: (document: ShipmentDocument) => void;
@@ -448,6 +473,7 @@ function AdminShipmentJobModal({
           <ShipmentJobForm
             key={job.id}
             job={job}
+            companyOptions={companyOptions}
             submitLabel={t("common.update")}
             loading={loading}
             onSubmit={onSubmit}
