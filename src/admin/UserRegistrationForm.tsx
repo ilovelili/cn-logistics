@@ -314,20 +314,6 @@ export default function UserRegistrationForm({
           </span>
         ),
       },
-      ...(isSuperAdmin
-        ? [
-            {
-              id: "admins" as const,
-              label: t("admin.userRegistration.assignedAdmins"),
-              width: 14,
-              render: (user: CompanyUser) => (
-                <AssignedAdminsSummary
-                  assignments={user.admin_assignments ?? []}
-                />
-              ),
-            },
-          ]
-        : []),
       {
         id: "email",
         label: t("admin.userRegistration.email"),
@@ -372,36 +358,47 @@ export default function UserRegistrationForm({
           </span>
         ),
       },
+      ...(isSuperAdmin
+        ? [
+            {
+              id: "admins" as const,
+              label: t("admin.userRegistration.assignedAdmins"),
+              width: 14,
+              render: (user: CompanyUser) => (
+                <AssignedAdminsSummary
+                  assignments={user.admin_assignments ?? []}
+                />
+              ),
+            },
+            {
+              id: "action" as const,
+              label: t("admin.userRegistration.action"),
+              width: 17,
+              render: (user: CompanyUser) => (
+                <ApprovalButtons
+                  disabled={
+                    actionLoadingId === user.id ||
+                    user.approval_status !== "to_be_approved"
+                  }
+                  deleteDisabled={actionLoadingId === user.id}
+                  onApprove={(event) => {
+                    event.stopPropagation();
+                    setPendingAction({ user, action: "approve" });
+                  }}
+                  onReject={(event) => {
+                    event.stopPropagation();
+                    setPendingAction({ user, action: "reject" });
+                  }}
+                  onDelete={(event) => {
+                    event.stopPropagation();
+                    setPendingAction({ user, action: "delete" });
+                  }}
+                />
+              ),
+            },
+          ]
+        : []),
     ];
-
-    if (isSuperAdmin) {
-      userColumns.push({
-        id: "action",
-        label: t("admin.userRegistration.action"),
-        width: 17,
-        render: (user) => (
-          <ApprovalButtons
-            disabled={
-              actionLoadingId === user.id ||
-              user.approval_status !== "to_be_approved"
-            }
-            deleteDisabled={actionLoadingId === user.id}
-            onApprove={(event) => {
-              event.stopPropagation();
-              setPendingAction({ user, action: "approve" });
-            }}
-            onReject={(event) => {
-              event.stopPropagation();
-              setPendingAction({ user, action: "reject" });
-            }}
-            onDelete={(event) => {
-              event.stopPropagation();
-              setPendingAction({ user, action: "delete" });
-            }}
-          />
-        ),
-      });
-    }
 
     return userColumns;
   }, [actionLoadingId, isSuperAdmin]);
@@ -414,7 +411,7 @@ export default function UserRegistrationForm({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "admin_user_registration_table_columns_v2",
+    "admin_user_registration_table_columns_v4",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
