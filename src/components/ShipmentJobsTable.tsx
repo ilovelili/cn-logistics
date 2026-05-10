@@ -220,7 +220,10 @@ export default function ShipmentJobsTable({
                     }
                   />
                 ) : (
-                  <th key={column.id} className="whitespace-nowrap px-3 py-3">
+                  <th
+                    key={column.id}
+                    className="whitespace-nowrap px-3 py-3 text-left"
+                  >
                     {column.label}
                   </th>
                 ),

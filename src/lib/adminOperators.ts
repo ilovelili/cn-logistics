@@ -1,10 +1,27 @@
 import { supabase } from "./supabase";
+import type { CompanyUserAdminAssignment } from "./companyUsers";
 
 export interface AdminOperator {
   id: string;
   email: string;
   user_name: string | null;
-  is_active: boolean;
+  assigned_company_users?: AssignedCompanyUser[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssignedCompanyUser {
+  id: string;
+  email: string;
+  company_name: string;
+  zipcode: string | null;
+  company_address: string | null;
+  telephone: string | null;
+  budget: number | null;
+  contact_person: string | null;
+  notes: string | null;
+  approval_status: string;
+  admin_assignments?: CompanyUserAdminAssignment[];
   created_at: string;
   updated_at: string;
 }

@@ -1,24 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Save, Search, ShieldCheck, Trash2, XCircle } from "lucide-react";
+import { Plus, Save, Search, Trash2, XCircle } from "lucide-react";
 import {
   AdminOperator,
+  AssignedCompanyUser,
   createAdminOperator,
   defaultAdminOperatorForm,
   deleteAdminOperator,
   fetchAdminOperators,
 } from "../lib/adminOperators";
+import type { CompanyUser } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { UserDetailModal } from "./UserRegistrationForm";
 
 interface AdminOperatorManagementProps {
   superAdminEmail: string;
 }
 
-type SortKey = "id" | "email" | "user_name" | "is_active" | "created_at";
+type SortKey = "id" | "email" | "user_name" | "created_at";
 type SortDirection = "asc" | "desc";
-type OperatorColumnId = SortKey | "action";
+type OperatorColumnId = SortKey | "assigned_company_users" | "action";
 
 interface OperatorTableColumn {
   id: OperatorColumnId;
@@ -39,6 +42,8 @@ export default function AdminOperatorManagement({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminOperator | null>(null);
+  const [selectedCompanyUser, setSelectedCompanyUser] =
+    useState<CompanyUser | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [toast, setToast] = useState<{
@@ -71,7 +76,15 @@ export default function AdminOperatorManagement({
     if (!normalizedQuery) return operators;
 
     return operators.filter((operator) =>
-      [operator.id, operator.email, operator.user_name]
+      [
+        operator.id,
+        operator.email,
+        operator.user_name,
+        ...(operator.assigned_company_users ?? []).flatMap((companyUser) => [
+          companyUser.company_name,
+          companyUser.email,
+        ]),
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
@@ -82,10 +95,6 @@ export default function AdminOperatorManagement({
   const sortedOperators = useMemo(() => {
     return [...filteredOperators].sort((a, b) => {
       const direction = sortDirection === "asc" ? 1 : -1;
-
-      if (sortKey === "is_active") {
-        return (Number(a.is_active) - Number(b.is_active)) * direction;
-      }
 
       if (sortKey === "created_at") {
         return (
@@ -153,7 +162,7 @@ export default function AdminOperatorManagement({
       {
         id: "id",
         label: "ID",
-        width: 110,
+        width: 90,
         sortKey: "id",
         render: (operator) => (
           <span className="font-mono text-xs text-gray-500">
@@ -164,7 +173,7 @@ export default function AdminOperatorManagement({
       {
         id: "email",
         label: t("superAdmin.operators.email"),
-        width: 240,
+        width: 220,
         sortKey: "email",
         render: (operator) => (
           <span className="font-bold text-gray-900 dark:text-white">
@@ -175,7 +184,7 @@ export default function AdminOperatorManagement({
       {
         id: "user_name",
         label: t("superAdmin.operators.name"),
-        width: 180,
+        width: 160,
         sortKey: "user_name",
         render: (operator) => (
           <span className="text-gray-700 dark:text-gray-300">
@@ -184,28 +193,27 @@ export default function AdminOperatorManagement({
         ),
       },
       {
-        id: "is_active",
-        label: t("superAdmin.operators.status"),
-        width: 150,
-        sortKey: "is_active",
-        render: (operator) => (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {operator.is_active
-              ? t("superAdmin.operators.active")
-              : t("superAdmin.operators.inactive")}
-          </span>
-        ),
-      },
-      {
         id: "created_at",
         label: t("admin.userRegistration.createdAt"),
-        width: 140,
+        width: 120,
         sortKey: "created_at",
         render: (operator) => (
           <span className="text-gray-500">
             {new Date(operator.created_at).toLocaleDateString("ja-JP")}
           </span>
+        ),
+      },
+      {
+        id: "assigned_company_users",
+        label: t("superAdmin.operators.assignedCompanies"),
+        width: 300,
+        render: (operator) => (
+          <AssignedCompanyUsers
+            companyUsers={operator.assigned_company_users ?? []}
+            onSelect={(companyUser) =>
+              setSelectedCompanyUser(toCompanyUser(companyUser))
+            }
+          />
         ),
       },
       {
@@ -236,7 +244,7 @@ export default function AdminOperatorManagement({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "admin_operators_table_columns",
+    "admin_operators_table_columns_v4",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -273,6 +281,28 @@ export default function AdminOperatorManagement({
           deleting={deletingId === deleteTarget.id}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => void handleDelete()}
+        />
+      )}
+
+      {selectedCompanyUser && (
+        <UserDetailModal
+          user={selectedCompanyUser}
+          isSuperAdmin
+          actionLoading={false}
+          adminOperators={operators}
+          superAdminEmail={superAdminEmail}
+          detailsReadOnly
+          showActions={false}
+          onSaved={(updatedUser) => {
+            setSelectedCompanyUser(updatedUser);
+            void loadOperators();
+          }}
+          onAssignmentsSaved={(updatedUser) => {
+            setSelectedCompanyUser(updatedUser);
+            void loadOperators();
+          }}
+          onRequestAction={() => undefined}
+          onClose={() => setSelectedCompanyUser(null)}
         />
       )}
 
@@ -383,7 +413,10 @@ export default function AdminOperatorManagement({
                       onSort={changeSort}
                     />
                   ) : (
-                    <th key={column.id} className="py-3 pl-4 text-right">
+                    <th
+                      key={column.id}
+                      className="py-3 pr-4 text-left font-bold"
+                    >
                       {column.label}
                     </th>
                   ),
@@ -415,11 +448,7 @@ export default function AdminOperatorManagement({
                     {visibleTableColumns.map((column) => (
                       <td
                         key={column.id}
-                        className={
-                          column.id === "action"
-                            ? "py-4 pl-4 text-right"
-                            : "py-4 pr-4"
-                        }
+                        className="py-4 pr-4 text-left"
                       >
                         {column.render(operator)}
                       </td>
@@ -461,6 +490,58 @@ function OperatorSortableHeader({
       inactiveClassName="text-gray-500 dark:text-gray-400"
     />
   );
+}
+
+function AssignedCompanyUsers({
+  companyUsers,
+  onSelect,
+}: {
+  companyUsers: NonNullable<AdminOperator["assigned_company_users"]>;
+  onSelect: (companyUser: AssignedCompanyUser) => void;
+}) {
+  if (companyUsers.length === 0) {
+    return <span className="text-sm text-gray-400">-</span>;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      {companyUsers.map((companyUser) => (
+        <button
+          type="button"
+          key={companyUser.id}
+          onClick={() => onSelect(companyUser)}
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+          title={companyUser.email}
+        >
+          <span className="min-w-0 truncate">{companyUser.company_name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function toCompanyUser(companyUser: AssignedCompanyUser): CompanyUser {
+  return {
+    id: companyUser.id,
+    email: companyUser.email,
+    company_name: companyUser.company_name,
+    zipcode: companyUser.zipcode,
+    company_address: companyUser.company_address ?? "",
+    telephone: companyUser.telephone ?? "",
+    budget: Number(companyUser.budget ?? 0),
+    contact_person: companyUser.contact_person,
+    notes: companyUser.notes,
+    approval_status:
+      companyUser.approval_status === "approved" ||
+      companyUser.approval_status === "rejected" ||
+      companyUser.approval_status === "to_be_approved"
+        ? companyUser.approval_status
+        : "to_be_approved",
+    created_by: null,
+    created_at: companyUser.created_at,
+    updated_at: companyUser.updated_at,
+    admin_assignments: companyUser.admin_assignments ?? [],
+  };
 }
 
 function ConfirmDeleteModal({

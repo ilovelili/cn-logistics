@@ -18,6 +18,7 @@ import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
 
 interface UserRegistrationFormProps {
   adminEmail: string;
@@ -33,7 +34,7 @@ type SortKey =
   | "created_at";
 type SortDirection = "asc" | "desc";
 type UserColumnId = SortKey | "admins" | "action";
-type UserAction = "approve" | "reject" | "delete";
+export type UserAction = "approve" | "reject" | "delete";
 
 interface UserTableColumn {
   id: UserColumnId;
@@ -571,7 +572,10 @@ export default function UserRegistrationForm({
                           inactiveClassName="text-gray-500 dark:text-gray-400"
                         />
                       ) : (
-                        <th key={column.id} className="py-3 pr-4 font-bold">
+                        <th
+                          key={column.id}
+                          className="py-3 pr-4 text-left font-bold"
+                        >
                           {column.label}
                         </th>
                       ),
@@ -745,13 +749,15 @@ export default function UserRegistrationForm({
   );
 }
 
-function UserDetailModal({
+export function UserDetailModal({
   user,
   onSaved,
   isSuperAdmin,
   actionLoading,
   adminOperators,
   superAdminEmail,
+  detailsReadOnly = false,
+  showActions = true,
   onRequestAction,
   onAssignmentsSaved,
   onClose,
@@ -762,11 +768,14 @@ function UserDetailModal({
   actionLoading: boolean;
   adminOperators: AdminOperator[];
   superAdminEmail: string;
+  detailsReadOnly?: boolean;
+  showActions?: boolean;
   onRequestAction: (action: UserAction) => void;
   onAssignmentsSaved: (user: CompanyUser) => void;
   onClose: () => void;
 }) {
-  const isEditable = user.approval_status === "to_be_approved";
+  const isEditable =
+    user.approval_status === "to_be_approved" && !detailsReadOnly;
   const [form, setForm] = useState<CompanyUserForm>({
     email: user.email,
     company_name: user.company_name,
@@ -1027,47 +1036,7 @@ function UserDetailModal({
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailItem label="ID" value={user.id} mono />
-            <DetailItem
-              label={t("admin.userRegistration.email")}
-              value={user.email}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.companyName")}
-              value={user.company_name}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.budget")}
-              value={`${Number(user.budget).toLocaleString()} ${t("admin.userRegistration.budgetUnit")}`}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.zipcode")}
-              value={user.zipcode || t("common.unset")}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.telephone")}
-              value={user.telephone}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.contactPerson")}
-              value={user.contact_person || t("common.unset")}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.createdAt")}
-              value={new Date(user.created_at).toLocaleString("ja-JP")}
-            />
-            <DetailItem
-              label={t("admin.userRegistration.companyAddress")}
-              value={user.company_address}
-              wide
-            />
-            <DetailItem
-              label={t("admin.userRegistration.notes")}
-              value={user.notes || t("common.unset")}
-              wide
-            />
-          </div>
+          <CompanyUserReadOnlyDetails companyUser={user} />
         )}
 
         {error && (
@@ -1077,7 +1046,7 @@ function UserDetailModal({
         )}
 
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-5 dark:border-gray-800">
-          {isSuperAdmin && (
+          {isSuperAdmin && showActions && (
             <ApprovalButtons
               disabled={
                 actionLoading || user.approval_status !== "to_be_approved"

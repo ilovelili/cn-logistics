@@ -250,7 +250,7 @@ export default function FeedbackReviewPanel({
             <thead>
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 {visibleTableColumns.map((column) => (
-                  <th key={column.id} className="py-3 pr-4">
+                  <th key={column.id} className="py-3 pr-4 text-left">
                     {column.label}
                   </th>
                 ))}
