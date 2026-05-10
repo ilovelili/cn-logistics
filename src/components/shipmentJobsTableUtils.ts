@@ -6,14 +6,24 @@ import {
   tradeModeLabels,
   transportModeLabels,
 } from "../lib/shipmentJobs";
+import type { CompanyUserAdminAssignment } from "../lib/companyUsers";
 import type { SortDirection } from "./SortableTableHeader";
 import type { ShipmentJobsTableSortKey } from "./ShipmentJobsTable";
 
-export function buildShipmentJobSearchText(job: ShipmentJob) {
+export interface ShipmentJobsCompanyOption {
+  company_name: string;
+  admin_assignments?: CompanyUserAdminAssignment[];
+}
+
+export function buildShipmentJobSearchText(
+  job: ShipmentJob,
+  responsibleAdminNames: string[] = [],
+) {
   return [
     job.id,
     formatShipmentJobShortId(job.id),
     job.company_name,
+    ...responsibleAdminNames,
     job.invoice_number,
     job.shipper_name,
     job.consignee_name,
@@ -38,12 +48,15 @@ export function buildShipmentJobSearchText(job: ShipmentJob) {
 export function getShipmentJobSortValue(
   job: ShipmentJob,
   sortKey: ShipmentJobsTableSortKey,
+  responsibleAdminNames: string[] = [],
 ) {
   switch (sortKey) {
     case "id":
       return job.id;
     case "company_name":
       return job.company_name ?? "";
+    case "responsible_admins":
+      return responsibleAdminNames.join(" ");
     case "status":
       return statusLabels[job.status];
     case "working_days":
@@ -138,6 +151,40 @@ export function getShipmentJobWorkingDays(job: ShipmentJob) {
   }
 
   return countWorkingDays(startDate, endDate);
+}
+
+export function getResponsibleAdminNames(
+  companyName: string | null,
+  companyOptions: ShipmentJobsCompanyOption[],
+) {
+  const company = companyOptions.find(
+    (option) => option.company_name === companyName,
+  );
+
+  return (
+    company?.admin_assignments
+      ?.map((assignment) => assignment.user_name || assignment.email)
+      .filter(Boolean) ?? []
+  );
+}
+
+export function getResponsibleAdminSearchTerms(
+  companyName: string | null,
+  companyOptions: ShipmentJobsCompanyOption[],
+) {
+  const company = companyOptions.find(
+    (option) => option.company_name === companyName,
+  );
+
+  return [
+    ...new Set(
+      company?.admin_assignments
+        ?.flatMap((assignment) => [
+          ...(assignment.user_name ? [assignment.user_name] : []),
+          assignment.email,
+        ]) ?? [],
+    ),
+  ];
 }
 
 function compareNonPinnedValues(

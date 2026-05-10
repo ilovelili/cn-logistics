@@ -16,10 +16,13 @@ import {
   buildShipmentJobDocumentsByJob,
   buildShipmentJobSearchText,
   compareShipmentJobSortValues,
+  getResponsibleAdminNames,
+  getResponsibleAdminSearchTerms,
   getShipmentJobSortValue,
 } from "../components/shipmentJobsTableUtils";
 import { SortDirection } from "../components/SortableTableHeader";
 import { t } from "../lib/i18n";
+import type { CompanyUser } from "../lib/companyUsers";
 import {
   createShipmentJob,
   documentApprovalClasses,
@@ -43,7 +46,7 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  companyNames?: string[];
+  companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   criteria?: ShipmentEntryCriteria;
   onRefresh: () => Promise<void>;
 }
@@ -51,7 +54,7 @@ interface ShipmentEntryFormProps {
 export default function ShipmentEntryForm({
   jobs,
   documents,
-  companyNames = [],
+  companyOptions = [],
   criteria = { kind: "all" },
   onRefresh,
 }: ShipmentEntryFormProps) {
@@ -73,6 +76,10 @@ export default function ShipmentEntryForm({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const companyNames = useMemo(
+    () => companyOptions.map((company) => company.company_name),
+    [companyOptions],
+  );
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -115,10 +122,14 @@ export default function ShipmentEntryForm({
       })
       .filter((job) => {
         if (!normalizedQuery) return true;
-        return buildShipmentJobSearchText(job).includes(normalizedQuery);
+        return buildShipmentJobSearchText(
+          job,
+          getResponsibleAdminSearchTerms(job.company_name, companyOptions),
+        ).includes(normalizedQuery);
       });
   }, [
     companyFilter,
+    companyOptions,
     criteria,
     documents,
     jobs,
@@ -133,13 +144,21 @@ export default function ShipmentEntryForm({
 
     return [...filteredJobs].sort((first, second) =>
       compareShipmentJobSortValues(
-        getShipmentJobSortValue(first, sortKey),
-        getShipmentJobSortValue(second, sortKey),
+        getShipmentJobSortValue(
+          first,
+          sortKey,
+          getResponsibleAdminNames(first.company_name, companyOptions),
+        ),
+        getShipmentJobSortValue(
+          second,
+          sortKey,
+          getResponsibleAdminNames(second.company_name, companyOptions),
+        ),
         sortDirection,
         sortKey,
       ),
     );
-  }, [filteredJobs, sortDirection, sortKey]);
+  }, [companyOptions, filteredJobs, sortDirection, sortKey]);
 
   const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
   const safeCurrentPage = Math.min(currentPage, pageCount);
@@ -380,6 +399,7 @@ export default function ShipmentEntryForm({
             visibleFrom={visibleFrom}
             visibleTo={visibleTo}
             adminTheme
+            companyOptions={companyOptions}
             onSort={handleSort}
             onSelectJob={setSelectedJob}
             onPageChange={setCurrentPage}
@@ -391,7 +411,7 @@ export default function ShipmentEntryForm({
             loading={loading}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
-            companyOptions={companyNames}
+            companyOptions={companyOptions}
             onApprove={(document) =>
               handleDocumentApproval(document, "approved")
             }
@@ -405,7 +425,7 @@ export default function ShipmentEntryForm({
       {mode === "create" && (
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
-            companyOptions={companyNames}
+            companyOptions={companyOptions}
             submitLabel={t("common.create")}
             loading={loading}
             onSubmit={handleCreate}
@@ -429,7 +449,7 @@ function AdminShipmentJobModal({
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
   loading: boolean;
-  companyOptions: string[];
+  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   onApprove: (document: ShipmentDocument) => void;

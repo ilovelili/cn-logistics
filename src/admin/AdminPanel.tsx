@@ -68,11 +68,16 @@ export default function AdminPanel({
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
   const isSuperAdmin = profileRole === "super_admin";
-  const companyNames = useMemo(
+  const shipmentCompanyOptions = useMemo(
     () =>
-      [...new Set(switchableUsers.map((user) => user.company_name))]
-        .filter(Boolean)
-        .sort((first, second) => first.localeCompare(second, "ja-JP")),
+      [...switchableUsers]
+        .sort((first, second) =>
+          first.company_name.localeCompare(second.company_name, "ja-JP"),
+        )
+        .map((user) => ({
+          company_name: user.company_name,
+          admin_assignments: user.admin_assignments,
+        })),
     [switchableUsers],
   );
 
@@ -310,7 +315,7 @@ export default function AdminPanel({
             <ShipmentEntryForm
               jobs={jobs}
               documents={documents}
-              companyNames={companyNames}
+              companyOptions={shipmentCompanyOptions}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />

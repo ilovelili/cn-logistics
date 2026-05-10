@@ -1,14 +1,38 @@
 import { supabase } from "./supabase";
 import type { CompanyUserAdminAssignment } from "./companyUsers";
+import type { TranslationKey } from "./i18n";
 
 export interface AdminOperator {
   id: string;
   email: string;
   user_name: string | null;
+  staff_role: AdminOperatorStaffRole;
   assigned_company_users?: AssignedCompanyUser[];
   created_at: string;
   updated_at: string;
 }
+
+export type AdminOperatorStaffRole =
+  | "sales"
+  | "customer_service"
+  | "operations"
+  | "other";
+
+export const adminOperatorStaffRoleOptions: {
+  value: AdminOperatorStaffRole;
+  labelKey: TranslationKey;
+}[] = [
+  { value: "sales", labelKey: "superAdmin.operators.staffRole.sales" },
+  {
+    value: "customer_service",
+    labelKey: "superAdmin.operators.staffRole.customer_service",
+  },
+  {
+    value: "operations",
+    labelKey: "superAdmin.operators.staffRole.operations",
+  },
+  { value: "other", labelKey: "superAdmin.operators.staffRole.other" },
+];
 
 export interface AssignedCompanyUser {
   id: string;
@@ -29,12 +53,14 @@ export interface AssignedCompanyUser {
 export interface AdminOperatorForm {
   email: string;
   user_name: string;
+  staff_role: AdminOperatorStaffRole;
   password: string;
 }
 
 export const defaultAdminOperatorForm: AdminOperatorForm = {
   email: "",
   user_name: "",
+  staff_role: "other",
   password: "12345",
 };
 
@@ -57,6 +83,7 @@ export async function createAdminOperator(
   const { error } = await supabase.rpc("create_admin_operator", {
     operator_email: form.email.trim(),
     operator_name: form.user_name.trim(),
+    operator_staff_role: form.staff_role,
     operator_password: form.password,
     super_admin_email: superAdminEmail,
   });

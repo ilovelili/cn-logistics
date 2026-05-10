@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Save, Search, Trash2, XCircle } from "lucide-react";
 import {
   AdminOperator,
+  AdminOperatorStaffRole,
   AssignedCompanyUser,
+  adminOperatorStaffRoleOptions,
   createAdminOperator,
   defaultAdminOperatorForm,
   deleteAdminOperator,
@@ -10,6 +12,7 @@ import {
 } from "../lib/adminOperators";
 import type { CompanyUser } from "../lib/companyUsers";
 import { t } from "../lib/i18n";
+import type { TranslationKey } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
@@ -19,7 +22,7 @@ interface AdminOperatorManagementProps {
   superAdminEmail: string;
 }
 
-type SortKey = "id" | "email" | "user_name" | "created_at";
+type SortKey = "id" | "email" | "user_name" | "staff_role" | "created_at";
 type SortDirection = "asc" | "desc";
 type OperatorColumnId = SortKey | "assigned_company_users" | "action";
 
@@ -29,6 +32,10 @@ interface OperatorTableColumn {
   width: number;
   sortKey?: SortKey;
   render: (operator: AdminOperator) => React.ReactNode;
+}
+
+function getStaffRoleLabelKey(role: AdminOperatorStaffRole): TranslationKey {
+  return `superAdmin.operators.staffRole.${role}` as TranslationKey;
 }
 
 export default function AdminOperatorManagement({
@@ -80,6 +87,7 @@ export default function AdminOperatorManagement({
         operator.id,
         operator.email,
         operator.user_name,
+        t(getStaffRoleLabelKey(operator.staff_role)),
         ...(operator.assigned_company_users ?? []).flatMap((companyUser) => [
           companyUser.company_name,
           companyUser.email,
@@ -193,6 +201,17 @@ export default function AdminOperatorManagement({
         ),
       },
       {
+        id: "staff_role",
+        label: t("superAdmin.operators.staffRole"),
+        width: 160,
+        sortKey: "staff_role",
+        render: (operator) => (
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            {t(getStaffRoleLabelKey(operator.staff_role))}
+          </span>
+        ),
+      },
+      {
         id: "created_at",
         label: t("admin.userRegistration.createdAt"),
         width: 120,
@@ -244,7 +263,7 @@ export default function AdminOperatorManagement({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "admin_operators_table_columns_v4",
+    "admin_operators_table_columns_v5",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -329,7 +348,7 @@ export default function AdminOperatorManagement({
           onSubmit={handleSubmit}
           className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
         >
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <FormField
               label={t("superAdmin.operators.email")}
               value={form.email}
@@ -342,6 +361,20 @@ export default function AdminOperatorManagement({
               value={form.user_name}
               required
               onChange={(value) => setForm({ ...form, user_name: value })}
+            />
+            <FormSelect
+              label={t("superAdmin.operators.staffRole")}
+              value={form.staff_role}
+              options={adminOperatorStaffRoleOptions.map((option) => ({
+                value: option.value,
+                label: t(option.labelKey),
+              }))}
+              onChange={(value) =>
+                setForm({
+                  ...form,
+                  staff_role: value as typeof form.staff_role,
+                })
+              }
             />
             <FormField
               label={t("superAdmin.operators.password")}
@@ -446,10 +479,7 @@ export default function AdminOperatorManagement({
                 sortedOperators.map((operator) => (
                   <tr key={operator.id}>
                     {visibleTableColumns.map((column) => (
-                      <td
-                        key={column.id}
-                        className="py-4 pr-4 text-left"
-                      >
+                      <td key={column.id} className="py-4 pr-4 text-left">
                         {column.render(operator)}
                       </td>
                     ))}
@@ -621,6 +651,39 @@ function FormField({
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
       />
+    </label>
+  );
+}
+
+function FormSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+        {label}
+        <span className="ml-1 text-rose-500">*</span>
+      </span>
+      <select
+        value={value}
+        required
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

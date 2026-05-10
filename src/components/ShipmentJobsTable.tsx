@@ -19,12 +19,15 @@ import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
   formatShipmentJobShortId,
+  getResponsibleAdminNames,
   getShipmentJobWorkingDays,
+  type ShipmentJobsCompanyOption,
 } from "./shipmentJobsTableUtils";
 
 export type ShipmentJobsTableSortKey =
   | "id"
   | "company_name"
+  | "responsible_admins"
   | "status"
   | "working_days"
   | "trade"
@@ -52,7 +55,7 @@ interface ShipmentJobsTableColumn {
   render: (job: ShipmentJob) => ReactNode;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v2";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v4";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -70,6 +73,7 @@ interface ShipmentJobsTableProps {
   visibleFrom: number;
   visibleTo: number;
   adminTheme?: boolean;
+  companyOptions?: ShipmentJobsCompanyOption[];
   onSort: (sortKey: ShipmentJobsTableSortKey) => void;
   onSelectJob: (job: ShipmentJob) => void;
   onPageChange: (page: number) => void;
@@ -92,14 +96,21 @@ export default function ShipmentJobsTable({
   visibleFrom,
   visibleTo,
   adminTheme = false,
+  companyOptions = [],
   onSort,
   onSelectJob,
   onPageChange,
   onPageSizeChange,
 }: ShipmentJobsTableProps) {
   const columns = useMemo(
-    () => buildColumns(documentsByJob, adminTheme, showInternalDocuments),
-    [adminTheme, documentsByJob, showInternalDocuments],
+    () =>
+      buildColumns(
+        documentsByJob,
+        adminTheme,
+        showInternalDocuments,
+        companyOptions,
+      ),
+    [adminTheme, companyOptions, documentsByJob, showInternalDocuments],
   );
   const {
     orderedColumns,
@@ -302,6 +313,7 @@ function buildColumns(
   documentsByJob: Record<string, ShipmentDocument[]>,
   adminTheme: boolean,
   showInternalDocuments: boolean,
+  companyOptions: ShipmentJobsCompanyOption[],
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
   const strongText = adminTheme
@@ -337,6 +349,24 @@ function buildColumns(
         </span>
       ),
     },
+    ...(companyOptions.length > 0
+      ? [
+          {
+            id: "responsible_admins" as const,
+            label: t("admin.userRegistration.contactPerson"),
+            width: 120,
+            sortKey: "responsible_admins" as const,
+            render: (job: ShipmentJob) => (
+              <ResponsibleAdminNames
+                names={getResponsibleAdminNames(
+                  job.company_name,
+                  companyOptions,
+                )}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       id: "status",
       label: t("common.status"),
@@ -570,6 +600,30 @@ function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
     <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
       {workingDays}営業日
     </span>
+  );
+}
+
+function ResponsibleAdminNames({
+  names,
+}: {
+  names: string[];
+}) {
+  if (names.length === 0) {
+    return <span className="text-slate-400">-</span>;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      {names.map((name) => (
+        <span
+          key={name}
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          title={name}
+        >
+          <span className="min-w-0 truncate">{name}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 

@@ -12,10 +12,11 @@ import {
   transportModeOptions,
   jobToForm,
 } from "../lib/shipmentJobs";
+import type { CompanyUser } from "../lib/companyUsers";
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
-  companyOptions?: string[];
+  companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   submitLabel: string;
   loading?: boolean;
   onCancel?: () => void;
@@ -60,6 +61,13 @@ export default function ShipmentJobForm({
     value: ShipmentJobFormState[Key],
   ) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateCompany = (companyName: string) => {
+    setForm((current) => ({
+      ...current,
+      company_name: companyName,
+    }));
   };
 
   const updateVesselFlightNumber = (index: number, value: string) => {
@@ -153,12 +161,12 @@ export default function ShipmentJobForm({
             label={t("common.companyName")}
             value={form.company_name}
             disabled={Boolean(job)}
-            onChange={(value) => updateField("company_name", value)}
+            onChange={updateCompany}
             options={[
               { value: "", label: t("form.selectCompany") },
-              ...companyOptions.map((companyName) => ({
-                value: companyName,
-                label: companyName,
+              ...companyOptions.map((company) => ({
+                value: company.company_name,
+                label: company.company_name,
               })),
             ]}
           />

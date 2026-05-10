@@ -98,7 +98,7 @@ const ja = {
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
-    "ID、会社名、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
+    "ID、会社名、担当者、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
   "jobs.filter.allCompanies": "すべての会社",
   "jobs.filter.allStatus": "すべてのステータス",
   "jobs.filter.allTrade": "すべての取引",
@@ -210,8 +210,7 @@ const ja = {
   "admin.userRegistration.dashboard": "登録会社一覧",
   "admin.userRegistration.newUser": "新規会社登録",
   "admin.userRegistration.noUsers": "登録済み会社はまだありません。",
-  "admin.userRegistration.noMatches":
-    "現在の条件に一致する会社はありません。",
+  "admin.userRegistration.noMatches": "現在の条件に一致する会社はありません。",
   "admin.userRegistration.count": "{count}件",
   "admin.userRegistration.searchPlaceholder":
     "ID、会社名、メール、郵便番号、住所、電話番号、担当者で検索...",
@@ -234,8 +233,7 @@ const ja = {
   "admin.userRegistration.addressSearching": "検索中...",
   "admin.userRegistration.zipcodeLookupFailed":
     "郵便番号から住所を取得できませんでした",
-  "admin.userRegistration.loadFailed":
-    "登録済み会社の読み込みに失敗しました",
+  "admin.userRegistration.loadFailed": "登録済み会社の読み込みに失敗しました",
   "admin.userRegistration.created": "会社を登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "会社登録に失敗しました",
   "admin.userRegistration.updateFailed": "会社情報の更新に失敗しました",
@@ -273,6 +271,11 @@ const ja = {
   "superAdmin.operators.list": "管理者一覧",
   "superAdmin.operators.email": "メールアドレス",
   "superAdmin.operators.name": "管理者名",
+  "superAdmin.operators.staffRole": "担当区分",
+  "superAdmin.operators.staffRole.sales": "営業",
+  "superAdmin.operators.staffRole.customer_service": "カスタマーサービス",
+  "superAdmin.operators.staffRole.operations": "オペレーション",
+  "superAdmin.operators.staffRole.other": "その他",
   "superAdmin.operators.assignedCompanies": "担当会社",
   "superAdmin.operators.password": "初期パスワード",
   "superAdmin.operators.noOperators": "管理者はまだ登録されていません。",
