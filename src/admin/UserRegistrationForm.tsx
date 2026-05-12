@@ -16,6 +16,7 @@ import {
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
+import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
@@ -371,34 +372,41 @@ export default function UserRegistrationForm({
                 />
               ),
             },
-            {
-              id: "action" as const,
-              label: t("admin.userRegistration.action"),
-              width: 17,
-              render: (user: CompanyUser) => (
-                <ApprovalButtons
-                  disabled={
-                    actionLoadingId === user.id ||
-                    user.approval_status !== "to_be_approved"
-                  }
-                  deleteDisabled={actionLoadingId === user.id}
-                  onApprove={(event) => {
-                    event.stopPropagation();
-                    setPendingAction({ user, action: "approve" });
-                  }}
-                  onReject={(event) => {
-                    event.stopPropagation();
-                    setPendingAction({ user, action: "reject" });
-                  }}
-                  onDelete={(event) => {
-                    event.stopPropagation();
-                    setPendingAction({ user, action: "delete" });
-                  }}
-                />
-              ),
-            },
           ]
         : []),
+      {
+        id: "action" as const,
+        label: t("admin.userRegistration.action"),
+        width: isSuperAdmin ? 23 : 8,
+        render: (user: CompanyUser) => (
+          <div className="flex flex-nowrap gap-1.5">
+            <TableActionButton
+              variant="primary"
+              onClick={() => setSelectedUser(user)}
+            >
+              {t("common.edit")}
+            </TableActionButton>
+            {isSuperAdmin && (
+              <ApprovalButtons
+                disabled={
+                  actionLoadingId === user.id ||
+                  user.approval_status !== "to_be_approved"
+                }
+                deleteDisabled={actionLoadingId === user.id}
+                onApprove={() => {
+                  setPendingAction({ user, action: "approve" });
+                }}
+                onReject={() => {
+                  setPendingAction({ user, action: "reject" });
+                }}
+                onDelete={() => {
+                  setPendingAction({ user, action: "delete" });
+                }}
+              />
+            )}
+          </div>
+        ),
+      },
     ];
 
     return userColumns;
@@ -586,15 +594,7 @@ export default function UserRegistrationForm({
                   {sortedUsers.map((user) => (
                     <tr
                       key={user.id}
-                      tabIndex={0}
-                      onClick={() => setSelectedUser(user)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          setSelectedUser(user);
-                        }
-                      }}
-                      className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none dark:border-gray-800 dark:hover:bg-gray-800/60 dark:focus:bg-gray-800/60"
+                      className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
                     >
                       {visibleTableColumns.map((column) => (
                         <td
@@ -1089,36 +1089,33 @@ function ApprovalButtons({
 }: {
   disabled: boolean;
   deleteDisabled: boolean;
-  onApprove: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onReject: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onDelete: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="flex flex-nowrap gap-1.5">
-      <button
-        type="button"
+      <TableActionButton
+        variant="success"
         disabled={disabled}
         onClick={onApprove}
-        className="whitespace-nowrap rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("admin.userRegistration.approve")}
-      </button>
-      <button
-        type="button"
+      </TableActionButton>
+      <TableActionButton
+        variant="warning"
         disabled={disabled}
         onClick={onReject}
-        className="whitespace-nowrap rounded-lg bg-amber-500 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("admin.userRegistration.unapprove")}
-      </button>
-      <button
-        type="button"
+      </TableActionButton>
+      <TableActionButton
+        variant="danger"
         disabled={deleteDisabled}
         onClick={onDelete}
-        className="whitespace-nowrap rounded-lg bg-rose-600 px-2.5 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t("common.delete")}
-      </button>
+      </TableActionButton>
     </div>
   );
 }

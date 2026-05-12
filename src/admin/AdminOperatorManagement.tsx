@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Save, Search, Trash2, XCircle } from "lucide-react";
+import { Plus, Save, Search, X, XCircle } from "lucide-react";
 import {
   AdminOperator,
   AdminOperatorStaffRole,
@@ -9,6 +9,7 @@ import {
   defaultAdminOperatorForm,
   deleteAdminOperator,
   fetchAdminOperators,
+  updateAdminOperator,
 } from "../lib/adminOperators";
 import {
   fetchCompanyUsersByAdmin,
@@ -18,6 +19,7 @@ import {
 import { t } from "../lib/i18n";
 import type { TranslationKey } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
+import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { UserDetailModal } from "./UserRegistrationForm";
@@ -55,8 +57,19 @@ export default function AdminOperatorManagement({
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminOperator | null>(null);
+  const [editTarget, setEditTarget] = useState<AdminOperator | null>(null);
+  const [editForm, setEditForm] = useState<{
+    user_name: string;
+    staff_role: AdminOperatorStaffRole;
+    company_user_ids: string[];
+  }>({
+    user_name: "",
+    staff_role: "other",
+    company_user_ids: [],
+  });
   const [selectedCompanyUser, setSelectedCompanyUser] =
     useState<CompanyUser | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
@@ -194,6 +207,73 @@ export default function AdminOperatorManagement({
     }
   };
 
+  const syncOperatorCompanyAssignments = async (
+    operatorId: string,
+    selectedCompanyUserIdsForOperator: string[],
+  ) => {
+    const selectedCompanyUserIdSet = new Set(selectedCompanyUserIdsForOperator);
+
+    await Promise.all(
+      companyUsers.map((companyUser) => {
+        const adminUserIds = new Set(
+          (companyUser.admin_assignments ?? []).map(
+            (assignment) => assignment.admin_user_id,
+          ),
+        );
+
+        if (selectedCompanyUserIdSet.has(companyUser.id)) {
+          adminUserIds.add(operatorId);
+        } else {
+          adminUserIds.delete(operatorId);
+        }
+
+        return updateCompanyUserAdminAssignments({
+          superAdminEmail,
+          userId: companyUser.id,
+          adminUserIds: [...adminUserIds],
+        });
+      }),
+    );
+  };
+
+  const openEditModal = (operator: AdminOperator) => {
+    setEditTarget(operator);
+    setEditForm({
+      user_name: operator.user_name ?? "",
+      staff_role: operator.staff_role,
+      company_user_ids: (operator.assigned_company_users ?? []).map(
+        (companyUser) => companyUser.id,
+      ),
+    });
+  };
+
+  const handleEditSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editTarget) return;
+
+    setEditSaving(true);
+    try {
+      await updateAdminOperator({
+        superAdminEmail,
+        operatorId: editTarget.id,
+        operatorName: editForm.user_name,
+        staffRole: editForm.staff_role,
+      });
+      await syncOperatorCompanyAssignments(
+        editTarget.id,
+        editForm.company_user_ids,
+      );
+      setEditTarget(null);
+      await loadCompanyUsers();
+      await loadOperators();
+      showToast("success", t("superAdmin.operators.updated"));
+    } catch {
+      showToast("error", t("superAdmin.operators.updateFailed"));
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
 
@@ -288,17 +368,23 @@ export default function AdminOperatorManagement({
       {
         id: "action",
         label: t("admin.userRegistration.action"),
-        width: 130,
+        width: 210,
         render: (operator) => (
-          <button
-            type="button"
-            disabled={deletingId === operator.id}
-            onClick={() => setDeleteTarget(operator)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-xs font-black text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("common.delete")}
-          </button>
+          <div className="flex items-center gap-2">
+            <TableActionButton
+              variant="success"
+              onClick={() => openEditModal(operator)}
+            >
+              {t("common.edit")}
+            </TableActionButton>
+            <TableActionButton
+              variant="danger"
+              disabled={deletingId === operator.id}
+              onClick={() => setDeleteTarget(operator)}
+            >
+              {t("common.delete")}
+            </TableActionButton>
+          </div>
         ),
       },
     ],
@@ -350,6 +436,18 @@ export default function AdminOperatorManagement({
           deleting={deletingId === deleteTarget.id}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => void handleDelete()}
+        />
+      )}
+
+      {editTarget && (
+        <EditOperatorModal
+          operator={editTarget}
+          form={editForm}
+          companyUsers={companyUsers}
+          saving={editSaving}
+          onChange={setEditForm}
+          onCancel={() => setEditTarget(null)}
+          onSubmit={handleEditSubmit}
         />
       )}
 
@@ -635,6 +733,118 @@ function toCompanyUser(companyUser: AssignedCompanyUser): CompanyUser {
     updated_at: companyUser.updated_at,
     admin_assignments: companyUser.admin_assignments ?? [],
   };
+}
+
+function EditOperatorModal({
+  operator,
+  form,
+  companyUsers,
+  saving,
+  onChange,
+  onCancel,
+  onSubmit,
+}: {
+  operator: AdminOperator;
+  form: {
+    user_name: string;
+    staff_role: AdminOperatorStaffRole;
+    company_user_ids: string[];
+  };
+  companyUsers: CompanyUser[];
+  saving: boolean;
+  onChange: (form: {
+    user_name: string;
+    staff_role: AdminOperatorStaffRole;
+    company_user_ids: string[];
+  }) => void;
+  onCancel: () => void;
+  onSubmit: (event: React.FormEvent) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900"
+      >
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">
+              {t("common.edit")}
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {operator.email}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onCancel}
+            className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField
+            label={t("superAdmin.operators.name")}
+            value={form.user_name}
+            required
+            onChange={(value) => onChange({ ...form, user_name: value })}
+          />
+          <FormSelect
+            label={t("superAdmin.operators.staffRole")}
+            value={form.staff_role}
+            options={adminOperatorStaffRoleOptions.map((option) => ({
+              value: option.value,
+              label: t(option.labelKey),
+            }))}
+            onChange={(value) =>
+              onChange({
+                ...form,
+                staff_role: value as AdminOperatorStaffRole,
+              })
+            }
+          />
+        </div>
+
+        <div className="mt-4">
+          <FormMultiSelect
+            label={t("superAdmin.operators.assignedCompanies")}
+            value={form.company_user_ids}
+            options={companyUsers.map((companyUser) => ({
+              value: companyUser.id,
+              label: companyUser.company_name,
+              description: companyUser.email,
+            }))}
+            emptyLabel={t("admin.userRegistration.noUsers")}
+            onChange={(companyUserIds) =>
+              onChange({ ...form, company_user_ids: companyUserIds })
+            }
+          />
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onCancel}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? t("common.saving") : t("common.save")}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 function ConfirmDeleteModal({

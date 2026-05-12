@@ -93,6 +93,29 @@ export async function createAdminOperator(
   }
 }
 
+export async function updateAdminOperator({
+  superAdminEmail,
+  operatorId,
+  operatorName,
+  staffRole,
+}: {
+  superAdminEmail: string;
+  operatorId: string;
+  operatorName: string;
+  staffRole: AdminOperatorStaffRole;
+}) {
+  const { error } = await supabase.rpc("update_admin_operator", {
+    super_admin_email: superAdminEmail,
+    target_operator_id: operatorId,
+    operator_name: operatorName.trim(),
+    operator_staff_role: staffRole,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function deleteAdminOperator({
   superAdminEmail,
   operatorId,
