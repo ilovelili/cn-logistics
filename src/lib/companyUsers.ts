@@ -37,6 +37,7 @@ export interface CompanyUserAdminAssignment {
   admin_user_id: string;
   email: string;
   user_name: string | null;
+  staff_role: "sales" | "customer_service" | "operations" | "other";
   created_at: string;
   updated_at: string;
 }

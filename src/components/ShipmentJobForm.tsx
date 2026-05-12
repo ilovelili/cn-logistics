@@ -64,9 +64,32 @@ export default function ShipmentJobForm({
   };
 
   const updateCompany = (companyName: string) => {
+    const selectedAdminAssignments = getCompanyAdminAssignments(
+      companyName,
+      companyOptions,
+    );
     setForm((current) => ({
       ...current,
       company_name: companyName,
+      assigned_admin_user_ids: selectedAdminAssignments.map(
+        (assignment) => assignment.admin_user_id,
+      ),
+    }));
+  };
+
+  const availableAdminAssignments = getCompanyAdminAssignments(
+    form.company_name,
+    companyOptions,
+  );
+
+  const toggleAssignedAdmin = (adminUserId: string) => {
+    setForm((current) => ({
+      ...current,
+      assigned_admin_user_ids: current.assigned_admin_user_ids.includes(
+        adminUserId,
+      )
+        ? current.assigned_admin_user_ids.filter((id) => id !== adminUserId)
+        : [...current.assigned_admin_user_ids, adminUserId],
     }));
   };
 
@@ -302,6 +325,12 @@ export default function ShipmentJobForm({
         placeholder={t("form.notesPlaceholder")}
       />
 
+      <AssignedAdminFields
+        assignments={availableAdminAssignments}
+        selectedAdminIds={form.assigned_admin_user_ids}
+        onToggle={toggleAssignedAdmin}
+      />
+
       <TrackingEventFields
         values={form.tracking_events}
         onAdd={addTrackingEvent}
@@ -342,6 +371,79 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
+}
+
+function AssignedAdminFields({
+  assignments,
+  selectedAdminIds,
+  onToggle,
+}: {
+  assignments: NonNullable<CompanyUser["admin_assignments"]>;
+  selectedAdminIds: string[];
+  onToggle: (adminUserId: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("admin.userRegistration.assignedAdmins")}
+        </span>
+      </div>
+      {assignments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+          {t("superAdmin.operators.noOperators")}
+        </div>
+      ) : (
+        <div className="grid gap-2 md:grid-cols-2">
+          {assignments.map((assignment) => (
+            <label
+              key={assignment.admin_user_id}
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-cyan-300 hover:bg-cyan-50/50"
+            >
+              <input
+                type="checkbox"
+                checked={selectedAdminIds.includes(assignment.admin_user_id)}
+                onChange={() => onToggle(assignment.admin_user_id)}
+                className="mt-1 h-4 w-4 rounded border-slate-300"
+              />
+              <span className="min-w-0">
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="min-w-0 truncate text-sm font-bold text-slate-900">
+                    {assignment.user_name || assignment.email}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
+                    {t(`superAdmin.operators.staffRole.${assignment.staff_role}`)}
+                  </span>
+                </span>
+                <span className="block truncate text-xs text-slate-500">
+                  {assignment.email}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getCompanyAdminAssignments(
+  companyName: string | null,
+  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[],
+) {
+  const assignmentsByAdminId = new Map<
+    string,
+    NonNullable<CompanyUser["admin_assignments"]>[number]
+  >();
+
+  companyOptions
+    .filter((company) => company.company_name === companyName)
+    .flatMap((company) => company.admin_assignments ?? [])
+    .forEach((assignment) => {
+      assignmentsByAdminId.set(assignment.admin_user_id, assignment);
+    });
+
+  return [...assignmentsByAdminId.values()];
 }
 
 function TrackingEventFields({

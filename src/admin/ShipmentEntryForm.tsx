@@ -124,7 +124,7 @@ export default function ShipmentEntryForm({
         if (!normalizedQuery) return true;
         return buildShipmentJobSearchText(
           job,
-          getResponsibleAdminSearchTerms(job.company_name, companyOptions),
+          getResponsibleAdminSearchTerms(job, companyOptions),
         ).includes(normalizedQuery);
       });
   }, [
@@ -147,12 +147,12 @@ export default function ShipmentEntryForm({
         getShipmentJobSortValue(
           first,
           sortKey,
-          getResponsibleAdminNames(first.company_name, companyOptions),
+          getResponsibleAdminNames(first, companyOptions),
         ),
         getShipmentJobSortValue(
           second,
           sortKey,
-          getResponsibleAdminNames(second.company_name, companyOptions),
+          getResponsibleAdminNames(second, companyOptions),
         ),
         sortDirection,
         sortKey,

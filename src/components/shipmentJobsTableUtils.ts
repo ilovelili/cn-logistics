@@ -17,13 +17,13 @@ export interface ShipmentJobsCompanyOption {
 
 export function buildShipmentJobSearchText(
   job: ShipmentJob,
-  responsibleAdminNames: string[] = [],
+  responsibleAdminTerms: string[] = [],
 ) {
   return [
     job.id,
     formatShipmentJobShortId(job.id),
     job.company_name,
-    ...responsibleAdminNames,
+    ...responsibleAdminTerms,
     job.invoice_number,
     job.shipper_name,
     job.consignee_name,
@@ -154,37 +154,64 @@ export function getShipmentJobWorkingDays(job: ShipmentJob) {
 }
 
 export function getResponsibleAdminNames(
-  companyName: string | null,
+  job: ShipmentJob,
   companyOptions: ShipmentJobsCompanyOption[],
 ) {
-  const company = companyOptions.find(
-    (option) => option.company_name === companyName,
-  );
-
-  return (
-    company?.admin_assignments
-      ?.map((assignment) => assignment.user_name || assignment.email)
-      .filter(Boolean) ?? []
-  );
+  return getResponsibleAdminAssignments(job, companyOptions)
+    .map((assignment) => assignment.user_name || assignment.email)
+    .filter(Boolean);
 }
 
 export function getResponsibleAdminSearchTerms(
+  job: ShipmentJob,
+  companyOptions: ShipmentJobsCompanyOption[],
+) {
+  return [
+    ...new Set(
+      getResponsibleAdminAssignments(job, companyOptions).flatMap(
+        (assignment) => [
+          ...(assignment.user_name ? [assignment.user_name] : []),
+          assignment.email,
+          assignment.staff_role,
+        ],
+      ),
+    ),
+  ];
+}
+
+function getResponsibleAdminAssignments(
+  job: ShipmentJob,
+  companyOptions: ShipmentJobsCompanyOption[],
+) {
+  const assignments = getCompanyAdminAssignments(
+    job.company_name,
+    companyOptions,
+  );
+
+  if ((job.assigned_admin_user_ids ?? []).length === 0) {
+    return assignments;
+  }
+
+  const selectedIds = new Set(job.assigned_admin_user_ids ?? []);
+  return assignments.filter((assignment) =>
+    selectedIds.has(assignment.admin_user_id),
+  );
+}
+
+function getCompanyAdminAssignments(
   companyName: string | null,
   companyOptions: ShipmentJobsCompanyOption[],
 ) {
-  const company = companyOptions.find(
-    (option) => option.company_name === companyName,
-  );
+  const assignmentsByAdminId = new Map<string, CompanyUserAdminAssignment>();
 
-  return [
-    ...new Set(
-      company?.admin_assignments
-        ?.flatMap((assignment) => [
-          ...(assignment.user_name ? [assignment.user_name] : []),
-          assignment.email,
-        ]) ?? [],
-    ),
-  ];
+  companyOptions
+    .filter((option) => option.company_name === companyName)
+    .flatMap((option) => option.admin_assignments ?? [])
+    .forEach((assignment) => {
+      assignmentsByAdminId.set(assignment.admin_user_id, assignment);
+    });
+
+  return [...assignmentsByAdminId.values()];
 }
 
 function compareNonPinnedValues(

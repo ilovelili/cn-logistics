@@ -27,6 +27,7 @@ export interface ShipmentJob {
   mbl_mawb: string | null;
   hbl_hawb: string | null;
   bl_awb_date: string | null;
+  assigned_admin_user_ids: string[];
   documents: string[];
   internal_documents: string[];
   notes: string | null;
@@ -93,6 +94,7 @@ export interface ShipmentJobForm {
   mbl_mawb: string;
   hbl_hawb: string;
   bl_awb_date: string;
+  assigned_admin_user_ids: string[];
   documents: string;
   internal_documents: string;
   document_files: File[];
@@ -178,6 +180,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   mbl_mawb: "",
   hbl_hawb: "",
   bl_awb_date: "",
+  assigned_admin_user_ids: [],
   documents: "",
   internal_documents: "",
   document_files: [],
@@ -216,6 +219,7 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     mbl_mawb: job.mbl_mawb ?? "",
     hbl_hawb: job.hbl_hawb ?? "",
     bl_awb_date: job.bl_awb_date ?? "",
+    assigned_admin_user_ids: job.assigned_admin_user_ids ?? [],
     documents: formatDocumentList(job.documents ?? []),
     internal_documents: formatDocumentList(job.internal_documents ?? []),
     document_files: [],
@@ -247,6 +251,7 @@ export function formToPayload(form: ShipmentJobForm) {
     mbl_mawb: form.mbl_mawb || null,
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
+    assigned_admin_user_ids: form.assigned_admin_user_ids,
     documents: getDocumentNames(form, "customer"),
     internal_documents: getDocumentNames(form, "internal"),
     notes: form.notes || null,

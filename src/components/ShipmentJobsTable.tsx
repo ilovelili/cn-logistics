@@ -358,10 +358,7 @@ function buildColumns(
             sortKey: "responsible_admins" as const,
             render: (job: ShipmentJob) => (
               <ResponsibleAdminNames
-                names={getResponsibleAdminNames(
-                  job.company_name,
-                  companyOptions,
-                )}
+                names={getResponsibleAdminNames(job, companyOptions)}
               />
             ),
           },
