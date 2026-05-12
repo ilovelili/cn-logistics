@@ -10,7 +10,11 @@ import {
   deleteAdminOperator,
   fetchAdminOperators,
 } from "../lib/adminOperators";
-import type { CompanyUser } from "../lib/companyUsers";
+import {
+  fetchCompanyUsersByAdmin,
+  updateCompanyUserAdminAssignments,
+  type CompanyUser,
+} from "../lib/companyUsers";
 import { t } from "../lib/i18n";
 import type { TranslationKey } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
@@ -42,8 +46,12 @@ export default function AdminOperatorManagement({
   superAdminEmail,
 }: AdminOperatorManagementProps) {
   const [operators, setOperators] = useState<AdminOperator[]>([]);
+  const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
   const [query, setQuery] = useState("");
   const [form, setForm] = useState(defaultAdminOperatorForm);
+  const [selectedCompanyUserIds, setSelectedCompanyUserIds] = useState<
+    string[]
+  >([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,6 +85,18 @@ export default function AdminOperatorManagement({
   useEffect(() => {
     void loadOperators();
   }, [loadOperators]);
+
+  const loadCompanyUsers = useCallback(async () => {
+    try {
+      setCompanyUsers(await fetchCompanyUsersByAdmin(superAdminEmail));
+    } catch {
+      setCompanyUsers([]);
+    }
+  }, [superAdminEmail]);
+
+  useEffect(() => {
+    void loadCompanyUsers();
+  }, [loadCompanyUsers]);
 
   const filteredOperators = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -133,8 +153,38 @@ export default function AdminOperatorManagement({
     setSaving(true);
     try {
       await createAdminOperator(form, superAdminEmail);
+      const updatedOperators = await fetchAdminOperators(superAdminEmail);
+      const createdOperator = updatedOperators.find(
+        (operator) =>
+          operator.email.toLowerCase() === form.email.trim().toLowerCase(),
+      );
+
+      if (createdOperator && selectedCompanyUserIds.length > 0) {
+        await Promise.all(
+          selectedCompanyUserIds.map((companyUserId) => {
+            const companyUser = companyUsers.find(
+              (currentCompanyUser) => currentCompanyUser.id === companyUserId,
+            );
+            const adminUserIds = new Set(
+              (companyUser?.admin_assignments ?? []).map(
+                (assignment) => assignment.admin_user_id,
+              ),
+            );
+            adminUserIds.add(createdOperator.id);
+
+            return updateCompanyUserAdminAssignments({
+              superAdminEmail,
+              userId: companyUserId,
+              adminUserIds: [...adminUserIds],
+            });
+          }),
+        );
+      }
+
       setForm(defaultAdminOperatorForm);
+      setSelectedCompanyUserIds([]);
       setShowForm(false);
+      await loadCompanyUsers();
       await loadOperators();
       showToast("success", t("superAdmin.operators.created"));
     } catch {
@@ -382,6 +432,19 @@ export default function AdminOperatorManagement({
               type="password"
               required
               onChange={(value) => setForm({ ...form, password: value })}
+            />
+          </div>
+          <div className="mt-4">
+            <FormMultiSelect
+              label={t("superAdmin.operators.assignedCompanies")}
+              value={selectedCompanyUserIds}
+              options={companyUsers.map((companyUser) => ({
+                value: companyUser.id,
+                label: companyUser.company_name,
+                description: companyUser.email,
+              }))}
+              emptyLabel={t("admin.userRegistration.noUsers")}
+              onChange={setSelectedCompanyUserIds}
             />
           </div>
           <div className="mt-5 flex justify-end">
@@ -685,5 +748,116 @@ function FormSelect({
         ))}
       </select>
     </label>
+  );
+}
+
+function FormMultiSelect({
+  label,
+  value,
+  options,
+  emptyLabel,
+  onChange,
+}: {
+  label: string;
+  value: string[];
+  options: { value: string; label: string; description?: string }[];
+  emptyLabel: string;
+  onChange: (value: string[]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = normalizedQuery
+    ? options.filter((option) =>
+        [option.label, option.description]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery),
+      )
+    : options;
+  const selectedValueSet = new Set(value);
+  const toggleValue = (nextValue: string) => {
+    onChange(
+      selectedValueSet.has(nextValue)
+        ? value.filter((currentValue) => currentValue !== nextValue)
+        : [...value, nextValue],
+    );
+  };
+
+  return (
+    <div>
+      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+        {label}
+      </span>
+      {options.length === 0 ? (
+        <div className="mt-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="mt-2 rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("admin.userRegistration.searchPlaceholder")}
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+            />
+          </div>
+          <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+            {filteredOptions.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                {t("admin.userRegistration.noMatches")}
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 transition hover:border-cyan-300 hover:bg-cyan-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/20"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedValueSet.has(option.value)}
+                    onChange={() => toggleValue(option.value)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-gray-900 dark:text-white">
+                      {option.label}
+                    </span>
+                    {option.description && (
+                      <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                        {option.description}
+                      </span>
+                    )}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          {value.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {value.map((selectedValue) => {
+                const selectedOption = options.find(
+                  (option) => option.value === selectedValue,
+                );
+                if (!selectedOption) return null;
+
+                return (
+                  <button
+                    key={selectedValue}
+                    type="button"
+                    onClick={() => toggleValue(selectedValue)}
+                    className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-900 transition hover:bg-cyan-200 dark:bg-cyan-950 dark:text-cyan-200 dark:hover:bg-cyan-900"
+                  >
+                    {selectedOption.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
