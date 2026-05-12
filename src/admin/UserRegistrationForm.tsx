@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle, Plus, Save, Search, X, XCircle } from "lucide-react";
-import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
+import {
+  AdminOperator,
+  AdminOperatorStaffRole,
+  fetchAdminOperators,
+} from "../lib/adminOperators";
 import {
   createCompanyUser,
   defaultCompanyUserForm,
@@ -20,6 +24,10 @@ import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
+
+function getStaffRoleLabel(role: AdminOperatorStaffRole) {
+  return t(`superAdmin.operators.staffRole.${role}`);
+}
 
 interface UserRegistrationFormProps {
   adminEmail: string;
@@ -938,8 +946,13 @@ export function UserDetailModal({
                       className="mt-1 h-4 w-4 rounded border-gray-300"
                     />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-gray-900 dark:text-white">
-                        {operator.user_name || operator.email}
+                      <span className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white">
+                          {operator.user_name || operator.email}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          {getStaffRoleLabel(operator.staff_role)}
+                        </span>
                       </span>
                       <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
                         {operator.email}
