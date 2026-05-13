@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertCircle, Check, Mail, Upload, UserRound, X } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  CheckCircle,
+  Mail,
+  Upload,
+  UserRound,
+  X,
+} from "lucide-react";
 import {
   AppUserProfile,
   fetchAppUserProfile,
@@ -26,6 +34,10 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
   const [cropZoom, setCropZoom] = useState(1);
   const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
   const [cropImageSize, setCropImageSize] = useState({ width: 0, height: 0 });
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [dragStart, setDragStart] = useState<{
     pointerId: number;
     x: number;
@@ -67,6 +79,11 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
   const avatarUrl = profile?.avatar_url;
   const displayEmail = profile?.email ?? email;
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const handleAvatarChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -182,8 +199,10 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       const nextProfile = await updateAppUserAvatar(displayEmail, publicUrl);
       setProfile(nextProfile);
       cancelCrop();
+      showToast("success", t("profile.updated"));
     } catch {
       setError(t("profile.uploadFailed"));
+      showToast("error", t("profile.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -402,6 +421,24 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       </button>
 
       {modal ? createPortal(modal, document.body) : null}
+      {toast &&
+        createPortal(
+          <div
+            className={`fixed right-6 top-6 z-[140] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+              toast.type === "success"
+                ? "bg-emerald-500 text-white"
+                : "bg-rose-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
+            {toast.message}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

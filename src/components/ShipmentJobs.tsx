@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Filter, Plus, Search, Star, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Filter, Plus, Search, Star, X } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import ShipmentJobsTable, {
@@ -76,6 +76,10 @@ export default function ShipmentJobs({
   const [feedbackByJob, setFeedbackByJob] = useState<
     Record<string, ShipmentFeedback>
   >({});
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -188,6 +192,11 @@ export default function ShipmentJobs({
     setFeedbackJob(job);
   };
 
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
   ) => {
@@ -198,6 +207,9 @@ export default function ShipmentJobs({
       await createShipmentJob(form);
       await onRefresh();
       setShowCreate(false);
+      showToast("success", t("admin.entry.created"));
+    } catch {
+      showToast("error", t("admin.entry.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -215,6 +227,23 @@ export default function ShipmentJobs({
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div
+          className={`fixed right-6 top-6 z-[120] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+            toast.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-rose-500 text-white"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -343,6 +372,7 @@ export default function ShipmentJobs({
 
             if (existingFeedbackByJob[jobId]) {
               setFeedbackByJob(existingFeedbackByJob);
+              showToast("error", t("feedback.alreadySubmitted"));
               return;
             }
 
@@ -360,6 +390,9 @@ export default function ShipmentJobs({
               ...currentFeedback,
               [jobId]: savedFeedback,
             }));
+            showToast("success", t("feedback.saved"));
+          } catch {
+            showToast("error", t("feedback.submitFailed"));
           } finally {
             setFeedbackSaving(false);
           }
@@ -435,13 +468,6 @@ function FeedbackModal({
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
   const isAlreadySubmitted = Boolean(initialFeedback);
-  const averageRating =
-    (ratings.attitudeRating +
-      ratings.professionalismRating +
-      ratings.speedRating +
-      ratings.accuracyRating +
-      ratings.priceRating) /
-    5;
   const isComplete = Object.values(ratings).every((rating) => rating > 0);
   const feedbackCategories = [
     {
@@ -518,19 +544,6 @@ function FeedbackModal({
           }}
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 text-amber-900">
-              <span className="text-sm font-black">
-                {t("feedback.summary")}
-              </span>
-              <span className="inline-flex items-center gap-1 text-sm font-black">
-                <Star className="h-4 w-4" fill="currentColor" />
-                {isComplete
-                  ? t("feedback.ratingValue", {
-                      rating: averageRating.toFixed(1),
-                    })
-                  : "-"}
-              </span>
-            </div>
             {feedbackCategories.map((category) => (
               <StarRatingInput
                 key={category.key}

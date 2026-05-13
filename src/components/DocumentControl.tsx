@@ -1,5 +1,7 @@
 import * as React from "react";
 import {
+  AlertCircle,
+  CheckCircle,
   Download,
   FileCheck2,
   FileClock,
@@ -76,6 +78,18 @@ export default function DocumentControl({
   const [requestingDocumentId, setRequestingDocumentId] = React.useState<
     string | null
   >(null);
+  const [toast, setToast] = React.useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const showToast = React.useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+      setTimeout(() => setToast(null), 4000);
+    },
+    [],
+  );
 
   React.useEffect(() => {
     if (!isAdminAuthenticated && scope === "internal") {
@@ -204,11 +218,14 @@ export default function DocumentControl({
       try {
         await updateShipmentDocumentApproval(document.id, "pending");
         await onRefresh();
+        showToast("success", t("documents.downloadRequested"));
+      } catch {
+        showToast("error", t("documents.downloadRequestFailed"));
       } finally {
         setRequestingDocumentId(null);
       }
     },
-    [onRefresh],
+    [onRefresh, showToast],
   );
 
   const columns = React.useMemo<DocumentColumn[]>(() => {
@@ -350,6 +367,23 @@ export default function DocumentControl({
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div
+          className={`fixed right-6 top-6 z-[120] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+            toast.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-rose-500 text-white"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
