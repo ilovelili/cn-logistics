@@ -572,15 +572,14 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
   const recentlyCompleted =
     job.status === "completed" && isWithinRecentBusinessDays(job.updated_at, 3);
   const staleCompleted = job.status === "completed" && !recentlyCompleted;
-  const activeStepCount =
-    job.status === "completed" ? 3 : job.status === "customs_hold" ? 2 : 1;
+  const activeStepCount = getShipmentProgressStepCount(job);
   const statusClass = staleCompleted
     ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
     : job.status === "completed"
       ? "border-emerald-200 bg-emerald-100 text-emerald-800"
       : job.status === "customs_hold"
         ? "border-amber-200 bg-amber-100 text-amber-800"
-        : "border-blue-200 bg-blue-100 text-blue-800";
+        : "border-orange-200 bg-orange-100 text-orange-800";
 
   return (
     <div className="min-w-[150px] space-y-2">
@@ -589,8 +588,12 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
       >
         {statusLabels[job.status]}
       </span>
-      <div className="grid grid-cols-3 gap-1" aria-hidden="true">
-        {[0, 1, 2].map((stepIndex) => (
+      <div
+        className="grid grid-cols-9 gap-0.5"
+        aria-label={t("common.status")}
+        title={`${activeStepCount}/9`}
+      >
+        {Array.from({ length: 9 }, (_, stepIndex) => (
           <span
             key={stepIndex}
             className={`h-1.5 rounded-full ${getProgressSegmentClass(
@@ -604,6 +607,27 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
       </div>
     </div>
   );
+}
+
+function getShipmentProgressStepCount(job: ShipmentJob) {
+  if (job.status === "completed") {
+    return 9;
+  }
+
+  const latestSortOrder = Math.max(
+    0,
+    ...(job.tracking_events ?? []).map((event) => event.sort_order ?? 0),
+  );
+
+  if (latestSortOrder > 0) {
+    return Math.max(1, Math.min(9, Math.ceil(latestSortOrder / 10)));
+  }
+
+  if (job.status === "customs_hold") {
+    return 7;
+  }
+
+  return 1;
 }
 
 function getProgressSegmentClass(
@@ -620,8 +644,8 @@ function getProgressSegmentClass(
     return "bg-emerald-500";
   }
 
-  if (status === "customs_hold" && stepIndex === 1) {
-    return "bg-amber-500";
+  if (stepIndex === activeStepCount - 1) {
+    return status === "customs_hold" ? "bg-amber-500" : "bg-orange-500";
   }
 
   return "bg-blue-500";
