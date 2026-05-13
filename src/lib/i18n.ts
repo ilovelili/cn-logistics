@@ -161,6 +161,17 @@ const ja = {
   "documents.downloadRequestApplied": "承認中",
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
+  "documents.batchTitle": "書類DL",
+  "documents.batchDescription":
+    "複数案件の顧客向け書類をまとめて選択し、ダウンロード承認を一括申請できます。",
+  "documents.batchSearchPlaceholder":
+    "インボイス、書類名、荷主、荷受人、BL/AWB、ルートで検索...",
+  "documents.batchSelected": "{count}件選択中",
+  "documents.batchSubmit": "選択した書類を申請",
+  "documents.batchRequested": "{count}件のダウンロード申請を登録しました",
+  "documents.batchRequestFailed": "一括ダウンロード申請に失敗しました",
+  "documents.selectAllVisible": "表示中の申請可能書類を選択",
+  "documents.clearSelection": "選択解除",
   "documents.downloadColumn": "DL",
   "documents.action": "操作",
   "documents.downloadLocked": "承認後にDL可能",

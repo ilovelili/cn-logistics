@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
+import BatchDocumentDownload from "./components/BatchDocumentDownload";
 import LoginPage from "./components/LoginPage";
 import ProfileButton from "./components/ProfileButton";
 import DocumentControl, {
@@ -175,13 +176,23 @@ function MainApp({
             documents={documents}
             loading={jobsLoading}
             profileEmail={profileEmail}
+            canManageShipments={
+              profileRole !== "normal" && isAdminAuthenticated
+            }
             onRefresh={loadJobs}
             statusFilter={jobsStatusFilter}
             onStatusFilterChange={setJobsStatusFilter}
           />
         );
       case "documents":
-        return (
+        return profileRole === "normal" ? (
+          <BatchDocumentDownload
+            jobs={jobs}
+            documents={documents}
+            loading={jobsLoading}
+            onRefresh={loadJobs}
+          />
+        ) : (
           <DocumentControl
             jobs={jobs}
             documents={documents}

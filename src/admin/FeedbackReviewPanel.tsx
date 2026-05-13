@@ -340,6 +340,7 @@ export default function FeedbackReviewPanel({
       <ShipmentJobDetailModal
         job={selectedJob}
         documents={selectedJobDocuments}
+        showInternalDocuments
         onClose={() => setSelectedShipmentJobId(null)}
       />
     </div>

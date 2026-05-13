@@ -6,7 +6,6 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { useAdminAuth } from "../admin/useAdminAuth";
 import { t } from "../lib/i18n";
 import {
   getShipmentFeedbackSummaryRating,
@@ -30,6 +29,7 @@ interface ShipmentJobDetailModalProps {
   documents: ShipmentDocument[];
   feedback?: ShipmentFeedback | null;
   feedbackLoading?: boolean;
+  showInternalDocuments?: boolean;
   onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
 }
@@ -39,11 +39,10 @@ export default function ShipmentJobDetailModal({
   documents,
   feedback,
   feedbackLoading = false,
+  showInternalDocuments = false,
   onOpenFeedback,
   onClose,
 }: ShipmentJobDetailModalProps) {
-  const { isAdminAuthenticated } = useAdminAuth();
-
   if (!job) {
     return null;
   }
@@ -190,7 +189,7 @@ export default function ShipmentJobDetailModal({
                 isCustomerDocumentDownloadable(document)
               }
             />
-            {isAdminAuthenticated && (
+            {showInternalDocuments && (
               <DocumentSection
                 title={t("common.internalDocuments")}
                 documents={internalDocuments}

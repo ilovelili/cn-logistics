@@ -14,7 +14,6 @@ import {
 } from "./shipmentJobsTableUtils";
 import { SortDirection } from "./SortableTableHeader";
 import { t } from "../lib/i18n";
-import { useAdminAuth } from "../admin/useAdminAuth";
 import {
   fetchShipmentFeedbackForUser,
   ShipmentFeedback,
@@ -45,6 +44,7 @@ interface ShipmentJobsProps {
   documents: ShipmentDocument[];
   loading: boolean;
   profileEmail: string;
+  canManageShipments?: boolean;
   onRefresh: () => Promise<void>;
   statusFilter: StatusFilter;
   onStatusFilterChange: (statusFilter: StatusFilter) => void;
@@ -55,11 +55,11 @@ export default function ShipmentJobs({
   documents,
   loading,
   profileEmail,
+  canManageShipments = false,
   onRefresh,
   statusFilter,
   onStatusFilterChange,
 }: ShipmentJobsProps) {
-  const { isAdminAuthenticated } = useAdminAuth();
   const [query, setQuery] = useState("");
   const [tradeFilter, setTradeFilter] = useState("all");
   const [transportFilter, setTransportFilter] = useState("all");
@@ -145,10 +145,10 @@ export default function ShipmentJobs({
   }, [currentPage, pageCount]);
 
   useEffect(() => {
-    if (!isAdminAuthenticated) {
+    if (!canManageShipments) {
       setShowCreate(false);
     }
-  }, [isAdminAuthenticated]);
+  }, [canManageShipments]);
 
   useEffect(() => {
     let active = true;
@@ -200,7 +200,7 @@ export default function ShipmentJobs({
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
   ) => {
-    if (!isAdminAuthenticated) return;
+    if (!canManageShipments) return;
 
     setSaving(true);
     try {
@@ -254,7 +254,7 @@ export default function ShipmentJobs({
               {t("jobs.description")}
             </p>
           </div>
-          {isAdminAuthenticated && (
+          {canManageShipments && (
             <button
               onClick={() => setShowCreate(true)}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
@@ -266,7 +266,7 @@ export default function ShipmentJobs({
         </div>
       </div>
 
-      {isAdminAuthenticated && showCreate && (
+      {canManageShipments && showCreate && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -329,7 +329,7 @@ export default function ShipmentJobs({
         paginatedJobs={paginatedJobs}
         documentsByJob={documentsByJob}
         loading={loading}
-        showInternalDocuments={isAdminAuthenticated}
+        showInternalDocuments={canManageShipments}
         sortKey={sortKey}
         sortDirection={sortDirection}
         currentPage={safeCurrentPage}
@@ -347,6 +347,7 @@ export default function ShipmentJobs({
         documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
         feedback={selectedJob ? feedbackByJob[selectedJob.id] : null}
         feedbackLoading={feedbackLoading}
+        showInternalDocuments={canManageShipments}
         onOpenFeedback={openFeedbackModal}
         onClose={() => setSelectedJob(null)}
       />
