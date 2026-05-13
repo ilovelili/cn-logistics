@@ -4,7 +4,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  ShipWheel,
   Star,
   Sun,
   LayoutDashboard,
@@ -39,6 +38,7 @@ interface AdminPanelProps {
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
+  switchedAccountName?: string;
   onSwitchToUser?: (
     email: string,
     role?: AppUserRole,
@@ -57,6 +57,7 @@ export default function AdminPanel({
   onToggleDark,
   profileEmail,
   profileRole,
+  switchedAccountName,
   onSwitchToUser,
   onBackToAdmin,
   onLogout,
@@ -222,7 +223,11 @@ export default function AdminPanel({
                       .map((operator) => (
                         <option
                           key={operator.id}
-                          value={`admin:${encodeURIComponent(operator.email)}`}
+                          value={`admin:${encodeURIComponent(
+                            operator.email,
+                          )}:${encodeURIComponent(
+                            operator.user_name || operator.email,
+                          )}`}
                         >
                           {operator.user_name || operator.email}
                         </option>
@@ -244,6 +249,22 @@ export default function AdminPanel({
                   </optgroup>
                 )}
               </select>
+            )}
+            {onBackToAdmin && (
+              <div className="hidden items-center gap-2 sm:flex">
+                <div className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900">
+                  {t("admin.switch.currentlySwitchedAs", {
+                    name: switchedAccountName?.trim() || profileEmail,
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={onBackToAdmin}
+                  className="rounded-full bg-slate-950 px-3 py-1.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+                >
+                  {t("superAdmin.switch.backToSuperAdmin")}
+                </button>
+              </div>
             )}
             <button
               onClick={onToggleDark}
@@ -298,18 +319,6 @@ export default function AdminPanel({
                 );
               })}
             </nav>
-            {onBackToAdmin && (
-              <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
-                <button
-                  type="button"
-                  onClick={onBackToAdmin}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                >
-                  <ShipWheel className="h-4 w-4" />
-                  {t("superAdmin.switch.backToSuperAdmin")}
-                </button>
-              </div>
-            )}
           </aside>
         )}
 

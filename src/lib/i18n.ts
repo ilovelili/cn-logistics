@@ -204,6 +204,7 @@ const ja = {
     "出荷案件、通関保留、書類対応状況を管理します。",
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
+  "admin.switch.currentlySwitchedAs": "{name} として表示中",
   "admin.nav.dashboard": "ダッシュボード",
   "admin.nav.shipmentEntry": "出荷案件管理",
   "admin.nav.userRegistration": "会社登録",
