@@ -167,10 +167,28 @@ export default function UserRegistrationForm({
     }
   };
 
+  const visibleUsers = useMemo(() => {
+    if (isSuperAdmin) {
+      return users;
+    }
+
+    const normalizedAdminEmail = adminEmail.trim().toLowerCase();
+    return users.filter((user) => {
+      if (user.created_by?.trim().toLowerCase() === normalizedAdminEmail) {
+        return true;
+      }
+
+      return (user.admin_assignments ?? []).some(
+        (assignment) =>
+          assignment.email.trim().toLowerCase() === normalizedAdminEmail,
+      );
+    });
+  }, [adminEmail, isSuperAdmin, users]);
+
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return users.filter((user) => {
+    return visibleUsers.filter((user) => {
       if (statusFilter !== "all" && user.approval_status !== statusFilter) {
         return false;
       }
@@ -195,7 +213,7 @@ export default function UserRegistrationForm({
         .toLowerCase()
         .includes(normalizedQuery);
     });
-  }, [query, statusFilter, users]);
+  }, [query, statusFilter, visibleUsers]);
 
   const sortedUsers = useMemo(() => {
     return [...filteredUsers].sort((a, b) => {
