@@ -53,6 +53,7 @@ const ja = {
   "common.reject": "却下",
   "common.edit": "編集",
   "common.delete": "削除",
+  "common.view": "表示",
   "common.loadingJobs": "案件を読み込み中...",
   "common.loadingDocuments": "書類を読み込み中...",
   "common.loadingFeedback": "評価を読み込み中...",
@@ -101,7 +102,7 @@ const ja = {
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
-    "ID、会社名、担当者、インボイス、荷主、荷受人、ルート、BL/AWB、書類で検索...",
+    "インボイス#、会社名、担当者、荷主、荷受人、POL/AOL、POD/AOD、BL/AWB、書類で検索...",
   "jobs.filter.allCompanies": "すべての会社",
   "jobs.filter.allStatus": "すべてのステータス",
   "jobs.filter.allTrade": "すべての取引",
@@ -146,19 +147,21 @@ const ja = {
   "documents.customer": "顧客向け",
   "documents.internal": "社内",
   "documents.onHold": "保留中",
-  "documents.pendingApproval": "承認待ち",
+  "documents.pendingApproval": "書類DL承認待ち",
   "documents.approvedDownloads": "書類DL承認済み",
-  "documents.searchPlaceholder":
-    "ID、書類、インボイス、荷主、荷受人、MBL/MAWB、HBL/HAWBで検索...",
+  "documents.searchPlaceholder": "書類名、会社名、インボイス#で検索...",
   "documents.filter.all": "すべての書類",
   "documents.filter.customer": "顧客向け書類",
   "documents.filter.internal": "社内書類",
+  "documents.filter.allApproval": "すべての承認状態",
   "documents.register": "書類台帳",
   "documents.count": "追跡中の書類 {count}件",
   "documents.scope": "区分",
   "documents.approval": "承認状態",
   "documents.downloadRequest": "DL申請",
   "documents.adminReview": "承認操作",
+  "documents.downloadRequestDate": "DL承認申請日",
+  "documents.preview": "書類プレビュー",
   "documents.downloadRequestApplied": "承認中",
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
@@ -166,7 +169,7 @@ const ja = {
   "documents.batchDescription":
     "複数案件の顧客向け書類をまとめて選択し、ダウンロード承認を一括申請できます。",
   "documents.batchSearchPlaceholder":
-    "インボイス、書類名、荷主、荷受人、BL/AWB、ルートで検索...",
+    "インボイス#、書類名、荷主、荷受人、POL/AOL、POD/AOD、BL/AWBで検索...",
   "documents.batchSelected": "{count}件選択中",
   "documents.batchSubmit": "選択した書類を申請",
   "documents.batchRequested": "{count}件のダウンロード申請を登録しました",
@@ -200,7 +203,7 @@ const ja = {
   "form.notesPlaceholder": "運用メモ、顧客要望、通関状況など",
   "form.addVesselFlight": "追加",
 
-  "admin.dashboard": "管理ダッシュボード",
+  "admin.dashboard": "ダッシュボード",
   "admin.dashboardDescription":
     "出荷案件、通関保留、書類対応状況を管理します。",
   "admin.switch.selectUser": "ユーザーに切替",
@@ -237,7 +240,7 @@ const ja = {
   "admin.userRegistration.noMatches": "現在の条件に一致する会社はありません。",
   "admin.userRegistration.count": "{count}件",
   "admin.userRegistration.searchPlaceholder":
-    "ID、会社名、メール、郵便番号、住所、電話番号、担当者で検索...",
+    "会社名、メール、担当管理者で検索...",
   "admin.userRegistration.email": "メールアドレス",
   "admin.userRegistration.companyName": "会社名",
   "admin.userRegistration.zipcode": "郵便番号",
@@ -303,7 +306,8 @@ const ja = {
   "superAdmin.operators.assignedCompanies": "担当会社",
   "superAdmin.operators.password": "初期パスワード",
   "superAdmin.operators.noOperators": "管理者はまだ登録されていません。",
-  "superAdmin.operators.searchPlaceholder": "ID、メール、管理者名で検索...",
+  "superAdmin.operators.searchPlaceholder":
+    "メール、管理者名、担当区分、担当会社で検索...",
   "superAdmin.operators.loadFailed": "管理者一覧の読み込みに失敗しました",
   "superAdmin.operators.created": "管理者を登録しました",
   "superAdmin.operators.createFailed": "管理者登録に失敗しました",
@@ -323,7 +327,7 @@ const ja = {
   "superAdmin.feedback.submitter": "評価者",
   "superAdmin.feedback.noFeedback": "評価はまだありません。",
   "superAdmin.feedback.searchPlaceholder":
-    "案件、管理者、評価者、理由で検索...",
+    "インボイス#、担当者、評価者、理由で検索...",
 
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",

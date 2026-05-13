@@ -3,10 +3,12 @@ import {
   AlertCircle,
   CheckCircle,
   Download,
+  Eye,
   FileCheck2,
   FileClock,
   LockKeyhole,
   Search,
+  X,
 } from "lucide-react";
 import { t } from "../lib/i18n";
 import {
@@ -43,16 +45,18 @@ interface DocumentRow {
 type DocumentSortKey =
   | "id"
   | "scope"
+  | "company"
   | "document"
   | "approval"
   | "status"
+  | "downloadRequestDate"
   | "invoice"
   | "parties"
   | "blAwb"
   | "route";
 type SortDirection = "asc" | "desc";
 type DocumentColumnId = DocumentSortKey;
-export type DocumentApprovalFilter = "all" | "approved";
+export type DocumentApprovalFilter = "all" | DocumentApprovalStatus;
 
 interface DocumentColumn {
   id: DocumentColumnId;
@@ -73,6 +77,8 @@ export default function DocumentControl({
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
   const [scope, setScope] = React.useState("all");
+  const [selectedApprovalFilter, setSelectedApprovalFilter] =
+    React.useState<DocumentApprovalFilter>(approvalFilter);
   const [sortKey, setSortKey] = React.useState<DocumentSortKey | null>(null);
   const [sortDirection, setSortDirection] =
     React.useState<SortDirection>("asc");
@@ -81,6 +87,8 @@ export default function DocumentControl({
   const [requestingDocumentId, setRequestingDocumentId] = React.useState<
     string | null
   >(null);
+  const [previewDocument, setPreviewDocument] =
+    React.useState<ShipmentDocument | null>(null);
   const [toast, setToast] = React.useState<{
     type: "success" | "error";
     message: string;
@@ -93,6 +101,10 @@ export default function DocumentControl({
     },
     [],
   );
+
+  React.useEffect(() => {
+    setSelectedApprovalFilter(approvalFilter);
+  }, [approvalFilter]);
 
   React.useEffect(() => {
     if (!isAdminAuthenticated && scope === "internal") {
@@ -159,11 +171,11 @@ export default function DocumentControl({
       return (
         (!normalizedQuery || haystack.includes(normalizedQuery)) &&
         (scope === "all" || row.document.scope === scope) &&
-        (approvalFilter === "all" ||
-          row.document.approval_status === approvalFilter)
+        (selectedApprovalFilter === "all" ||
+          row.document.approval_status === selectedApprovalFilter)
       );
     });
-  }, [approvalFilter, query, rows, scope]);
+  }, [query, rows, scope, selectedApprovalFilter]);
 
   const sortedRows = React.useMemo(() => {
     if (!sortKey) return filteredRows;
@@ -190,10 +202,10 @@ export default function DocumentControl({
   React.useEffect(() => {
     setCurrentPage(1);
   }, [
-    approvalFilter,
     pageSize,
     query,
     scope,
+    selectedApprovalFilter,
     sortDirection,
     sortKey,
     isAdminAuthenticated,
@@ -269,11 +281,26 @@ export default function DocumentControl({
         width: isAdminAuthenticated ? 180 : 220,
         sortKey: "document",
         render: (row) => (
-          <span className="font-semibold text-slate-950">
+          <span className="font-semibold text-gray-900 dark:text-white">
             {row.document.name}
           </span>
         ),
       },
+      ...(isAdminAuthenticated
+        ? [
+            {
+              id: "company" as const,
+              label: t("common.companyName"),
+              width: 190,
+              sortKey: "company" as const,
+              render: (row: DocumentRow) => (
+                <span className="font-semibold text-gray-700 dark:text-gray-200">
+                  {row.job.company_name || "-"}
+                </span>
+              ),
+            },
+          ]
+        : []),
       {
         id: "status",
         label: t("common.status"),
@@ -288,6 +315,19 @@ export default function DocumentControl({
         ),
       },
       {
+        id: "downloadRequestDate",
+        label: t("documents.downloadRequestDate"),
+        width: 150,
+        sortKey: "downloadRequestDate",
+        render: (row) => (
+          <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
+            {row.document.approval_status === "pending"
+              ? formatDocumentDate(row.document.updated_at)
+              : "-"}
+          </span>
+        ),
+      },
+      {
         id: "invoice",
         label: t("common.invoice"),
         width: 130,
@@ -296,45 +336,50 @@ export default function DocumentControl({
           <span className="font-mono">{row.job.invoice_number || "-"}</span>
         ),
       },
-      {
-        id: "parties",
-        label: t("common.parties"),
-        width: isAdminAuthenticated ? 220 : 240,
-        sortKey: "parties",
-        render: (row) => (
-          <>
-            {row.job.shipper_name || "-"} / {row.job.consignee_name || "-"}
-          </>
-        ),
-      },
-      {
-        id: "blAwb",
-        label: "BL/AWB",
-        width: 180,
-        sortKey: "blAwb",
-        render: (row) => (
-          <span className="font-mono text-xs">
-            {row.job.mbl_mawb || "-"} / {row.job.hbl_hawb || "-"}
-          </span>
-        ),
-      },
-      {
-        id: "route",
-        label: t("common.route"),
-        width: 180,
-        sortKey: "route",
-        render: (row) => (
-          <>
-            {row.job.pol_aol || "-"} → {row.job.pod_aod || "-"}
-          </>
-        ),
-      },
+      ...(!isAdminAuthenticated
+        ? [
+            {
+              id: "parties" as const,
+              label: t("common.parties"),
+              width: 240,
+              sortKey: "parties" as const,
+              render: (row: DocumentRow) => (
+                <>
+                  {row.job.shipper_name || "-"} /{" "}
+                  {row.job.consignee_name || "-"}
+                </>
+              ),
+            },
+            {
+              id: "blAwb" as const,
+              label: "BL/AWB",
+              width: 180,
+              sortKey: "blAwb" as const,
+              render: (row: DocumentRow) => (
+                <span className="font-mono text-xs">
+                  {row.job.mbl_mawb || "-"} / {row.job.hbl_hawb || "-"}
+                </span>
+              ),
+            },
+            {
+              id: "route" as const,
+              label: t("common.route"),
+              width: 180,
+              sortKey: "route" as const,
+              render: (row: DocumentRow) => (
+                <>
+                  {row.job.pol_aol || "-"} → {row.job.pod_aod || "-"}
+                </>
+              ),
+            },
+          ]
+        : []),
       {
         id: "approval",
         label: isAdminAuthenticated
           ? t("documents.adminReview")
           : t("documents.downloadRequest"),
-        width: 160,
+        width: isAdminAuthenticated ? 250 : 160,
         sortKey: "approval",
         render: (row) => (
           <DocumentActionButton
@@ -343,6 +388,7 @@ export default function DocumentControl({
             requesting={requestingDocumentId === row.document.id}
             onRequest={handleDownloadRequest}
             onReview={handleAdminApproval}
+            onPreview={setPreviewDocument}
           />
         ),
       },
@@ -406,6 +452,7 @@ export default function DocumentControl({
     (total, column) => total + column.width,
     0,
   );
+  const isAdminStyle = isAdminAuthenticated;
 
   return (
     <div className="space-y-6">
@@ -426,55 +473,130 @@ export default function DocumentControl({
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <div
+        className={
+          isAdminStyle
+            ? "rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+            : "rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+        }
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-black text-slate-950">
+            <h1
+              className={
+                isAdminStyle
+                  ? "text-2xl font-bold text-gray-900 dark:text-white"
+                  : "text-3xl font-black text-slate-950"
+              }
+            >
               {t("documents.title")}
             </h1>
-            <p className="mt-1 max-w-3xl text-slate-500">
-              {t("documents.description")}
-            </p>
           </div>
         </div>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section
+        className={
+          isAdminStyle
+            ? "rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+            : "rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+        }
+      >
         <div
           className={`grid grid-cols-1 gap-3 ${
-            isAdminAuthenticated ? "md:grid-cols-[1fr_220px]" : ""
+            isAdminAuthenticated ? "md:grid-cols-[1fr_220px_220px]" : ""
           }`}
         >
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search
+              className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
+                isAdminStyle ? "text-gray-400" : "text-slate-400"
+              }`}
+            />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("documents.searchPlaceholder")}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+              className={
+                isAdminStyle
+                  ? "w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
+                  : "w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+              }
             />
           </div>
           {isAdminAuthenticated && (
-            <select
-              value={scope}
-              onChange={(event) => setScope(event.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
-            >
-              <option value="all">{t("documents.filter.all")}</option>
-              <option value="customer">{t("documents.filter.customer")}</option>
-              <option value="internal">{t("documents.filter.internal")}</option>
-            </select>
+            <>
+              <select
+                value={scope}
+                onChange={(event) => setScope(event.target.value)}
+                className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
+              >
+                <option value="all">{t("documents.filter.all")}</option>
+                <option value="customer">
+                  {t("documents.filter.customer")}
+                </option>
+                <option value="internal">
+                  {t("documents.filter.internal")}
+                </option>
+              </select>
+              <select
+                value={selectedApprovalFilter}
+                onChange={(event) =>
+                  setSelectedApprovalFilter(
+                    event.target.value as DocumentApprovalFilter,
+                  )
+                }
+                className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
+              >
+                <option value="all">
+                  {t("documents.filter.allApproval")}
+                </option>
+                <option value="pending">
+                  {t("documents.approval.pending")}
+                </option>
+                <option value="approved">
+                  {t("documents.approval.approved")}
+                </option>
+                <option value="rejected">
+                  {t("documents.approval.rejected")}
+                </option>
+              </select>
+            </>
           )}
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+      <section
+        className={
+          isAdminStyle
+            ? "overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+            : "overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+        }
+      >
+        <div
+          className={
+            isAdminStyle
+              ? "flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800"
+              : "flex items-center justify-between border-b border-slate-200 px-5 py-4"
+          }
+        >
           <div>
-            <h2 className="font-black text-slate-950">
+            <h2
+              className={
+                isAdminStyle
+                  ? "font-bold text-gray-900 dark:text-white"
+                  : "font-black text-slate-950"
+              }
+            >
               {t("documents.register")}
             </h2>
-            <p className="text-sm text-slate-500">
+            <p
+              className={
+                isAdminStyle
+                  ? "text-sm text-gray-500 dark:text-gray-400"
+                  : "text-sm text-slate-500"
+              }
+            >
               {t("documents.count", { count: sortedRows.length })}
             </p>
           </div>
@@ -496,9 +618,21 @@ export default function DocumentControl({
                 <col key={column.id} style={{ width: `${column.width}px` }} />
               ))}
             </colgroup>
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
-              <tr>
-                {visibleTableColumns.map((column) => (
+            <thead
+              className={
+                isAdminStyle
+                  ? "text-xs uppercase text-gray-500 dark:text-gray-400"
+                  : "bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500"
+              }
+            >
+              <tr
+                className={
+                  isAdminStyle
+                    ? "border-b border-gray-200 dark:border-gray-800"
+                    : undefined
+                }
+              >
+                {visibleTableColumns.map((column, columnIndex) => (
                   <SortableTableHeader
                     key={column.id}
                     label={column.label}
@@ -506,16 +640,51 @@ export default function DocumentControl({
                     activeSortKey={sortKey}
                     direction={sortDirection}
                     onSort={handleSort}
-                    className="whitespace-nowrap px-5 py-3"
+                    className={
+                      isAdminStyle
+                        ? `whitespace-nowrap py-3 pr-4 font-bold ${
+                            columnIndex === 0 ? "pl-5" : ""
+                          }`
+                        : "whitespace-nowrap px-5 py-3"
+                    }
+                    buttonClassName={
+                      isAdminStyle
+                        ? "inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                        : undefined
+                    }
+                    activeClassName={
+                      isAdminStyle ? "text-gray-900 dark:text-white" : undefined
+                    }
+                    inactiveClassName={
+                      isAdminStyle
+                        ? "text-gray-500 dark:text-gray-400"
+                        : undefined
+                    }
                   />
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className={isAdminStyle ? "" : "divide-y divide-slate-100"}>
               {paginatedRows.map((row) => (
-                <tr key={row.id} className="transition hover:bg-slate-50/80">
-                  {visibleTableColumns.map((column) => (
-                    <td key={column.id} className="px-5 py-4">
+                <tr
+                  key={row.id}
+                  className={
+                    isAdminStyle
+                      ? "border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
+                      : "transition hover:bg-slate-50/80"
+                  }
+                >
+                  {visibleTableColumns.map((column, columnIndex) => (
+                    <td
+                      key={column.id}
+                      className={
+                        isAdminStyle
+                          ? `overflow-hidden py-4 pr-4 text-gray-700 dark:text-gray-300 ${
+                              columnIndex === 0 ? "pl-5" : ""
+                            }`
+                          : "px-5 py-4"
+                      }
+                    >
                       {column.render(row)}
                     </td>
                   ))}
@@ -524,13 +693,25 @@ export default function DocumentControl({
             </tbody>
           </table>
           {!loading && sortedRows.length === 0 && (
-            <div className="py-16 text-center text-slate-500">
+            <div
+              className={
+                isAdminStyle
+                  ? "py-16 text-center text-gray-500 dark:text-gray-400"
+                  : "py-16 text-center text-slate-500"
+              }
+            >
               <FileClock className="mx-auto mb-3 h-8 w-8" />
               {t("documents.noMatches")}
             </div>
           )}
           {loading && (
-            <div className="py-16 text-center text-slate-500">
+            <div
+              className={
+                isAdminStyle
+                  ? "py-16 text-center text-gray-500 dark:text-gray-400"
+                  : "py-16 text-center text-slate-500"
+              }
+            >
               {t("common.loadingDocuments")}
             </div>
           )}
@@ -546,6 +727,57 @@ export default function DocumentControl({
           onPageSizeChange={setPageSize}
         />
       </section>
+      {previewDocument && (
+        <DocumentPreviewModal
+          document={previewDocument}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function DocumentPreviewModal({
+  document,
+  onClose,
+}: {
+  document: ShipmentDocument;
+  onClose: () => void;
+}) {
+  const previewUrl = document.file_url || "/sample-document.pdf";
+
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("documents.preview")}
+    >
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div className="min-w-0">
+            <h3 className="truncate text-xl font-black text-slate-950">
+              {document.name}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {t("documents.preview")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label={t("jobs.detail.close")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <iframe
+          title={document.name}
+          src={previewUrl}
+          className="h-[72vh] w-full bg-slate-100"
+        />
+      </div>
     </div>
   );
 }
@@ -556,6 +788,7 @@ function DocumentActionButton({
   requesting,
   onRequest,
   onReview,
+  onPreview,
 }: {
   row: DocumentRow;
   isAdminAuthenticated: boolean;
@@ -565,6 +798,7 @@ function DocumentActionButton({
     document: ShipmentDocument,
     approvalStatus: Extract<DocumentApprovalStatus, "approved" | "rejected">,
   ) => Promise<void>;
+  onPreview: (document: ShipmentDocument) => void;
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
@@ -572,6 +806,7 @@ function DocumentActionButton({
     isAdminAuthenticated &&
     isCustomerDocument &&
     document.approval_status === "pending";
+  const canPreview = isAdminAuthenticated && !canReview;
   const canDownload = isCustomerDocumentDownloadable(document);
   const canRequest =
     isCustomerDocument &&
@@ -594,25 +829,38 @@ function DocumentActionButton({
     }
   };
 
-  if (canReview) {
+  if (canReview || canPreview) {
     return (
       <div className="flex items-center gap-2">
         <button
           type="button"
           disabled={requesting}
-          onClick={() => void onReview(document, "approved")}
-          className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+          onClick={() => onPreview(document)}
+          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
         >
-          {requesting ? t("common.saving") : t("common.approve")}
+          <Eye className="h-3.5 w-3.5" />
+          {t("common.view")}
         </button>
-        <button
-          type="button"
-          disabled={requesting}
-          onClick={() => void onReview(document, "rejected")}
-          className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-wait disabled:opacity-60"
-        >
-          {t("common.reject")}
-        </button>
+        {canReview && (
+          <>
+            <button
+              type="button"
+              disabled={requesting}
+              onClick={() => void onReview(document, "approved")}
+              className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {requesting ? t("common.saving") : t("common.approve")}
+            </button>
+            <button
+              type="button"
+              disabled={requesting}
+              onClick={() => void onReview(document, "rejected")}
+              className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {t("common.reject")}
+            </button>
+          </>
+        )}
       </div>
     );
   }
@@ -661,10 +909,16 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
         : t("documents.customer");
     case "document":
       return row.document.name;
+    case "company":
+      return row.job.company_name ?? "";
     case "approval":
       return getDocumentApprovalSortValue(row.document);
     case "status":
       return statusLabels[row.job.status];
+    case "downloadRequestDate":
+      return row.document.approval_status === "pending"
+        ? row.document.updated_at
+        : "";
     case "invoice":
       return row.job.invoice_number ?? "";
     case "parties":
@@ -678,6 +932,12 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
 
 function formatShortId(id: string) {
   return id.slice(0, 8).toUpperCase();
+}
+
+function formatDocumentDate(value: string | null) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleDateString("ja-JP");
 }
 
 function getDocumentApprovalSortValue(document: ShipmentDocument) {

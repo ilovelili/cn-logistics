@@ -17,7 +17,9 @@ import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
-import DocumentControl from "../components/DocumentControl";
+import DocumentControl, {
+  DocumentApprovalFilter,
+} from "../components/DocumentControl";
 import ProfileButton from "../components/ProfileButton";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
@@ -75,6 +77,8 @@ export default function AdminPanel({
   >([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
+  const [documentApprovalFilter, setDocumentApprovalFilter] =
+    useState<DocumentApprovalFilter>("all");
   const isSuperAdmin = profileRole === "super_admin";
   const shipmentCompanyOptions = useMemo(
     () =>
@@ -91,6 +95,7 @@ export default function AdminPanel({
   useEffect(() => {
     setView("dashboard");
     setShipmentEntryCriteria({ kind: "all" });
+    setDocumentApprovalFilter("all");
   }, [profileEmail, profileRole]);
 
   useEffect(() => {
@@ -312,6 +317,9 @@ export default function AdminPanel({
                       if (item.id === "shipmentEntry") {
                         setShipmentEntryCriteria({ kind: "all" });
                       }
+                      if (item.id === "documents") {
+                        setDocumentApprovalFilter("all");
+                      }
                       setView(item.id);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -339,6 +347,10 @@ export default function AdminPanel({
                 setShipmentEntryCriteria(criteria);
                 setView("shipmentEntry");
               }}
+              onOpenDocuments={(approvalFilter) => {
+                setDocumentApprovalFilter(approvalFilter);
+                setView("documents");
+              }}
             />
           )}
           {view === "shipmentEntry" && (
@@ -359,7 +371,7 @@ export default function AdminPanel({
               onRefresh={onRefreshJobs}
               isAdminAuthenticated={isAdminAuthenticated}
               requesterEmail={profileEmail}
-              approvalFilter="all"
+              approvalFilter={documentApprovalFilter}
             />
           )}
           {view === "userRegistration" && (
