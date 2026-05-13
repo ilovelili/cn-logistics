@@ -39,7 +39,11 @@ interface AdminPanelProps {
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
-  onSwitchToUser?: (email: string, role?: AppUserRole) => void;
+  onSwitchToUser?: (
+    email: string,
+    role?: AppUserRole,
+    companyName?: string | null,
+  ) => void;
   onBackToAdmin?: () => void;
   onLogout?: () => void;
   onRefreshJobs: () => Promise<void>;
@@ -195,8 +199,13 @@ export default function AdminPanel({
                 value=""
                 onChange={(event) => {
                   if (event.target.value) {
-                    const [role, email] = event.target.value.split(":");
-                    onSwitchToUser(email, role as AppUserRole);
+                    const [role, email, companyName] =
+                      event.target.value.split(":");
+                    onSwitchToUser(
+                      decodeURIComponent(email),
+                      role as AppUserRole,
+                      companyName ? decodeURIComponent(companyName) : null,
+                    );
                   }
                 }}
                 className="max-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -213,7 +222,7 @@ export default function AdminPanel({
                       .map((operator) => (
                         <option
                           key={operator.id}
-                          value={`admin:${operator.email}`}
+                          value={`admin:${encodeURIComponent(operator.email)}`}
                         >
                           {operator.user_name || operator.email}
                         </option>
@@ -223,7 +232,12 @@ export default function AdminPanel({
                 {switchableUsers.length > 0 && (
                   <optgroup label={t("superAdmin.switch.normalUsers")}>
                     {switchableUsers.map((user) => (
-                      <option key={user.id} value={`normal:${user.email}`}>
+                      <option
+                        key={user.id}
+                        value={`normal:${encodeURIComponent(
+                          user.email,
+                        )}:${encodeURIComponent(user.company_name)}`}
+                      >
                         {user.company_name}
                       </option>
                     ))}

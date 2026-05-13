@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   FileStack,
@@ -59,6 +59,7 @@ function MainApp({
   onToggleDark,
   profileEmail,
   profileRole,
+  profileCompanyName,
   initialAdminMode = false,
   onSwitchToUser,
   onBackToAdmin,
@@ -68,8 +69,13 @@ function MainApp({
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
+  profileCompanyName: string | null;
   initialAdminMode?: boolean;
-  onSwitchToUser?: (email: string, role?: AppUserRole) => void;
+  onSwitchToUser?: (
+    email: string,
+    role?: AppUserRole,
+    companyName?: string | null,
+  ) => void;
   onBackToAdmin?: () => void;
   onLogout: () => void;
 }) {
@@ -86,6 +92,30 @@ function MainApp({
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const { isAdminAuthenticated } = useAdminAuth();
+  const visibleJobs = useMemo(() => {
+    if (profileRole !== "normal") {
+      return jobs;
+    }
+
+    const normalizedCompanyName = profileCompanyName?.trim().toLowerCase();
+    if (!normalizedCompanyName) {
+      return [];
+    }
+
+    return jobs.filter(
+      (job) => job.company_name?.trim().toLowerCase() === normalizedCompanyName,
+    );
+  }, [jobs, profileCompanyName, profileRole]);
+  const visibleDocuments = useMemo(() => {
+    if (profileRole !== "normal") {
+      return documents;
+    }
+
+    const visibleJobIds = new Set(visibleJobs.map((job) => job.id));
+    return documents.filter((document) =>
+      visibleJobIds.has(document.shipment_job_id),
+    );
+  }, [documents, profileRole, visibleJobs]);
 
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
@@ -161,8 +191,8 @@ function MainApp({
       case "dashboard":
         return (
           <ShipmentDashboard
-            jobs={jobs}
-            documents={documents}
+            jobs={visibleJobs}
+            documents={visibleDocuments}
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
@@ -172,8 +202,8 @@ function MainApp({
       case "jobs":
         return (
           <ShipmentJobs
-            jobs={jobs}
-            documents={documents}
+            jobs={visibleJobs}
+            documents={visibleDocuments}
             loading={jobsLoading}
             profileEmail={profileEmail}
             canManageShipments={
@@ -187,15 +217,15 @@ function MainApp({
       case "documents":
         return profileRole === "normal" ? (
           <BatchDocumentDownload
-            jobs={jobs}
-            documents={documents}
+            jobs={visibleJobs}
+            documents={visibleDocuments}
             loading={jobsLoading}
             onRefresh={loadJobs}
           />
         ) : (
           <DocumentControl
-            jobs={jobs}
-            documents={documents}
+            jobs={visibleJobs}
+            documents={visibleDocuments}
             loading={jobsLoading}
             onRefresh={loadJobs}
             isAdminAuthenticated={isAdminAuthenticated}
@@ -205,8 +235,8 @@ function MainApp({
       default:
         return (
           <ShipmentDashboard
-            jobs={jobs}
-            documents={documents}
+            jobs={visibleJobs}
+            documents={visibleDocuments}
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
@@ -388,6 +418,9 @@ function AppContent({
       ? savedRole
       : "normal";
   });
+  const [profileCompanyName, setProfileCompanyName] = useState(() => {
+    return sessionStorage.getItem("app_profile_company_name") ?? "";
+  });
   const [adminEmail, setAdminEmail] = useState(() => {
     return sessionStorage.getItem("app_admin_email") ?? "";
   });
@@ -409,7 +442,16 @@ function AppContent({
         if (!active || !profile) return;
 
         setProfileRole(profile.role);
+        setProfileCompanyName(profile.company_name ?? "");
         sessionStorage.setItem("app_profile_role", profile.role);
+        if (profile.company_name) {
+          sessionStorage.setItem(
+            "app_profile_company_name",
+            profile.company_name,
+          );
+        } else {
+          sessionStorage.removeItem("app_profile_company_name");
+        }
 
         if (authRole === "admin" && authEmail === adminEmail) {
           setAdminProfileRole(profile.role);
@@ -433,9 +475,18 @@ function AppContent({
       setAuthRole("user");
       setAuthEmail(profile.email);
       setProfileRole(profile.role);
+      setProfileCompanyName(profile.company_name ?? "");
       sessionStorage.setItem("app_auth_role", "user");
       sessionStorage.setItem("app_auth_email", profile.email);
       sessionStorage.setItem("app_profile_role", profile.role);
+      if (profile.company_name) {
+        sessionStorage.setItem(
+          "app_profile_company_name",
+          profile.company_name,
+        );
+      } else {
+        sessionStorage.removeItem("app_profile_company_name");
+      }
       logoutAdmin();
       return true;
     }
@@ -444,11 +495,20 @@ function AppContent({
       setAuthRole("admin");
       setAuthEmail(profile.email);
       setProfileRole(profile.role);
+      setProfileCompanyName(profile.company_name ?? "");
       setAdminEmail(profile.email);
       setAdminProfileRole(profile.role);
       sessionStorage.setItem("app_auth_role", "admin");
       sessionStorage.setItem("app_auth_email", profile.email);
       sessionStorage.setItem("app_profile_role", profile.role);
+      if (profile.company_name) {
+        sessionStorage.setItem(
+          "app_profile_company_name",
+          profile.company_name,
+        );
+      } else {
+        sessionStorage.removeItem("app_profile_company_name");
+      }
       sessionStorage.setItem("app_admin_email", profile.email);
       sessionStorage.setItem("app_admin_profile_role", profile.role);
       return true;
@@ -456,16 +516,26 @@ function AppContent({
     return false;
   };
 
-  const handleSwitchToUser = (email: string, role: AppUserRole = "normal") => {
+  const handleSwitchToUser = (
+    email: string,
+    role: AppUserRole = "normal",
+    companyName: string | null = null,
+  ) => {
     setAuthRole(role === "normal" ? "user" : "admin");
     setAuthEmail(email);
     setProfileRole(role);
+    setProfileCompanyName(companyName ?? "");
     sessionStorage.setItem(
       "app_auth_role",
       role === "normal" ? "user" : "admin",
     );
     sessionStorage.setItem("app_auth_email", email);
     sessionStorage.setItem("app_profile_role", role);
+    if (companyName) {
+      sessionStorage.setItem("app_profile_company_name", companyName);
+    } else {
+      sessionStorage.removeItem("app_profile_company_name");
+    }
   };
 
   const handleBackToAdmin = () => {
@@ -473,9 +543,11 @@ function AppContent({
     setAuthRole("admin");
     setAuthEmail(adminEmail);
     setProfileRole(adminProfileRole);
+    setProfileCompanyName("");
     sessionStorage.setItem("app_auth_role", "admin");
     sessionStorage.setItem("app_auth_email", adminEmail);
     sessionStorage.setItem("app_profile_role", adminProfileRole);
+    sessionStorage.removeItem("app_profile_company_name");
   };
 
   const handleLogout = () => {
@@ -483,18 +555,19 @@ function AppContent({
     setAuthRole(null);
     setAuthEmail("");
     setProfileRole("normal");
+    setProfileCompanyName("");
     setAdminEmail("");
     setAdminProfileRole("admin");
     sessionStorage.removeItem("app_auth_role");
     sessionStorage.removeItem("app_auth_email");
     sessionStorage.removeItem("app_profile_role");
+    sessionStorage.removeItem("app_profile_company_name");
     sessionStorage.removeItem("app_admin_email");
     sessionStorage.removeItem("app_admin_profile_role");
   };
 
   const isSwitchedFromAdmin =
-    Boolean(adminEmail) &&
-    authEmail.toLowerCase() !== adminEmail.toLowerCase();
+    Boolean(adminEmail) && authEmail.toLowerCase() !== adminEmail.toLowerCase();
 
   if (
     !authRole ||
@@ -510,6 +583,7 @@ function AppContent({
       onToggleDark={onToggleDark}
       profileEmail={authEmail}
       profileRole={profileRole}
+      profileCompanyName={profileCompanyName}
       initialAdminMode={authRole === "admin"}
       onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}
       onBackToAdmin={isSwitchedFromAdmin ? handleBackToAdmin : undefined}
