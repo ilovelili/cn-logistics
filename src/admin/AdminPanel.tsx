@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  FileStack,
   FilePlus2,
   LogOut,
   Menu,
@@ -16,6 +17,7 @@ import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
+import DocumentControl from "../components/DocumentControl";
 import ProfileButton from "../components/ProfileButton";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
@@ -26,6 +28,7 @@ import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 type AdminView =
   | "dashboard"
   | "shipmentEntry"
+  | "documents"
   | "userRegistration"
   | "adminOperators"
   | "feedbackReview";
@@ -63,7 +66,7 @@ export default function AdminPanel({
   onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
-  const { logout } = useAdminAuth();
+  const { isAdminAuthenticated, logout } = useAdminAuth();
   const [view, setView] = useState<AdminView>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
@@ -149,6 +152,11 @@ export default function AdminPanel({
       id: "shipmentEntry" as AdminView,
       label: t("admin.nav.shipmentEntry"),
       icon: FilePlus2,
+    },
+    {
+      id: "documents" as AdminView,
+      label: t("app.nav.documents"),
+      icon: FileStack,
     },
     {
       id: "userRegistration" as AdminView,
@@ -341,6 +349,17 @@ export default function AdminPanel({
               companyOptions={shipmentCompanyOptions}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
+            />
+          )}
+          {view === "documents" && (
+            <DocumentControl
+              jobs={jobs}
+              documents={documents}
+              loading={jobsLoading}
+              onRefresh={onRefreshJobs}
+              isAdminAuthenticated={isAdminAuthenticated}
+              requesterEmail={profileEmail}
+              approvalFilter="all"
             />
           )}
           {view === "userRegistration" && (

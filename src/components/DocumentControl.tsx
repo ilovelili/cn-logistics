@@ -12,6 +12,7 @@ import { t } from "../lib/i18n";
 import {
   downloadShipmentDocument,
   isCustomerDocumentDownloadable,
+  DocumentApprovalStatus,
   ShipmentDocument,
   ShipmentJob,
   statusBadgeClasses,
@@ -29,6 +30,7 @@ interface DocumentControlProps {
   loading: boolean;
   onRefresh: () => Promise<void>;
   isAdminAuthenticated: boolean;
+  requesterEmail?: string;
   approvalFilter: DocumentApprovalFilter;
 }
 
@@ -66,6 +68,7 @@ export default function DocumentControl({
   loading,
   onRefresh,
   isAdminAuthenticated,
+  requesterEmail,
   approvalFilter,
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
@@ -228,6 +231,36 @@ export default function DocumentControl({
     [onRefresh, showToast],
   );
 
+  const handleAdminApproval = React.useCallback(
+    async (
+      document: ShipmentDocument,
+      approvalStatus: Extract<DocumentApprovalStatus, "approved" | "rejected">,
+    ) => {
+      if (!requesterEmail) return;
+
+      setRequestingDocumentId(document.id);
+      try {
+        await updateShipmentDocumentApproval(
+          document.id,
+          approvalStatus,
+          requesterEmail,
+        );
+        await onRefresh();
+        showToast(
+          "success",
+          approvalStatus === "approved"
+            ? t("admin.documents.approved")
+            : t("admin.documents.rejected"),
+        );
+      } catch {
+        showToast("error", t("admin.documents.updateFailed"));
+      } finally {
+        setRequestingDocumentId(null);
+      }
+    },
+    [onRefresh, requesterEmail, showToast],
+  );
+
   const columns = React.useMemo<DocumentColumn[]>(() => {
     const documentColumns: DocumentColumn[] = [
       {
@@ -298,14 +331,18 @@ export default function DocumentControl({
       },
       {
         id: "approval",
-        label: t("documents.downloadRequest"),
+        label: isAdminAuthenticated
+          ? t("documents.adminReview")
+          : t("documents.downloadRequest"),
         width: 160,
         sortKey: "approval",
         render: (row) => (
           <DocumentActionButton
             row={row}
+            isAdminAuthenticated={isAdminAuthenticated}
             requesting={requestingDocumentId === row.document.id}
             onRequest={handleDownloadRequest}
+            onReview={handleAdminApproval}
           />
         ),
       },
@@ -339,7 +376,12 @@ export default function DocumentControl({
     }
 
     return documentColumns;
-  }, [handleDownloadRequest, isAdminAuthenticated, requestingDocumentId]);
+  }, [
+    handleAdminApproval,
+    handleDownloadRequest,
+    isAdminAuthenticated,
+    requestingDocumentId,
+  ]);
 
   const {
     orderedColumns,
@@ -510,15 +552,26 @@ export default function DocumentControl({
 
 function DocumentActionButton({
   row,
+  isAdminAuthenticated,
   requesting,
   onRequest,
+  onReview,
 }: {
   row: DocumentRow;
+  isAdminAuthenticated: boolean;
   requesting: boolean;
   onRequest: (document: ShipmentDocument) => Promise<void>;
+  onReview: (
+    document: ShipmentDocument,
+    approvalStatus: Extract<DocumentApprovalStatus, "approved" | "rejected">,
+  ) => Promise<void>;
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
+  const canReview =
+    isAdminAuthenticated &&
+    isCustomerDocument &&
+    document.approval_status === "pending";
   const canDownload = isCustomerDocumentDownloadable(document);
   const canRequest =
     isCustomerDocument &&
@@ -540,6 +593,29 @@ function DocumentActionButton({
       void onRequest(document);
     }
   };
+
+  if (canReview) {
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={requesting}
+          onClick={() => void onReview(document, "approved")}
+          className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+        >
+          {requesting ? t("common.saving") : t("common.approve")}
+        </button>
+        <button
+          type="button"
+          disabled={requesting}
+          onClick={() => void onReview(document, "rejected")}
+          className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-wait disabled:opacity-60"
+        >
+          {t("common.reject")}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <button

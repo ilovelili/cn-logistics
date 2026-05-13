@@ -232,6 +232,7 @@ function MainApp({
             loading={jobsLoading}
             onRefresh={loadJobs}
             isAdminAuthenticated={isAdminAuthenticated}
+            requesterEmail={profileEmail}
             approvalFilter={documentsApprovalFilter}
           />
         );

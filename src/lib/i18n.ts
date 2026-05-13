@@ -158,6 +158,7 @@ const ja = {
   "documents.scope": "区分",
   "documents.approval": "承認状態",
   "documents.downloadRequest": "DL申請",
+  "documents.adminReview": "承認操作",
   "documents.downloadRequestApplied": "承認中",
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",

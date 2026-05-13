@@ -371,7 +371,28 @@ export async function updateShipmentJob(
 export async function updateShipmentDocumentApproval(
   id: string,
   approvalStatus: DocumentApprovalStatus,
+  requesterEmail?: string,
 ) {
+  if (
+    requesterEmail &&
+    (approvalStatus === "approved" || approvalStatus === "rejected")
+  ) {
+    const { error } = await supabase.rpc(
+      "update_accessible_shipment_document_approval",
+      {
+        requester_email: requesterEmail,
+        target_document_id: id,
+        next_approval_status: approvalStatus,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
+
   const { error } = await supabase
     .from("shipment_documents")
     .update({

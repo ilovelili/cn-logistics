@@ -25,8 +25,6 @@ import { t } from "../lib/i18n";
 import type { CompanyUser } from "../lib/companyUsers";
 import {
   createShipmentJob,
-  documentApprovalClasses,
-  documentApprovalLabels,
   DocumentApprovalStatus,
   ShipmentDocument,
   ShipmentJob,
@@ -34,7 +32,6 @@ import {
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
-  updateShipmentDocumentApproval,
   updateShipmentJob,
 } from "../lib/shipmentJobs";
 
@@ -248,27 +245,6 @@ export default function ShipmentEntryForm({
     }
   };
 
-  const handleDocumentApproval = async (
-    document: ShipmentDocument,
-    approvalStatus: "approved" | "rejected",
-  ) => {
-    setLoading(true);
-    try {
-      await updateShipmentDocumentApproval(document.id, approvalStatus);
-      await onRefresh();
-      showToast(
-        "success",
-        approvalStatus === "approved"
-          ? t("admin.documents.approved")
-          : t("admin.documents.rejected"),
-      );
-    } catch {
-      showToast("error", t("admin.documents.updateFailed"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSort = (nextSortKey: ShipmentJobsTableSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -409,17 +385,10 @@ export default function ShipmentEntryForm({
           />
           <AdminShipmentJobModal
             job={selectedJob}
-            documents={selectedJob ? documentsByJob[selectedJob.id] : []}
             loading={loading}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
             companyOptions={companyOptions}
-            onApprove={(document) =>
-              handleDocumentApproval(document, "approved")
-            }
-            onReject={(document) =>
-              handleDocumentApproval(document, "rejected")
-            }
           />
         </div>
       )}
@@ -440,22 +409,16 @@ export default function ShipmentEntryForm({
 
 function AdminShipmentJobModal({
   job,
-  documents,
   loading,
   companyOptions,
   onClose,
   onSubmit,
-  onApprove,
-  onReject,
 }: {
   job: ShipmentJob | null;
-  documents: ShipmentDocument[];
   loading: boolean;
   companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
-  onApprove: (document: ShipmentDocument) => void;
-  onReject: (document: ShipmentDocument) => void;
 }) {
   if (!job) {
     return null;
@@ -500,104 +463,9 @@ function AdminShipmentJobModal({
             loading={loading}
             onSubmit={onSubmit}
           />
-          <DocumentApprovalPanel
-            documents={documents}
-            loading={loading}
-            onApprove={onApprove}
-            onReject={onReject}
-          />
         </div>
       </div>
     </div>
-  );
-}
-
-function DocumentApprovalPanel({
-  documents,
-  loading,
-  onApprove,
-  onReject,
-}: {
-  documents: ShipmentDocument[];
-  loading: boolean;
-  onApprove: (document: ShipmentDocument) => void;
-  onReject: (document: ShipmentDocument) => void;
-}) {
-  return (
-    <section className="mt-8 border-t border-gray-200 pt-6 dark:border-gray-800">
-      <div className="mb-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          {t("admin.documents.title")}
-        </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {t("admin.documents.description")}
-        </p>
-      </div>
-
-      {documents.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 p-5 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          {t("admin.documents.noDocuments")}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {documents.map((document) => {
-            const canReview = document.approval_status === "pending";
-
-            return (
-              <div
-                key={document.id}
-                className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {document.name}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                      {document.scope === "customer"
-                        ? t("documents.customer")
-                        : t("documents.internal")}
-                    </span>
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-xs font-bold ${documentApprovalClasses[document.approval_status]}`}
-                    >
-                      {documentApprovalLabels[document.approval_status]}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {document.scope === "customer"
-                      ? t("documents.downloadLocked")
-                      : t("documents.internalOnly")}
-                  </p>
-                </div>
-                {document.scope === "customer" && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={loading || !canReview}
-                      onClick={() => onApprove(document)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      {t("common.approve")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={loading || !canReview}
-                      onClick={() => onReject(document)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <XCircle className="h-3.5 w-3.5" />
-                      {t("common.reject")}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
   );
 }
 
