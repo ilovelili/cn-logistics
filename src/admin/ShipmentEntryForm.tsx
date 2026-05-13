@@ -47,6 +47,7 @@ interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
   companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
+  adminEmail: string;
   criteria?: ShipmentEntryCriteria;
   onRefresh: () => Promise<void>;
 }
@@ -55,6 +56,7 @@ export default function ShipmentEntryForm({
   jobs,
   documents,
   companyOptions = [],
+  adminEmail,
   criteria = { kind: "all" },
   onRefresh,
 }: ShipmentEntryFormProps) {
@@ -236,7 +238,7 @@ export default function ShipmentEntryForm({
     if (!selectedJob) return;
     setLoading(true);
     try {
-      await updateShipmentJob(selectedJob.id, form);
+      await updateShipmentJob(selectedJob.id, form, adminEmail);
       await onRefresh();
       showToast("success", t("admin.entry.updated"));
     } catch {

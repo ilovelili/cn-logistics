@@ -258,11 +258,15 @@ export function formToPayload(form: ShipmentJobForm) {
   };
 }
 
-export async function fetchShipmentJobs(): Promise<ShipmentJob[]> {
-  const { data: jobsData, error: jobsError } = await supabase
-    .from("shipment_jobs")
-    .select("*")
-    .order("updated_at", { ascending: false });
+export async function fetchShipmentJobs(
+  requesterEmail: string,
+): Promise<ShipmentJob[]> {
+  const { data: jobsData, error: jobsError } = await supabase.rpc(
+    "list_accessible_shipment_jobs",
+    {
+      requester_email: requesterEmail,
+    },
+  );
 
   if (jobsError) {
     throw jobsError;
@@ -272,7 +276,7 @@ export async function fetchShipmentJobs(): Promise<ShipmentJob[]> {
     ShipmentJob,
     "tracking_events"
   >[];
-  const trackingEvents = await fetchShipmentTrackingEvents();
+  const trackingEvents = await fetchShipmentTrackingEvents(requesterEmail);
   const trackingEventsByJob = groupTrackingEventsByJob(trackingEvents);
 
   return shipmentJobs.map((job) => ({
@@ -281,16 +285,15 @@ export async function fetchShipmentJobs(): Promise<ShipmentJob[]> {
   }));
 }
 
-export async function fetchShipmentTrackingEvents(): Promise<
-  ShipmentTrackingEvent[]
-> {
-  const { data, error } = await supabase
-    .from("shipment_tracking_events")
-    .select("*")
-    .is("deleted_at", null)
-    .order("event_date", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+export async function fetchShipmentTrackingEvents(
+  requesterEmail: string,
+): Promise<ShipmentTrackingEvent[]> {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipment_tracking_events",
+    {
+      requester_email: requesterEmail,
+    },
+  );
 
   if (error) {
     throw error;
@@ -316,12 +319,15 @@ export async function fetchShipmentTrackingEventTemplates(): Promise<
   return (data ?? []) as ShipmentTrackingEventTemplate[];
 }
 
-export async function fetchShipmentDocuments(): Promise<ShipmentDocument[]> {
-  const { data, error } = await supabase
-    .from("shipment_documents")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true });
+export async function fetchShipmentDocuments(
+  requesterEmail: string,
+): Promise<ShipmentDocument[]> {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipment_documents",
+    {
+      requester_email: requesterEmail,
+    },
+  );
 
   if (error) {
     throw error;
@@ -331,21 +337,24 @@ export async function fetchShipmentDocuments(): Promise<ShipmentDocument[]> {
 }
 
 export async function createShipmentJob(form: ShipmentJobForm) {
-  const { data, error } = await supabase
+  const jobId = crypto.randomUUID();
+  const { error } = await supabase
     .from("shipment_jobs")
-    .insert(formToPayload(form))
-    .select("id")
-    .single();
+    .insert({ id: jobId, ...formToPayload(form) });
 
   if (error) {
     throw error;
   }
 
-  await replaceShipmentDocuments(data.id, form);
-  await replaceShipmentTrackingEvents(data.id, form);
+  await replaceShipmentDocuments(jobId, form);
+  await replaceShipmentTrackingEvents(jobId, form);
 }
 
-export async function updateShipmentJob(id: string, form: ShipmentJobForm) {
+export async function updateShipmentJob(
+  id: string,
+  form: ShipmentJobForm,
+  requesterEmail: string,
+) {
   const { error } = await supabase
     .from("shipment_jobs")
     .update(formToPayload(form))
@@ -355,7 +364,7 @@ export async function updateShipmentJob(id: string, form: ShipmentJobForm) {
     throw error;
   }
 
-  await replaceShipmentDocuments(id, form);
+  await replaceShipmentDocuments(id, form, requesterEmail);
   await replaceShipmentTrackingEvents(id, form);
 }
 
@@ -424,8 +433,14 @@ function getDownloadFileName(document: ShipmentDocument) {
   return hasExtension ? document.name : `${document.name}.pdf`;
 }
 
-async function replaceShipmentDocuments(jobId: string, form: ShipmentJobForm) {
-  const existing = await fetchDocumentsForJob(jobId);
+async function replaceShipmentDocuments(
+  jobId: string,
+  form: ShipmentJobForm,
+  requesterEmail?: string,
+) {
+  const existing = requesterEmail
+    ? await fetchDocumentsForJob(jobId, requesterEmail)
+    : [];
   const [customerUploads, internalUploads] = await Promise.all([
     uploadShipmentDocumentFiles(jobId, "customer", form.document_files),
     uploadShipmentDocumentFiles(
@@ -485,17 +500,22 @@ async function replaceShipmentDocuments(jobId: string, form: ShipmentJobForm) {
 
 async function fetchDocumentsForJob(
   jobId: string,
+  requesterEmail: string,
 ): Promise<ShipmentDocument[]> {
-  const { data, error } = await supabase
-    .from("shipment_documents")
-    .select("*")
-    .eq("shipment_job_id", jobId);
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipment_documents",
+    {
+      requester_email: requesterEmail,
+    },
+  );
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as ShipmentDocument[];
+  return ((data ?? []) as ShipmentDocument[]).filter(
+    (document) => document.shipment_job_id === jobId,
+  );
 }
 
 function buildDocumentPayload(

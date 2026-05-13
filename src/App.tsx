@@ -123,8 +123,8 @@ function MainApp({
     setJobsLoading(true);
     try {
       const [shipmentJobs, shipmentDocuments] = await Promise.all([
-        fetchShipmentJobs(),
-        fetchShipmentDocuments(),
+        fetchShipmentJobs(profileEmail),
+        fetchShipmentDocuments(profileEmail),
       ]);
       setJobs(shipmentJobs);
       setDocuments(shipmentDocuments);
@@ -138,7 +138,7 @@ function MainApp({
     } finally {
       setJobsLoading(false);
     }
-  }, []);
+  }, [profileEmail]);
 
   useEffect(() => {
     void loadJobs();
