@@ -85,6 +85,30 @@ export default function AdminPanel({
         })),
     [switchableUsers],
   );
+  const scopedJobs = useMemo(() => {
+    if (isSuperAdmin) {
+      return jobs;
+    }
+
+    const assignedCompanyNames = new Set(
+      switchableUsers.map((user) => user.company_name.trim().toLowerCase()),
+    );
+
+    return jobs.filter((job) => {
+      const companyName = job.company_name?.trim().toLowerCase();
+      return companyName ? assignedCompanyNames.has(companyName) : false;
+    });
+  }, [isSuperAdmin, jobs, switchableUsers]);
+  const scopedDocuments = useMemo(() => {
+    if (isSuperAdmin) {
+      return documents;
+    }
+
+    const scopedJobIds = new Set(scopedJobs.map((job) => job.id));
+    return documents.filter((document) =>
+      scopedJobIds.has(document.shipment_job_id),
+    );
+  }, [documents, isSuperAdmin, scopedJobs]);
 
   useEffect(() => {
     setView("dashboard");
@@ -325,8 +349,8 @@ export default function AdminPanel({
         <main className="flex-1 p-6 overflow-y-auto">
           {view === "dashboard" && (
             <AdminDashboard
-              jobs={jobs}
-              documents={documents}
+              jobs={scopedJobs}
+              documents={scopedDocuments}
               loading={jobsLoading}
               onOpenShipmentEntry={(criteria) => {
                 setShipmentEntryCriteria(criteria);
@@ -336,8 +360,8 @@ export default function AdminPanel({
           )}
           {view === "shipmentEntry" && (
             <ShipmentEntryForm
-              jobs={jobs}
-              documents={documents}
+              jobs={scopedJobs}
+              documents={scopedDocuments}
               companyOptions={shipmentCompanyOptions}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
