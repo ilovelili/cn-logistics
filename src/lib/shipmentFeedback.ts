@@ -7,6 +7,7 @@ export interface ShipmentFeedback {
   admin_operator_email: string | null;
   rating: number;
   attitude_rating: number;
+  professionalism_rating: number;
   speed_rating: number;
   accuracy_rating: number;
   price_rating: number;
@@ -40,6 +41,7 @@ export async function submitShipmentFeedback({
   shipmentJobId,
   submitterEmail,
   attitudeRating,
+  professionalismRating,
   speedRating,
   accuracyRating,
   priceRating,
@@ -48,6 +50,7 @@ export async function submitShipmentFeedback({
   shipmentJobId: string;
   submitterEmail: string;
   attitudeRating: number;
+  professionalismRating: number;
   speedRating: number;
   accuracyRating: number;
   priceRating: number;
@@ -57,6 +60,7 @@ export async function submitShipmentFeedback({
     feedback_shipment_job_id: shipmentJobId,
     feedback_submitter_email: submitterEmail,
     feedback_attitude_rating: attitudeRating,
+    feedback_professionalism_rating: professionalismRating,
     feedback_speed_rating: speedRating,
     feedback_accuracy_rating: accuracyRating,
     feedback_price_rating: priceRating,
@@ -92,14 +96,19 @@ export async function fetchAllShipmentFeedback(
 export function getShipmentFeedbackSummaryRating(
   feedback: Pick<
     ShipmentFeedback,
-    "attitude_rating" | "speed_rating" | "accuracy_rating" | "price_rating"
+    | "attitude_rating"
+    | "professionalism_rating"
+    | "speed_rating"
+    | "accuracy_rating"
+    | "price_rating"
   >,
 ) {
   return (
     (feedback.attitude_rating +
+      feedback.professionalism_rating +
       feedback.speed_rating +
       feedback.accuracy_rating +
       feedback.price_rating) /
-    4
+    5
   );
 }

@@ -298,17 +298,6 @@ export default function AdminOperatorManagement({
   const columns = useMemo<OperatorTableColumn[]>(
     () => [
       {
-        id: "id",
-        label: "ID",
-        width: 90,
-        sortKey: "id",
-        render: (operator) => (
-          <span className="font-mono text-xs text-gray-500">
-            {operator.id.slice(0, 8).toUpperCase()}
-          </span>
-        ),
-      },
-      {
         id: "email",
         label: t("superAdmin.operators.email"),
         width: 220,

@@ -18,7 +18,6 @@ import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
-  formatShipmentJobShortId,
   getResponsibleAdminNames,
   getShipmentJobWorkingDays,
   type ShipmentJobsCompanyOption,
@@ -322,16 +321,13 @@ function buildColumns(
 
   const columns: ShipmentJobsTableColumn[] = [
     {
-      id: "id",
-      label: "ID",
-      width: 90,
-      sortKey: "id",
+      id: "invoice_number",
+      label: t("common.invoice"),
+      width: 120,
+      sortKey: "invoice_number",
       render: (job) => (
-        <span
-          title={job.id}
-          className="font-mono text-xs font-bold text-slate-500"
-        >
-          {formatShipmentJobShortId(job.id)}
+        <span className={`whitespace-nowrap font-mono ${strongText}`}>
+          {job.invoice_number || "-"}
         </span>
       ),
     },
@@ -404,17 +400,6 @@ function buildColumns(
             {job.trade_term || "-"}
           </div>
         </>
-      ),
-    },
-    {
-      id: "invoice_number",
-      label: t("common.invoice"),
-      width: 120,
-      sortKey: "invoice_number",
-      render: (job) => (
-        <span className={`whitespace-nowrap font-mono ${strongText}`}>
-          {job.invoice_number || "-"}
-        </span>
       ),
     },
     {

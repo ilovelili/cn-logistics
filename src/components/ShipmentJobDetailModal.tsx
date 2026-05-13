@@ -59,7 +59,6 @@ export default function ShipmentJobDetailModal({
       role="dialog"
       aria-modal="true"
       aria-label={t("jobs.detail.title")}
-      onMouseDown={onClose}
     >
       <div
         className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl"

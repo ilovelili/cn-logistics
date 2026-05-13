@@ -330,7 +330,11 @@ export default function AdminPanel({
             <AdminOperatorManagement superAdminEmail={profileEmail} />
           )}
           {view === "feedbackReview" && isSuperAdmin && (
-            <FeedbackReviewPanel superAdminEmail={profileEmail} />
+            <FeedbackReviewPanel
+              superAdminEmail={profileEmail}
+              jobs={jobs}
+              documents={documents}
+            />
           )}
         </main>
       </div>

@@ -214,20 +214,6 @@ export default function DocumentControl({
   const columns = React.useMemo<DocumentColumn[]>(() => {
     const documentColumns: DocumentColumn[] = [
       {
-        id: "id",
-        label: "ID",
-        width: 96,
-        sortKey: "id",
-        render: (row) => (
-          <span
-            title={row.document.id}
-            className="font-mono text-xs font-bold text-slate-500"
-          >
-            {formatShortId(row.document.id)}
-          </span>
-        ),
-      },
-      {
         id: "document",
         label: t("common.documents"),
         width: isAdminAuthenticated ? 180 : 220,

@@ -300,17 +300,6 @@ export default function UserRegistrationForm({
   const columns = useMemo<UserTableColumn[]>(() => {
     const userColumns: UserTableColumn[] = [
       {
-        id: "id",
-        label: "ID",
-        width: isSuperAdmin ? 7 : 12,
-        sortKey: "id",
-        render: (user) => (
-          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-            {user.id.slice(0, 8)}
-          </span>
-        ),
-      },
-      {
         id: "company_name",
         label: t("admin.userRegistration.companyName"),
         width: isSuperAdmin ? 16 : 24,

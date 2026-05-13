@@ -34,6 +34,7 @@ type StatusFilter = ShipmentStatus | "all";
 
 type FeedbackRatings = {
   attitudeRating: number;
+  professionalismRating: number;
   speedRating: number;
   accuracyRating: number;
   priceRating: number;
@@ -315,6 +316,7 @@ export default function ShipmentJobs({
               shipmentJobId: jobId,
               submitterEmail: profileEmail,
               attitudeRating: feedback.attitudeRating,
+              professionalismRating: feedback.professionalismRating,
               speedRating: feedback.speedRating,
               accuracyRating: feedback.accuracyRating,
               priceRating: feedback.priceRating,
@@ -398,18 +400,24 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
-  const summaryRating =
+  const averageRating =
     (ratings.attitudeRating +
+      ratings.professionalismRating +
       ratings.speedRating +
       ratings.accuracyRating +
       ratings.priceRating) /
-    4;
+    5;
   const isComplete = Object.values(ratings).every((rating) => rating > 0);
   const feedbackCategories = [
     {
       key: "attitudeRating" as const,
       label: t("feedback.attitude"),
       value: ratings.attitudeRating,
+    },
+    {
+      key: "professionalismRating" as const,
+      label: t("feedback.professionalism"),
+      value: ratings.professionalismRating,
     },
     {
       key: "speedRating" as const,
@@ -483,7 +491,7 @@ function FeedbackModal({
                 <Star className="h-4 w-4" fill="currentColor" />
                 {isComplete
                   ? t("feedback.ratingValue", {
-                      rating: summaryRating.toFixed(1),
+                      rating: averageRating.toFixed(1),
                     })
                   : "-"}
               </span>
@@ -538,12 +546,12 @@ function FeedbackModal({
 function getInitialFeedbackRatings(
   feedback?: ShipmentFeedback | null,
 ): FeedbackRatings {
-  const fallbackRating = feedback?.rating ?? 0;
   return {
-    attitudeRating: feedback?.attitude_rating ?? fallbackRating,
-    speedRating: feedback?.speed_rating ?? fallbackRating,
-    accuracyRating: feedback?.accuracy_rating ?? fallbackRating,
-    priceRating: feedback?.price_rating ?? fallbackRating,
+    attitudeRating: feedback?.attitude_rating ?? 0,
+    professionalismRating: feedback?.professionalism_rating ?? 0,
+    speedRating: feedback?.speed_rating ?? 0,
+    accuracyRating: feedback?.accuracy_rating ?? 0,
+    priceRating: feedback?.price_rating ?? 0,
   };
 }
 
