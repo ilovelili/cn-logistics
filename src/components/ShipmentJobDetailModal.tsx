@@ -29,6 +29,7 @@ interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
   feedback?: ShipmentFeedback | null;
+  feedbackLoading?: boolean;
   onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
 }
@@ -37,6 +38,7 @@ export default function ShipmentJobDetailModal({
   job,
   documents,
   feedback,
+  feedbackLoading = false,
   onOpenFeedback,
   onClose,
 }: ShipmentJobDetailModalProps) {
@@ -84,30 +86,34 @@ export default function ShipmentJobDetailModal({
             {onOpenFeedback && (
               <button
                 type="button"
-                disabled={Boolean(feedback)}
+                disabled={feedbackLoading || Boolean(feedback)}
                 onClick={() => {
-                  if (!feedback) {
+                  if (!feedbackLoading && !feedback) {
                     onOpenFeedback(job);
                   }
                 }}
                 className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-black transition ${
-                  feedback
+                  feedbackLoading || feedback
                     ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <Star
                   className={`h-4 w-4 ${
-                    feedback ? "text-slate-400" : "text-slate-400"
+                    feedbackLoading || feedback
+                      ? "text-slate-400"
+                      : "text-slate-400"
                   }`}
-                  fill={feedback ? "currentColor" : "none"}
+                  fill={feedbackLoading || feedback ? "currentColor" : "none"}
                 />
-                {feedback
-                  ? t("feedback.ratingValue", {
-                      rating:
-                        getShipmentFeedbackSummaryRating(feedback).toFixed(1),
-                    })
-                  : t("feedback.open")}
+                {feedbackLoading
+                  ? t("common.loadingFeedback")
+                  : feedback
+                    ? t("feedback.ratingValue", {
+                        rating:
+                          getShipmentFeedbackSummaryRating(feedback).toFixed(1),
+                      })
+                    : t("feedback.open")}
               </button>
             )}
             <button

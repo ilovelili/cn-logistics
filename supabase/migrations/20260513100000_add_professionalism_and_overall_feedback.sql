@@ -131,6 +131,15 @@ BEGIN
     RAISE EXCEPTION 'Only active normal users can submit shipment feedback';
   END IF;
 
+  IF EXISTS (
+    SELECT 1
+    FROM shipment_feedback
+    WHERE shipment_feedback.shipment_job_id = feedback_shipment_job_id
+      AND shipment_feedback.submitter_email = normalized_submitter_email
+  ) THEN
+    RAISE EXCEPTION 'Feedback has already been submitted for this shipment';
+  END IF;
+
   SELECT admin_user.email
   INTO assigned_operator_email
   FROM app_user_admin_assignments assignment
@@ -176,17 +185,6 @@ BEGIN
     feedback_price_rating,
     NULLIF(trim(feedback_reason), '')
   )
-  ON CONFLICT (shipment_job_id, submitter_email) DO UPDATE
-  SET
-    admin_operator_email = EXCLUDED.admin_operator_email,
-    rating = EXCLUDED.rating,
-    attitude_rating = EXCLUDED.attitude_rating,
-    professionalism_rating = EXCLUDED.professionalism_rating,
-    speed_rating = EXCLUDED.speed_rating,
-    accuracy_rating = EXCLUDED.accuracy_rating,
-    price_rating = EXCLUDED.price_rating,
-    reason = EXCLUDED.reason,
-    updated_at = now()
   RETURNING
     shipment_feedback.id,
     shipment_feedback.shipment_job_id,

@@ -72,6 +72,7 @@ export default function ShipmentJobs({
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [feedbackJob, setFeedbackJob] = useState<ShipmentJob | null>(null);
   const [feedbackSaving, setFeedbackSaving] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [feedbackByJob, setFeedbackByJob] = useState<
     Record<string, ShipmentFeedback>
   >({});
@@ -149,6 +150,7 @@ export default function ShipmentJobs({
     let active = true;
 
     const loadFeedback = async () => {
+      setFeedbackLoading(true);
       try {
         const feedback = await fetchShipmentFeedbackForUser(profileEmail);
         if (!active) return;
@@ -161,6 +163,10 @@ export default function ShipmentJobs({
         if (active) {
           setFeedbackByJob({});
         }
+      } finally {
+        if (active) {
+          setFeedbackLoading(false);
+        }
       }
     };
 
@@ -170,6 +176,17 @@ export default function ShipmentJobs({
       active = false;
     };
   }, [profileEmail]);
+
+  useEffect(() => {
+    if (feedbackJob && feedbackByJob[feedbackJob.id]) {
+      setFeedbackJob(null);
+    }
+  }, [feedbackByJob, feedbackJob]);
+
+  const openFeedbackModal = (job: ShipmentJob) => {
+    if (feedbackLoading || feedbackByJob[job.id]) return;
+    setFeedbackJob(job);
+  };
 
   const handleCreate = async (
     form: Parameters<typeof createShipmentJob>[0],
@@ -300,7 +317,8 @@ export default function ShipmentJobs({
         job={selectedJob}
         documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
         feedback={selectedJob ? feedbackByJob[selectedJob.id] : null}
-        onOpenFeedback={(job) => setFeedbackJob(job)}
+        feedbackLoading={feedbackLoading}
+        onOpenFeedback={openFeedbackModal}
         onClose={() => setSelectedJob(null)}
       />
       <FeedbackModal
@@ -309,9 +327,25 @@ export default function ShipmentJobs({
         saving={feedbackSaving}
         onClose={() => setFeedbackJob(null)}
         onSubmit={async (jobId, feedback) => {
+          if (feedbackByJob[jobId]) {
+            setFeedbackJob(null);
+            return;
+          }
+
           setFeedbackJob(null);
           setFeedbackSaving(true);
           try {
+            const existingFeedback =
+              await fetchShipmentFeedbackForUser(profileEmail);
+            const existingFeedbackByJob = Object.fromEntries(
+              existingFeedback.map((item) => [item.shipment_job_id, item]),
+            );
+
+            if (existingFeedbackByJob[jobId]) {
+              setFeedbackByJob(existingFeedbackByJob);
+              return;
+            }
+
             const savedFeedback = await submitShipmentFeedback({
               shipmentJobId: jobId,
               submitterEmail: profileEmail,
@@ -400,6 +434,7 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
+  const isAlreadySubmitted = Boolean(initialFeedback);
   const averageRating =
     (ratings.attitudeRating +
       ratings.professionalismRating +
@@ -478,7 +513,7 @@ function FeedbackModal({
           className="space-y-6 p-6"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!isComplete) return;
+            if (!isComplete || isAlreadySubmitted) return;
             void onSubmit(job.id, { ...ratings, reason: reason.trim() });
           }}
         >
@@ -501,6 +536,7 @@ function FeedbackModal({
                 key={category.key}
                 label={category.label}
                 value={category.value}
+                disabled={isAlreadySubmitted}
                 onChange={(ratingValue) =>
                   setCategoryRating(category.key, ratingValue)
                 }
@@ -514,10 +550,11 @@ function FeedbackModal({
             </span>
             <textarea
               value={reason}
+              readOnly={isAlreadySubmitted}
               onChange={(event) => setReason(event.target.value)}
               rows={5}
               placeholder={t("feedback.reasonPlaceholder")}
-              className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+              className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 read-only:cursor-not-allowed read-only:text-slate-500"
             />
           </label>
 
@@ -531,10 +568,14 @@ function FeedbackModal({
             </button>
             <button
               type="submit"
-              disabled={!isComplete || saving}
+              disabled={!isComplete || saving || isAlreadySubmitted}
               className="rounded-2xl bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? t("common.saving") : t("feedback.submit")}
+              {isAlreadySubmitted
+                ? t("feedback.submitted")
+                : saving
+                  ? t("common.saving")
+                  : t("feedback.submit")}
             </button>
           </div>
         </form>
@@ -558,10 +599,12 @@ function getInitialFeedbackRatings(
 function StarRatingInput({
   label,
   value,
+  disabled = false,
   onChange,
 }: {
   label: string;
   value: number;
+  disabled?: boolean;
   onChange: (rating: number) => void;
 }) {
   return (
@@ -572,8 +615,9 @@ function StarRatingInput({
           <button
             key={star}
             type="button"
+            disabled={disabled}
             onClick={() => onChange(star)}
-            className={`rounded-2xl p-2 transition hover:bg-amber-50 ${
+            className={`rounded-2xl p-2 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
               star <= value ? "text-amber-400" : "text-slate-300"
             }`}
             aria-label={`${label}: ${t("feedback.star", { count: star })}`}
