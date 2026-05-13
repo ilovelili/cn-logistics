@@ -15,7 +15,6 @@ import {
   documentApprovalClasses,
   documentApprovalLabels,
   downloadShipmentDocument,
-  isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
   statusBadgeClasses,
@@ -47,9 +46,6 @@ export default function ShipmentJobDetailModal({
     return null;
   }
 
-  const customerDocuments = documents.filter(
-    (document) => document.scope === "customer",
-  );
   const internalDocuments = documents.filter(
     (document) => document.scope === "internal",
   );
@@ -181,23 +177,16 @@ export default function ShipmentJobDetailModal({
 
           <TrackingTimeline events={job.tracking_events} />
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <DocumentSection
-              title={t("common.documents")}
-              documents={customerDocuments}
-              canDownload={(document) =>
-                isCustomerDocumentDownloadable(document)
-              }
-            />
-            {showInternalDocuments && (
+          {showInternalDocuments && (
+            <div className="mt-6">
               <DocumentSection
                 title={t("common.internalDocuments")}
                 documents={internalDocuments}
                 muted
                 canDownload={() => true}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
