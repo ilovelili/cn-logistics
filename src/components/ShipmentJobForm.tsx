@@ -17,6 +17,8 @@ import type { CompanyUser } from "../lib/companyUsers";
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
   companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
+  fixedAssignedAdminEmail?: string;
+  assignedAdminsReadOnly?: boolean;
   submitLabel: string;
   loading?: boolean;
   onCancel?: () => void;
@@ -26,6 +28,8 @@ interface ShipmentJobFormProps {
 export default function ShipmentJobForm({
   job,
   companyOptions = [],
+  fixedAssignedAdminEmail,
+  assignedAdminsReadOnly = false,
   submitLabel,
   loading = false,
   onCancel,
@@ -64,16 +68,15 @@ export default function ShipmentJobForm({
   };
 
   const updateCompany = (companyName: string) => {
-    const selectedAdminAssignments = getCompanyAdminAssignments(
+    const selectedAdminIds = getDefaultAssignedAdminIds(
       companyName,
       companyOptions,
+      job ? undefined : fixedAssignedAdminEmail,
     );
     setForm((current) => ({
       ...current,
       company_name: companyName,
-      assigned_admin_user_ids: selectedAdminAssignments.map(
-        (assignment) => assignment.admin_user_id,
-      ),
+      assigned_admin_user_ids: selectedAdminIds,
     }));
   };
 
@@ -328,6 +331,9 @@ export default function ShipmentJobForm({
       <AssignedAdminFields
         assignments={availableAdminAssignments}
         selectedAdminIds={form.assigned_admin_user_ids}
+        readOnly={
+          assignedAdminsReadOnly || Boolean(!job && fixedAssignedAdminEmail)
+        }
         onToggle={toggleAssignedAdmin}
       />
 
@@ -376,12 +382,20 @@ function useShipmentForm(job?: ShipmentJob | null) {
 function AssignedAdminFields({
   assignments,
   selectedAdminIds,
+  readOnly = false,
   onToggle,
 }: {
   assignments: NonNullable<CompanyUser["admin_assignments"]>;
   selectedAdminIds: string[];
+  readOnly?: boolean;
   onToggle: (adminUserId: string) => void;
 }) {
+  const visibleAssignments = readOnly
+    ? assignments.filter((assignment) =>
+        selectedAdminIds.includes(assignment.admin_user_id),
+      )
+    : assignments;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <div className="mb-3">
@@ -389,21 +403,30 @@ function AssignedAdminFields({
           {t("admin.userRegistration.assignedAdmins")}
         </span>
       </div>
-      {assignments.length === 0 ? (
+      {visibleAssignments.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
           {t("superAdmin.operators.noOperators")}
         </div>
       ) : (
         <div className="grid gap-2 md:grid-cols-2">
-          {assignments.map((assignment) => (
+          {visibleAssignments.map((assignment) => (
             <label
               key={assignment.admin_user_id}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-cyan-300 hover:bg-cyan-50/50"
+              className={`flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition ${
+                readOnly
+                  ? "cursor-default"
+                  : "cursor-pointer hover:border-cyan-300 hover:bg-cyan-50/50"
+              }`}
             >
               <input
                 type="checkbox"
                 checked={selectedAdminIds.includes(assignment.admin_user_id)}
-                onChange={() => onToggle(assignment.admin_user_id)}
+                disabled={readOnly}
+                onChange={() => {
+                  if (!readOnly) {
+                    onToggle(assignment.admin_user_id);
+                  }
+                }}
                 className="mt-1 h-4 w-4 rounded border-slate-300"
               />
               <span className="min-w-0">
@@ -412,7 +435,9 @@ function AssignedAdminFields({
                     {assignment.user_name || assignment.email}
                   </span>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
-                    {t(`superAdmin.operators.staffRole.${assignment.staff_role}`)}
+                    {t(
+                      `superAdmin.operators.staffRole.${assignment.staff_role}`,
+                    )}
                   </span>
                 </span>
                 <span className="block truncate text-xs text-slate-500">
@@ -444,6 +469,25 @@ function getCompanyAdminAssignments(
     });
 
   return [...assignmentsByAdminId.values()];
+}
+
+function getDefaultAssignedAdminIds(
+  companyName: string,
+  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[],
+  fixedAssignedAdminEmail?: string,
+) {
+  const assignments = getCompanyAdminAssignments(companyName, companyOptions);
+
+  if (!fixedAssignedAdminEmail) {
+    return assignments.map((assignment) => assignment.admin_user_id);
+  }
+
+  const normalizedEmail = fixedAssignedAdminEmail.trim().toLowerCase();
+  return assignments
+    .filter(
+      (assignment) => assignment.email.trim().toLowerCase() === normalizedEmail,
+    )
+    .map((assignment) => assignment.admin_user_id);
 }
 
 function TrackingEventFields({

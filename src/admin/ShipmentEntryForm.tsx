@@ -45,6 +45,7 @@ interface ShipmentEntryFormProps {
   documents: ShipmentDocument[];
   companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   adminEmail: string;
+  canEditAssignedAdmins?: boolean;
   criteria?: ShipmentEntryCriteria;
   onRefresh: () => Promise<void>;
 }
@@ -54,6 +55,7 @@ export default function ShipmentEntryForm({
   documents,
   companyOptions = [],
   adminEmail,
+  canEditAssignedAdmins = false,
   criteria = { kind: "all" },
   onRefresh,
 }: ShipmentEntryFormProps) {
@@ -377,6 +379,7 @@ export default function ShipmentEntryForm({
             visibleFrom={visibleFrom}
             visibleTo={visibleTo}
             adminTheme
+            showInternalDocuments
             companyOptions={companyOptions}
             onSort={handleSort}
             onSelectJob={setSelectedJob}
@@ -389,6 +392,7 @@ export default function ShipmentEntryForm({
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
             companyOptions={companyOptions}
+            assignedAdminsReadOnly={!canEditAssignedAdmins}
           />
         </div>
       )}
@@ -397,6 +401,10 @@ export default function ShipmentEntryForm({
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
             companyOptions={companyOptions}
+            fixedAssignedAdminEmail={
+              canEditAssignedAdmins ? undefined : adminEmail
+            }
+            assignedAdminsReadOnly={!canEditAssignedAdmins}
             submitLabel={t("common.create")}
             loading={loading}
             onSubmit={handleCreate}
@@ -413,12 +421,14 @@ function AdminShipmentJobModal({
   companyOptions,
   onClose,
   onSubmit,
+  assignedAdminsReadOnly,
 }: {
   job: ShipmentJob | null;
   loading: boolean;
   companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
+  assignedAdminsReadOnly: boolean;
 }) {
   if (!job) {
     return null;
@@ -459,6 +469,7 @@ function AdminShipmentJobModal({
             key={job.id}
             job={job}
             companyOptions={companyOptions}
+            assignedAdminsReadOnly={assignedAdminsReadOnly}
             submitLabel={t("common.update")}
             loading={loading}
             onSubmit={onSubmit}

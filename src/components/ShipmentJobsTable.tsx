@@ -1,14 +1,9 @@
-import {
-  CalendarDays,
-  FileText,
-  MoreHorizontal,
-} from "lucide-react";
+import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
   ShipmentDocument,
   ShipmentJob,
-  statusBadgeClasses,
   statusLabels,
   tradeModeLabels,
   transportModeLabels,
@@ -363,15 +358,9 @@ function buildColumns(
     {
       id: "status",
       label: t("common.status"),
-      width: 120,
+      width: 180,
       sortKey: "status",
-      render: (job) => (
-        <span
-          className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
-        >
-          {statusLabels[job.status]}
-        </span>
-      ),
+      render: (job) => <ShipmentProgressStatus job={job} />,
     },
     {
       id: "working_days",
@@ -557,18 +546,132 @@ function DocumentPills({
   return (
     <div className="flex flex-col items-start gap-1.5">
       {documents.map((document) => (
-        <span
+        <button
+          type="button"
           key={document.id}
+          onClick={(event) => {
+            event.stopPropagation();
+            window.open(document.file_url || "/sample-document.pdf", "_blank");
+          }}
           className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-            muted ? "bg-slate-100 text-slate-600" : "bg-cyan-50 text-cyan-800"
+            muted
+              ? "bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100"
           }`}
+          title={document.name}
         >
           <FileText className="h-3 w-3 shrink-0" />
           <span className="min-w-0 truncate">{document.name}</span>
-        </span>
+        </button>
       ))}
     </div>
   );
+}
+
+function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
+  const recentlyCompleted =
+    job.status === "completed" && isWithinRecentBusinessDays(job.updated_at, 3);
+  const staleCompleted = job.status === "completed" && !recentlyCompleted;
+  const activeStepCount =
+    job.status === "completed" ? 3 : job.status === "customs_hold" ? 2 : 1;
+  const statusClass = staleCompleted
+    ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+    : job.status === "completed"
+      ? "border-emerald-200 bg-emerald-100 text-emerald-800"
+      : job.status === "customs_hold"
+        ? "border-amber-200 bg-amber-100 text-amber-800"
+        : "border-blue-200 bg-blue-100 text-blue-800";
+
+  return (
+    <div className="min-w-[150px] space-y-2">
+      <span
+        className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}
+      >
+        {statusLabels[job.status]}
+      </span>
+      <div className="grid grid-cols-3 gap-1" aria-hidden="true">
+        {[0, 1, 2].map((stepIndex) => (
+          <span
+            key={stepIndex}
+            className={`h-1.5 rounded-full ${getProgressSegmentClass(
+              stepIndex,
+              activeStepCount,
+              job.status,
+              staleCompleted,
+            )}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function getProgressSegmentClass(
+  stepIndex: number,
+  activeStepCount: number,
+  status: ShipmentJob["status"],
+  staleCompleted: boolean,
+) {
+  if (staleCompleted || stepIndex >= activeStepCount) {
+    return "bg-gray-200 dark:bg-gray-700";
+  }
+
+  if (status === "completed") {
+    return "bg-emerald-500";
+  }
+
+  if (status === "customs_hold" && stepIndex === 1) {
+    return "bg-amber-500";
+  }
+
+  return "bg-blue-500";
+}
+
+function isWithinRecentBusinessDays(
+  value: string | null,
+  maxBusinessDays: number,
+) {
+  const date = parseDate(value);
+  if (!date) {
+    return false;
+  }
+
+  return countBusinessDays(date, new Date()) <= maxBusinessDays;
+}
+
+function parseDate(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function countBusinessDays(startDate: Date, endDate: Date) {
+  const start = startOfLocalDay(startDate);
+  const end = startOfLocalDay(endDate);
+
+  if (end < start) {
+    return 0;
+  }
+
+  let count = 0;
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) {
+      count += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return count;
+}
+
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
@@ -585,11 +688,7 @@ function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
   );
 }
 
-function ResponsibleAdminNames({
-  names,
-}: {
-  names: string[];
-}) {
+function ResponsibleAdminNames({ names }: { names: string[] }) {
   if (names.length === 0) {
     return <span className="text-slate-400">-</span>;
   }

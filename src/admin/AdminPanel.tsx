@@ -358,6 +358,7 @@ export default function AdminPanel({
               jobs={jobs}
               documents={documents}
               adminEmail={profileEmail}
+              canEditAssignedAdmins={isSuperAdmin}
               companyOptions={shipmentCompanyOptions}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
