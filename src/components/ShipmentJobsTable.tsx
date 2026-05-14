@@ -577,8 +577,9 @@ function DocumentPills({
 }
 
 function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
+  const completedAt = getShipmentCompletedAt(job);
   const recentlyCompleted =
-    job.status === "completed" && isWithinRecentBusinessDays(job.updated_at, 3);
+    job.status === "completed" && isWithinRecentBusinessDays(completedAt, 3);
   const staleCompleted = job.status === "completed" && !recentlyCompleted;
   const activeStepCount = getShipmentProgressStepCount(job);
   const statusClass = staleCompleted
@@ -636,6 +637,48 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
   }
 
   return 1;
+}
+
+function getShipmentCompletedAt(job: ShipmentJob) {
+  if (job.status !== "completed") {
+    return null;
+  }
+
+  const completionEvent = [...(job.tracking_events ?? [])]
+    .filter(
+      (event) =>
+        (event.sort_order ?? 0) >= 90 || event.description.includes("完了"),
+    )
+    .sort(compareTrackingEventsNewestFirst)[0];
+
+  return (
+    completionEvent?.event_date ??
+    completionEvent?.updated_at ??
+    completionEvent?.created_at ??
+    job.updated_at
+  );
+}
+
+function compareTrackingEventsNewestFirst(
+  first: ShipmentJob["tracking_events"][number],
+  second: ShipmentJob["tracking_events"][number],
+) {
+  const firstTime = getTrackingEventTime(first);
+  const secondTime = getTrackingEventTime(second);
+
+  if (secondTime !== firstTime) {
+    return secondTime - firstTime;
+  }
+
+  return (second.sort_order ?? 0) - (first.sort_order ?? 0);
+}
+
+function getTrackingEventTime(event: ShipmentJob["tracking_events"][number]) {
+  return Math.max(
+    parseDate(event.event_date)?.getTime() ?? 0,
+    parseDate(event.updated_at)?.getTime() ?? 0,
+    parseDate(event.created_at)?.getTime() ?? 0,
+  );
 }
 
 function getProgressSegmentClass(
