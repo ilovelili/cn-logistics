@@ -25,6 +25,10 @@ import PaginationControls from "./PaginationControls";
 import SortableTableHeader from "./SortableTableHeader";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
+import {
+  getResponsibleAdminNames,
+  type ShipmentJobsCompanyOption,
+} from "./shipmentJobsTableUtils";
 
 interface DocumentControlProps {
   jobs: ShipmentJob[];
@@ -34,18 +38,21 @@ interface DocumentControlProps {
   isAdminAuthenticated: boolean;
   requesterEmail?: string;
   approvalFilter: DocumentApprovalFilter;
+  companyOptions?: ShipmentJobsCompanyOption[];
 }
 
 interface DocumentRow {
   id: string;
   job: ShipmentJob;
   document: ShipmentDocument;
+  responsibleAdminNames: string[];
 }
 
 type DocumentSortKey =
   | "id"
   | "scope"
   | "company"
+  | "responsibleAdmins"
   | "document"
   | "approval"
   | "status"
@@ -74,6 +81,7 @@ export default function DocumentControl({
   isAdminAuthenticated,
   requesterEmail,
   approvalFilter,
+  companyOptions = [],
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
   const [scope, setScope] = React.useState("all");
@@ -145,10 +153,11 @@ export default function DocumentControl({
           id: document.id,
           job,
           document,
+          responsibleAdminNames: getResponsibleAdminNames(job, companyOptions),
         },
       ];
     });
-  }, [documents, isAdminAuthenticated, jobs]);
+  }, [companyOptions, documents, isAdminAuthenticated, jobs]);
 
   const filteredRows = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -158,6 +167,7 @@ export default function DocumentControl({
         row.document.id,
         formatShortId(row.document.id),
         row.document.name,
+        row.responsibleAdminNames.join(" "),
         row.job.invoice_number,
         row.job.shipper_name,
         row.job.consignee_name,
@@ -297,6 +307,17 @@ export default function DocumentControl({
                 <span className="font-semibold text-gray-700 dark:text-gray-200">
                   {row.job.company_name || "-"}
                 </span>
+              ),
+            },
+            {
+              id: "responsibleAdmins" as const,
+              label: t("admin.userRegistration.contactPerson"),
+              width: 170,
+              sortKey: "responsibleAdmins" as const,
+              render: (row: DocumentRow) => (
+                <ResponsibleAdminNames
+                  names={row.responsibleAdminNames}
+                />
               ),
             },
           ]
@@ -737,6 +758,26 @@ export default function DocumentControl({
   );
 }
 
+function ResponsibleAdminNames({ names }: { names: string[] }) {
+  if (names.length === 0) {
+    return <span className="text-gray-400 dark:text-gray-500">-</span>;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      {names.map((name) => (
+        <span
+          key={name}
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          title={name}
+        >
+          <span className="min-w-0 truncate">{name}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function DocumentPreviewModal({
   document,
   onClose,
@@ -911,6 +952,8 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
       return row.document.name;
     case "company":
       return row.job.company_name ?? "";
+    case "responsibleAdmins":
+      return row.responsibleAdminNames.join(" ");
     case "approval":
       return getDocumentApprovalSortValue(row.document);
     case "status":

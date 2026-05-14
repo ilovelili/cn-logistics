@@ -159,7 +159,7 @@ const ja = {
   "documents.scope": "区分",
   "documents.approval": "承認状態",
   "documents.downloadRequest": "DL申請",
-  "documents.adminReview": "承認操作",
+  "documents.adminReview": "操作",
   "documents.downloadRequestDate": "DL承認申請日",
   "documents.preview": "書類プレビュー",
   "documents.downloadRequestApplied": "承認中",

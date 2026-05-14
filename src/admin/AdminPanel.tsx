@@ -373,6 +373,7 @@ export default function AdminPanel({
               isAdminAuthenticated={isAdminAuthenticated}
               requesterEmail={profileEmail}
               approvalFilter={documentApprovalFilter}
+              companyOptions={shipmentCompanyOptions}
             />
           )}
           {view === "userRegistration" && (
