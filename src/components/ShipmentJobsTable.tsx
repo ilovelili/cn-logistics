@@ -49,7 +49,7 @@ interface ShipmentJobsTableColumn {
   render: (job: ShipmentJob) => ReactNode;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v4";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v5";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -106,6 +106,13 @@ export default function ShipmentJobsTable({
       ),
     [adminTheme, companyOptions, documentsByJob, showInternalDocuments],
   );
+  const columnSettingsRoleKey = `${columnSettingsStorageKey}-${
+    adminTheme
+      ? showInternalDocuments
+        ? "admin-internal"
+        : "admin"
+      : "customer"
+  }`;
   const {
     orderedColumns,
     visibleColumns,
@@ -114,7 +121,7 @@ export default function ShipmentJobsTable({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    columnSettingsStorageKey,
+    columnSettingsRoleKey,
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -290,6 +297,7 @@ export default function ShipmentJobsTable({
         )}
       </div>
       <PaginationControls
+        adminTheme={adminTheme}
         currentPage={currentPage}
         pageCount={pageCount}
         pageSize={pageSize}
@@ -556,7 +564,7 @@ function DocumentPills({
           className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
             muted
               ? "bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100"
+              : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
           }`}
           title={document.name}
         >
@@ -722,7 +730,7 @@ function ResponsibleAdminNames({ names }: { names: string[] }) {
       {names.map((name) => (
         <span
           key={name}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
           title={name}
         >
           <span className="min-w-0 truncate">{name}</span>

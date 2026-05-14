@@ -1136,7 +1136,7 @@ function AssignedAdminsSummary({
       {assignments.map((assignment) => (
         <span
           key={assignment.admin_user_id}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
           title={assignment.email}
         >
           <span className="min-w-0 truncate">

@@ -425,8 +425,8 @@ export default function DocumentControl({
           <span
             className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
               row.document.scope === "internal"
-                ? "bg-slate-100 text-slate-700"
-                : "bg-cyan-50 text-cyan-800"
+                ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                : "bg-cyan-50 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200"
             }`}
           >
             {row.document.scope === "internal" ? (
@@ -458,7 +458,9 @@ export default function DocumentControl({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "document_control_table_columns",
+    isAdminAuthenticated
+      ? "document_control_table_columns_admin_v2"
+      : "document_control_table_columns_customer_v2",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -627,6 +629,7 @@ export default function DocumentControl({
             onVisibilityChange={setColumnVisibility}
             onMoveColumn={moveColumn}
             onReset={resetColumns}
+            adminTheme={isAdminStyle}
           />
         </div>
         <div className="overflow-x-auto">
@@ -738,6 +741,7 @@ export default function DocumentControl({
           )}
         </div>
         <PaginationControls
+          adminTheme={isAdminStyle}
           currentPage={safeCurrentPage}
           pageCount={pageCount}
           pageSize={pageSize}
@@ -751,6 +755,7 @@ export default function DocumentControl({
       {previewDocument && (
         <DocumentPreviewModal
           document={previewDocument}
+          adminTheme={isAdminStyle}
           onClose={() => setPreviewDocument(null)}
         />
       )}
@@ -768,7 +773,7 @@ function ResponsibleAdminNames({ names }: { names: string[] }) {
       {names.map((name) => (
         <span
           key={name}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800"
+          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
           title={name}
         >
           <span className="min-w-0 truncate">{name}</span>
@@ -780,9 +785,11 @@ function ResponsibleAdminNames({ names }: { names: string[] }) {
 
 function DocumentPreviewModal({
   document,
+  adminTheme,
   onClose,
 }: {
   document: ShipmentDocument;
+  adminTheme: boolean;
   onClose: () => void;
 }) {
   const previewUrl = document.file_url || "/sample-document.pdf";
@@ -794,20 +801,46 @@ function DocumentPreviewModal({
       aria-modal="true"
       aria-label={t("documents.preview")}
     >
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+      <div
+        className={`flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden shadow-2xl ${
+          adminTheme
+            ? "rounded-xl bg-white dark:bg-gray-900"
+            : "rounded-[2rem] bg-white"
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between border-b px-6 py-4 ${
+            adminTheme
+              ? "border-gray-200 dark:border-gray-800"
+              : "border-slate-200"
+          }`}
+        >
           <div className="min-w-0">
-            <h3 className="truncate text-xl font-black text-slate-950">
+            <h3
+              className={`truncate text-xl font-black ${
+                adminTheme ? "text-gray-900 dark:text-white" : "text-slate-950"
+              }`}
+            >
               {document.name}
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p
+              className={`mt-1 text-sm ${
+                adminTheme
+                  ? "text-gray-500 dark:text-gray-400"
+                  : "text-slate-500"
+              }`}
+            >
               {t("documents.preview")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className={`p-2 transition ${
+              adminTheme
+                ? "rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+                : "rounded-2xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            }`}
             aria-label={t("jobs.detail.close")}
           >
             <X className="h-5 w-5" />
@@ -816,7 +849,11 @@ function DocumentPreviewModal({
         <iframe
           title={document.name}
           src={previewUrl}
-          className="h-[72vh] w-full bg-slate-100"
+          className={
+            adminTheme
+              ? "h-[72vh] w-full bg-gray-100 dark:bg-gray-950"
+              : "h-[72vh] w-full bg-slate-100"
+          }
         />
       </div>
     </div>
@@ -913,10 +950,10 @@ function DocumentActionButton({
       onClick={handleClick}
       className={`inline-flex min-w-[96px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition ${
         canDownload
-          ? "border-slate-200 text-slate-700 hover:bg-slate-50"
+          ? "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           : canRequest
-            ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
-            : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
+            : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500"
       }`}
       title={!canDownload && !canRequest ? lockedTitle : undefined}
     >

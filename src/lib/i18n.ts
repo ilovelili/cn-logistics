@@ -149,7 +149,7 @@ const ja = {
   "documents.onHold": "保留中",
   "documents.pendingApproval": "書類DL承認待ち",
   "documents.approvedDownloads": "書類DL承認済み",
-  "documents.searchPlaceholder": "書類名、会社名、インボイス#で検索...",
+  "documents.searchPlaceholder": "書類名、会社名、担当者、インボイス#で検索...",
   "documents.filter.all": "すべての書類",
   "documents.filter.customer": "顧客向け書類",
   "documents.filter.internal": "社内書類",
