@@ -1,5 +1,5 @@
 import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
   ShipmentDocument,
@@ -9,6 +9,7 @@ import {
   transportModeLabels,
 } from "../lib/shipmentJobs";
 import PaginationControls from "./PaginationControls";
+import DocumentPreviewModal from "./DocumentPreviewModal";
 import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
@@ -96,6 +97,8 @@ export default function ShipmentJobsTable({
   onPageChange,
   onPageSizeChange,
 }: ShipmentJobsTableProps) {
+  const [previewDocument, setPreviewDocument] =
+    useState<ShipmentDocument | null>(null);
   const columns = useMemo(
     () =>
       buildColumns(
@@ -103,8 +106,15 @@ export default function ShipmentJobsTable({
         adminTheme,
         showInternalDocuments,
         companyOptions,
+        setPreviewDocument,
       ),
-    [adminTheme, companyOptions, documentsByJob, showInternalDocuments],
+    [
+      adminTheme,
+      companyOptions,
+      documentsByJob,
+      showInternalDocuments,
+      setPreviewDocument,
+    ],
   );
   const columnSettingsRoleKey = `${columnSettingsStorageKey}-${
     adminTheme
@@ -307,6 +317,13 @@ export default function ShipmentJobsTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
+      {previewDocument && (
+        <DocumentPreviewModal
+          document={previewDocument}
+          adminTheme={adminTheme}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
     </section>
   );
 }
@@ -316,6 +333,7 @@ function buildColumns(
   adminTheme: boolean,
   showInternalDocuments: boolean,
   companyOptions: ShipmentJobsCompanyOption[],
+  onPreviewDocument: (document: ShipmentDocument) => void,
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
   const strongText = adminTheme
@@ -516,6 +534,7 @@ function buildColumns(
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "customer",
           )}
+          onPreview={onPreviewDocument}
         />
       ),
     },
@@ -532,6 +551,7 @@ function buildColumns(
             (document) => document.scope === "internal",
           )}
           muted
+          onPreview={onPreviewDocument}
         />
       ),
     });
@@ -543,9 +563,11 @@ function buildColumns(
 function DocumentPills({
   documents,
   muted = false,
+  onPreview,
 }: {
   documents?: ShipmentDocument[];
   muted?: boolean;
+  onPreview: (document: ShipmentDocument) => void;
 }) {
   if (!documents?.length) {
     return <span className="text-slate-400">-</span>;
@@ -559,7 +581,7 @@ function DocumentPills({
           key={document.id}
           onClick={(event) => {
             event.stopPropagation();
-            window.open(document.file_url || "/sample-document.pdf", "_blank");
+            onPreview(document);
           }}
           className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
             muted
