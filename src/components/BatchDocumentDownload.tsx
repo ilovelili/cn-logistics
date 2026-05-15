@@ -19,6 +19,7 @@ interface BatchDocumentDownloadProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
   loading: boolean;
+  requesterEmail: string;
   onRefresh: () => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export default function BatchDocumentDownload({
   jobs,
   documents,
   loading,
+  requesterEmail,
   onRefresh,
 }: BatchDocumentDownloadProps) {
   const [query, setQuery] = useState("");
@@ -106,7 +108,7 @@ export default function BatchDocumentDownload({
     try {
       await Promise.all(
         selectedDocumentIds.map((documentId) =>
-          updateShipmentDocumentApproval(documentId, "pending"),
+          updateShipmentDocumentApproval(documentId, "pending", requesterEmail),
         ),
       );
       const requestedCount = selectedDocumentIds.length;
@@ -145,9 +147,6 @@ export default function BatchDocumentDownload({
             <h1 className="text-3xl font-black text-slate-950">
               {t("documents.title")}
             </h1>
-          </div>
-          <div className="rounded-2xl bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-900">
-            {t("documents.batchSelected", { count: selectedCount })}
           </div>
         </div>
       </section>

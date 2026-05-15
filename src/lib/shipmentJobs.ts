@@ -430,6 +430,22 @@ export async function updateShipmentDocumentApproval(
   approvalStatus: DocumentApprovalStatus,
   requesterEmail?: string,
 ) {
+  if (requesterEmail && approvalStatus === "pending") {
+    const { error } = await supabase.rpc(
+      "request_accessible_shipment_document_download",
+      {
+        requester_email: requesterEmail,
+        target_document_id: id,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
+
   if (
     requesterEmail &&
     (approvalStatus === "approved" || approvalStatus === "rejected")

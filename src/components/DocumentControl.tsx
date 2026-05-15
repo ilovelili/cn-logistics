@@ -241,7 +241,11 @@ export default function DocumentControl({
     async (document: ShipmentDocument) => {
       setRequestingDocumentId(document.id);
       try {
-        await updateShipmentDocumentApproval(document.id, "pending");
+        await updateShipmentDocumentApproval(
+          document.id,
+          "pending",
+          requesterEmail,
+        );
         await onRefresh();
         showToast("success", t("documents.downloadRequested"));
       } catch {
@@ -250,7 +254,7 @@ export default function DocumentControl({
         setRequestingDocumentId(null);
       }
     },
-    [onRefresh, showToast],
+    [onRefresh, requesterEmail, showToast],
   );
 
   const handleAdminApproval = React.useCallback(

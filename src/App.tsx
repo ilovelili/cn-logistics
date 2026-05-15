@@ -223,6 +223,7 @@ function MainApp({
             jobs={visibleJobs}
             documents={visibleDocuments}
             loading={jobsLoading}
+            requesterEmail={profileEmail}
             onRefresh={loadJobs}
           />
         ) : (
