@@ -91,6 +91,12 @@ export default function BatchDocumentDownload({
     setTimeout(() => setToast(null), 4000);
   };
 
+  const previewApprovedDocument = (document: ShipmentDocument) => {
+    if (isCustomerDocumentDownloadable(document)) {
+      setPreviewDocument(document);
+    }
+  };
+
   const toggleDocument = (documentId: string) => {
     setSelectedDocumentIds((current) =>
       current.includes(documentId)
@@ -259,7 +265,7 @@ export default function BatchDocumentDownload({
                       <td className="px-4 py-4">
                         <DocumentNameCell
                           document={document}
-                          onPreview={setPreviewDocument}
+                          onPreview={previewApprovedDocument}
                         />
                       </td>
                       <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
@@ -287,7 +293,7 @@ export default function BatchDocumentDownload({
           </table>
         </div>
       </section>
-      {previewDocument && (
+      {previewDocument && isCustomerDocumentDownloadable(previewDocument) && (
         <DocumentPreviewModal
           document={previewDocument}
           adminTheme

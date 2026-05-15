@@ -322,13 +322,15 @@ export default function ShipmentJobsTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
-      {previewDocument && (
-        <DocumentPreviewModal
-          document={previewDocument}
-          adminTheme={adminTheme}
-          onClose={() => setPreviewDocument(null)}
-        />
-      )}
+      {previewDocument &&
+        (!approvedDocumentsOnly ||
+          isCustomerDocumentDownloadable(previewDocument)) && (
+          <DocumentPreviewModal
+            document={previewDocument}
+            adminTheme={adminTheme}
+            onClose={() => setPreviewDocument(null)}
+          />
+        )}
     </section>
   );
 }
@@ -588,8 +590,10 @@ function DocumentPills({
         const canPreview =
           !approvedOnly || isCustomerDocumentDownloadable(document);
         const pillClass =
-          muted || !canPreview
-            ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
+          muted
+            ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100 transition hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-200 dark:ring-indigo-900 dark:hover:bg-indigo-950"
+            : !canPreview
+              ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
             : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950";
         const content = (
           <>
@@ -617,7 +621,9 @@ function DocumentPills({
             key={document.id}
             onClick={(event) => {
               event.stopPropagation();
-              onPreview(document);
+              if (canPreview) {
+                onPreview(document);
+              }
             }}
             className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}
             title={document.name}

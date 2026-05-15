@@ -608,6 +608,13 @@ export function getShipmentTotalWorkingDays(job: ShipmentJob) {
 }
 
 export async function downloadShipmentDocument(document: ShipmentDocument) {
+  if (
+    document.scope === "customer" &&
+    !isCustomerDocumentDownloadable(document)
+  ) {
+    throw new Error("Document download is not approved.");
+  }
+
   const fileUrl = document.file_url || "/sample-document.pdf";
   const fileName = getDownloadFileName(document);
   const response = await fetch(fileUrl);

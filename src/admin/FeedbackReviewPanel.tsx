@@ -111,9 +111,12 @@ export default function FeedbackReviewPanel({
       {
         id: "operator",
         label: t("superAdmin.feedback.operator"),
-        width: 220,
+        width: 210,
         render: (item) => (
-          <span className="text-gray-700 dark:text-gray-300">
+          <span
+            className="block truncate text-gray-700 dark:text-gray-300"
+            title={item.admin_operator_email ?? undefined}
+          >
             {item.admin_operator_email || "-"}
           </span>
         ),
@@ -121,9 +124,12 @@ export default function FeedbackReviewPanel({
       {
         id: "submitter",
         label: t("superAdmin.feedback.submitter"),
-        width: 220,
+        width: 200,
         render: (item) => (
-          <span className="text-gray-700 dark:text-gray-300">
+          <span
+            className="block truncate text-gray-700 dark:text-gray-300"
+            title={item.submitter_email}
+          >
             {item.submitter_email}
           </span>
         ),
@@ -325,7 +331,7 @@ export default function FeedbackReviewPanel({
                     className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
                   >
                     {visibleTableColumns.map((column) => (
-                      <td key={column.id} className="py-4 pr-4">
+                      <td key={column.id} className="py-4 pr-4 align-middle">
                         {column.render(item)}
                       </td>
                     ))}
