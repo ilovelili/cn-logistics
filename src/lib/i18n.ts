@@ -41,6 +41,8 @@ const ja = {
   "common.blAwbDate": "BL/AWB日付",
   "common.vesselFlightNo": "船名/便名 No.",
   "common.workingDaysSpent": "経過営業日",
+  "common.fromDate": "開始日",
+  "common.toDate": "終了日",
   "common.feedback": "評価",
   "common.notes": "メモ",
   "common.cancel": "キャンセル",
@@ -81,15 +83,19 @@ const ja = {
   "transport.lcl": "LCL",
   "transport.fcl": "FCL",
 
-  "dashboard.title": "出荷管理ダッシュボード",
-  "dashboard.description":
-    "取引形態、BL/AWB番号、航路、書類準備状況を一元管理します。",
+  "dashboard.title": "ダッシュボード",
   "dashboard.completionRate": "完了率",
   "dashboard.totalJobs": "案件数",
   "dashboard.statusPipeline": "ステータス別件数",
   "dashboard.tradeMix": "取引形態別",
   "dashboard.transportMix": "輸送形態別",
   "dashboard.recentJobs": "最近更新された案件",
+  "dashboard.previousStatus": "前回ステータス",
+  "dashboard.currentStatus": "現在ステータス",
+  "dashboard.statusDays": "ステータス日数",
+  "dashboard.previousStatusShort": "前回",
+  "dashboard.currentStatusShort": "現在",
+  "dashboard.totalShort": "合計",
   "dashboard.noJobs":
     "出荷案件がまだありません。最新マイグレーションを実行するか、管理画面から作成してください。",
   "dashboard.setup.title": "Supabaseの設定を確認してください",
@@ -97,8 +103,6 @@ const ja = {
     "shipment_jobs / shipment_documents を読み込めませんでした。Supabase SQL Editorで最新マイグレーションを実行してから、画面を更新してください。",
 
   "jobs.title": "出荷案件",
-  "jobs.description":
-    "取引形態、輸送形態、BL/AWB番号、荷主/荷受人、ルート、書類チェックリストを管理します。",
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
@@ -142,8 +146,6 @@ const ja = {
   "jobs.detail.parties": "関係者",
 
   "documents.title": "書類管理",
-  "documents.description":
-    "顧客向け書類と社内用の経理・補助書類を分けて管理します。",
   "documents.customer": "顧客向け",
   "documents.internal": "社内",
   "documents.onHold": "保留中",
@@ -166,8 +168,6 @@ const ja = {
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
   "documents.batchTitle": "書類DL",
-  "documents.batchDescription":
-    "複数案件の顧客向け書類をまとめて選択し、ダウンロード承認を一括申請できます。",
   "documents.batchSearchPlaceholder":
     "インボイス#、書類名、荷主、荷受人、POL/AOL、POD/AOD、BL/AWBで検索...",
   "documents.batchSelected": "{count}件選択中",
@@ -187,6 +187,7 @@ const ja = {
   "documents.approval.rejected": "却下",
 
   "form.status": "ステータス",
+  "form.statusPeriods": "ステータス期間",
   "form.tradeMode": "取引形態",
   "form.tradeTerm": "取引条件",
   "form.transportMode": "輸送形態",
@@ -204,8 +205,6 @@ const ja = {
   "form.addVesselFlight": "追加",
 
   "admin.dashboard": "ダッシュボード",
-  "admin.dashboardDescription":
-    "出荷案件、通関保留、書類対応状況を管理します。",
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
   "admin.switch.currentlySwitchedAs": "{name} として表示中",
@@ -226,8 +225,6 @@ const ja = {
   "admin.entry.createFailed": "出荷案件の作成に失敗しました",
   "admin.entry.updateFailed": "出荷案件の更新に失敗しました",
   "admin.documents.title": "書類承認",
-  "admin.documents.description":
-    "顧客向け書類は承認後にダウンロード可能になります。社内書類は管理者専用です。",
   "admin.documents.noDocuments": "この案件には書類が登録されていません。",
   "admin.documents.approved": "承認しました",
   "admin.documents.rejected": "書類を却下しました",
@@ -292,8 +289,6 @@ const ja = {
   "superAdmin.switch.normalUsers": "通常ユーザー",
   "superAdmin.switch.backToSuperAdmin": "スーパー管理者に戻る",
   "superAdmin.operators.title": "管理者登録",
-  "superAdmin.operators.description":
-    "出荷案件やユーザーを担当する管理者オペレーターを追加します。",
   "superAdmin.operators.new": "管理者を追加",
   "superAdmin.operators.list": "管理者一覧",
   "superAdmin.operators.email": "メールアドレス",
@@ -319,8 +314,6 @@ const ja = {
   "superAdmin.operators.confirmDelete":
     "この管理者を削除します。削除後はログインや切替先として利用できません。",
   "superAdmin.feedback.title": "評価一覧",
-  "superAdmin.feedback.description":
-    "顧客からの評価を確認し、管理者オペレーター別の対応品質を把握します。",
   "superAdmin.feedback.list": "評価履歴",
   "superAdmin.feedback.average": "平均評価",
   "superAdmin.feedback.operator": "担当管理者",

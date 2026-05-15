@@ -1,4 +1,5 @@
 import {
+  getShipmentTotalWorkingDays,
   getDocumentsForJob,
   ShipmentDocument,
   ShipmentJob,
@@ -138,19 +139,7 @@ export function buildShipmentJobDocumentsByJob(
 }
 
 export function getShipmentJobWorkingDays(job: ShipmentJob) {
-  if (job.status !== "under_process" && job.status !== "completed") {
-    return null;
-  }
-
-  const startDate = parseDate(job.created_at);
-  const endDate =
-    job.status === "completed" ? parseDate(job.updated_at) : new Date();
-
-  if (!startDate || !endDate) {
-    return null;
-  }
-
-  return countWorkingDays(startDate, endDate);
+  return getShipmentTotalWorkingDays(job);
 }
 
 export function getResponsibleAdminNames(
@@ -225,39 +214,4 @@ function compareNonPinnedValues(
   });
 
   return direction === "asc" ? comparison : -comparison;
-}
-
-function parseDate(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function countWorkingDays(startDate: Date, endDate: Date) {
-  const start = startOfLocalDay(startDate);
-  const end = startOfLocalDay(endDate);
-
-  if (end < start) {
-    return 0;
-  }
-
-  let count = 0;
-  const cursor = new Date(start);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-}
-
-function startOfLocalDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }

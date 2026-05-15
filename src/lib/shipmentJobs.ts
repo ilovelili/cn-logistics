@@ -15,6 +15,12 @@ export interface ShipmentJob {
   id: string;
   company_name: string | null;
   status: ShipmentStatus;
+  under_process_from_date: string | null;
+  under_process_to_date: string | null;
+  customs_hold_from_date: string | null;
+  customs_hold_to_date: string | null;
+  completed_from_date: string | null;
+  completed_to_date: string | null;
   trade_mode: TradeMode;
   trade_term: string | null;
   invoice_number: string | null;
@@ -82,6 +88,12 @@ export interface ShipmentDocument {
 export interface ShipmentJobForm {
   company_name: string;
   status: ShipmentStatus;
+  under_process_from_date: string;
+  under_process_to_date: string;
+  customs_hold_from_date: string;
+  customs_hold_to_date: string;
+  completed_from_date: string;
+  completed_to_date: string;
   trade_mode: TradeMode;
   trade_term: string;
   invoice_number: string;
@@ -114,6 +126,30 @@ export const statusOptions: { value: ShipmentStatus; label: string }[] = [
   { value: "customs_hold", label: t("status.customsHold") },
   { value: "completed", label: t("status.completed") },
 ];
+
+export const shipmentStatusOrder: ShipmentStatus[] = [
+  "under_process",
+  "customs_hold",
+  "completed",
+];
+
+export const shipmentStatusDateFields: Record<
+  ShipmentStatus,
+  { from: keyof ShipmentJob; to: keyof ShipmentJob }
+> = {
+  under_process: {
+    from: "under_process_from_date",
+    to: "under_process_to_date",
+  },
+  customs_hold: {
+    from: "customs_hold_from_date",
+    to: "customs_hold_to_date",
+  },
+  completed: {
+    from: "completed_from_date",
+    to: "completed_to_date",
+  },
+};
 
 export const tradeModeOptions: { value: TradeMode; label: string }[] = [
   { value: "export", label: t("trade.export") },
@@ -171,6 +207,12 @@ export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
 export const defaultShipmentJobForm: ShipmentJobForm = {
   company_name: "",
   status: "under_process",
+  under_process_from_date: "",
+  under_process_to_date: "",
+  customs_hold_from_date: "",
+  customs_hold_to_date: "",
+  completed_from_date: "",
+  completed_to_date: "",
   trade_mode: "export",
   trade_term: "CIF",
   invoice_number: "",
@@ -207,6 +249,12 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
   return {
     company_name: job.company_name ?? "",
     status: job.status,
+    under_process_from_date: job.under_process_from_date ?? "",
+    under_process_to_date: job.under_process_to_date ?? "",
+    customs_hold_from_date: job.customs_hold_from_date ?? "",
+    customs_hold_to_date: job.customs_hold_to_date ?? "",
+    completed_from_date: job.completed_from_date ?? "",
+    completed_to_date: job.completed_to_date ?? "",
     trade_mode: job.trade_mode,
     trade_term: job.trade_term ?? "",
     invoice_number: job.invoice_number ?? "",
@@ -240,6 +288,12 @@ export function formToPayload(form: ShipmentJobForm) {
   return {
     company_name: form.company_name || null,
     status: form.status,
+    under_process_from_date: form.under_process_from_date || null,
+    under_process_to_date: form.under_process_to_date || null,
+    customs_hold_from_date: form.customs_hold_from_date || null,
+    customs_hold_to_date: form.customs_hold_to_date || null,
+    completed_from_date: form.completed_from_date || null,
+    completed_to_date: form.completed_to_date || null,
     trade_mode: form.trade_mode,
     trade_term: form.trade_term || null,
     invoice_number: form.invoice_number || null,
@@ -429,6 +483,114 @@ export function isCustomerDocumentDownloadable(document: ShipmentDocument) {
   );
 }
 
+export interface ShipmentStatusPeriod {
+  status: ShipmentStatus;
+  fromDate: string | null;
+  toDate: string | null;
+  durationDays: number | null;
+}
+
+export interface ShipmentLatestStatusUpdate {
+  previousPeriod: ShipmentStatusPeriod | null;
+  currentPeriod: ShipmentStatusPeriod;
+  updatedAt: string;
+  totalDays: number | null;
+}
+
+export function getShipmentStatusPeriods(job: ShipmentJob) {
+  const statusDates = Object.fromEntries(
+    shipmentStatusOrder.map((status) => {
+      const fields = shipmentStatusDateFields[status];
+      return [
+        status,
+        {
+          fromDate: normalizeDateValue(job[fields.from]),
+          toDate: normalizeDateValue(job[fields.to]),
+        },
+      ];
+    }),
+  ) as Record<ShipmentStatus, { fromDate: string | null; toDate: string | null }>;
+
+  return shipmentStatusOrder
+    .map((status, index) => {
+      const { fromDate, toDate: explicitToDate } = statusDates[status];
+      const nextFromDate = shipmentStatusOrder
+        .slice(index + 1)
+        .map((nextStatus) => statusDates[nextStatus].fromDate)
+        .find(Boolean);
+      const toDate =
+        explicitToDate ??
+        nextFromDate ??
+        getFallbackStatusToDate(job, status, fromDate);
+
+      if (!fromDate && !toDate) {
+        return null;
+      }
+
+      const effectiveFromDate =
+        fromDate ?? (status === "under_process" ? job.created_at : null);
+      const effectiveToDate =
+        toDate ?? (status === job.status ? new Date().toISOString() : null);
+      const parsedFromDate = parseDate(effectiveFromDate);
+      const parsedToDate = parseDate(effectiveToDate);
+
+      return {
+        status,
+        fromDate: effectiveFromDate,
+        toDate:
+          explicitToDate ??
+          (status === job.status ? null : (nextFromDate ?? null)),
+        durationDays:
+          parsedFromDate && parsedToDate
+            ? countWorkingDays(parsedFromDate, parsedToDate)
+            : null,
+      };
+    })
+    .filter((period): period is ShipmentStatusPeriod => Boolean(period));
+}
+
+export function getLatestShipmentStatusUpdate(
+  job: ShipmentJob,
+): ShipmentLatestStatusUpdate {
+  const periods = getShipmentStatusPeriods(job);
+  const currentPeriod =
+    periods.find((period) => period.status === job.status) ??
+    buildFallbackCurrentStatusPeriod(job);
+  const currentIndex = shipmentStatusOrder.indexOf(currentPeriod.status);
+  const previousPeriod =
+    [...periods]
+      .filter(
+        (period) => shipmentStatusOrder.indexOf(period.status) < currentIndex,
+      )
+      .sort(compareStatusPeriodsNewestFirst)[0] ?? null;
+  const updatedAt =
+    currentPeriod.fromDate ?? currentPeriod.toDate ?? job.updated_at;
+
+  return {
+    previousPeriod,
+    currentPeriod,
+    updatedAt,
+    totalDays: getShipmentTotalWorkingDays(job),
+  };
+}
+
+export function getShipmentTotalWorkingDays(job: ShipmentJob) {
+  const periods = getShipmentStatusPeriods(job);
+  const firstFromDate =
+    periods.find((period) => period.fromDate)?.fromDate ?? job.created_at;
+  const finalToDate =
+    job.completed_to_date ??
+    (job.status === "completed" ? job.updated_at : new Date().toISOString());
+  const startDate = parseDate(firstFromDate);
+  const endDate = parseDate(finalToDate);
+
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  return countWorkingDays(startDate, endDate);
+}
+
 export async function downloadShipmentDocument(document: ShipmentDocument) {
   const fileUrl = document.file_url || "/sample-document.pdf";
   const fileName = getDownloadFileName(document);
@@ -455,6 +617,96 @@ export async function downloadShipmentDocument(document: ShipmentDocument) {
 function getDownloadFileName(document: ShipmentDocument) {
   const hasExtension = /\.[a-z0-9]+$/i.test(document.name);
   return hasExtension ? document.name : `${document.name}.pdf`;
+}
+
+function buildFallbackCurrentStatusPeriod(
+  job: ShipmentJob,
+): ShipmentStatusPeriod {
+  const fromDate = job.created_at;
+  const toDate =
+    job.status === "completed" ? (job.completed_to_date ?? job.updated_at) : null;
+  const effectiveToDate = toDate ?? new Date().toISOString();
+  const parsedFromDate = parseDate(fromDate);
+  const parsedToDate = parseDate(effectiveToDate);
+
+  return {
+    status: job.status,
+    fromDate,
+    toDate,
+    durationDays:
+      parsedFromDate && parsedToDate
+        ? countWorkingDays(parsedFromDate, parsedToDate)
+        : null,
+  };
+}
+
+function getFallbackStatusToDate(
+  job: ShipmentJob,
+  status: ShipmentStatus,
+  fromDate: string | null,
+) {
+  if (!fromDate || status !== "completed" || job.status !== "completed") {
+    return null;
+  }
+
+  return job.updated_at;
+}
+
+function compareStatusPeriodsNewestFirst(
+  first: ShipmentStatusPeriod,
+  second: ShipmentStatusPeriod,
+) {
+  return (
+    getStatusPeriodTime(second) - getStatusPeriodTime(first) ||
+    shipmentStatusOrder.indexOf(second.status) -
+      shipmentStatusOrder.indexOf(first.status)
+  );
+}
+
+function getStatusPeriodTime(period: ShipmentStatusPeriod) {
+  return Math.max(
+    parseDate(period.toDate)?.getTime() ?? 0,
+    parseDate(period.fromDate)?.getTime() ?? 0,
+  );
+}
+
+function normalizeDateValue(value: unknown) {
+  return typeof value === "string" && value ? value : null;
+}
+
+export function parseDate(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function countWorkingDays(startDate: Date, endDate: Date) {
+  const start = startOfLocalDay(startDate);
+  const end = startOfLocalDay(endDate);
+
+  if (end < start) {
+    return 0;
+  }
+
+  let count = 0;
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) {
+      count += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return count;
+}
+
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 async function replaceShipmentDocuments(

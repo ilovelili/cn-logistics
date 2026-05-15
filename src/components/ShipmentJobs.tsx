@@ -250,9 +250,6 @@ export default function ShipmentJobs({
             <h1 className="text-3xl font-black text-slate-950">
               {t("jobs.title")}
             </h1>
-            <p className="mt-1 max-w-3xl text-slate-500">
-              {t("jobs.description")}
-            </p>
           </div>
           {canManageShipments && (
             <button

@@ -11,6 +11,7 @@ import {
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import { t } from "../lib/i18n";
 import {
+  getLatestShipmentStatusUpdate,
   getDocumentsForJob,
   ShipmentDocument,
   ShipmentJob,
@@ -51,16 +52,25 @@ export default function ShipmentDashboard({
     (document) =>
       document.scope === "customer" && document.approval_status === "approved",
   );
-  const completionRate = jobs.length
-    ? Math.round((completed / jobs.length) * 100)
-    : 0;
-
+  const customerDocuments = documents.filter(
+    (document) => document.scope === "customer",
+  );
   const tradeCounts = countBy(jobs, (job) => job.trade_mode);
   const transportCounts = countBy(
     jobs,
     (job) => job.transport_mode ?? "unknown",
   );
-  const recentJobs = jobs.slice(0, 5);
+  const recentJobs = useMemo(
+    () =>
+      [...jobs]
+        .sort(
+          (first, second) =>
+            new Date(getLatestShipmentStatusUpdate(second).updatedAt).getTime() -
+            new Date(getLatestShipmentStatusUpdate(first).updatedAt).getTime(),
+        )
+        .slice(0, 5),
+    [jobs],
+  );
   const documentsByJob = useMemo(() => {
     return Object.fromEntries(
       jobs.map((job) => [job.id, getDocumentsForJob(documents, job.id)]),
@@ -76,20 +86,11 @@ export default function ShipmentDashboard({
       <div className="rounded-[2rem] border border-slate-800 bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/20 overflow-hidden relative">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
         <div className="absolute right-32 bottom-0 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative">
           <div>
             <h1 className="text-4xl font-black tracking-tight">
               {t("dashboard.title")}
             </h1>
-            <p className="mt-3 max-w-2xl text-slate-300">
-              {t("dashboard.description")}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
-            <div className="text-sm text-slate-300">
-              {t("dashboard.completionRate")}
-            </div>
-            <div className="mt-1 text-4xl font-black">{completionRate}%</div>
           </div>
         </div>
       </div>
@@ -127,7 +128,7 @@ export default function ShipmentDashboard({
         />
         <MetricCard
           label={t("documents.approvedDownloads")}
-          value={approvedDownloads.length}
+          value={`${approvedDownloads.length} / ${customerDocuments.length}`}
           icon={<FileStack />}
           tone="rose"
           onClick={() => onOpenDocuments("approved")}
@@ -201,14 +202,15 @@ export default function ShipmentDashboard({
         icon={<FileStack className="h-5 w-5" />}
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.16em] text-slate-500">
-                <th className="py-3 pr-4">{t("common.status")}</th>
+                <th className="py-3 pr-4">{t("dashboard.previousStatus")}</th>
+                <th className="py-3 pr-4">{t("dashboard.currentStatus")}</th>
                 <th className="py-3 pr-4">{t("common.invoice")}</th>
                 <th className="py-3 pr-4">{t("common.route")}</th>
                 <th className="py-3 pr-4">{t("common.parties")}</th>
-                <th className="py-3 pr-4">{t("common.workingDaysSpent")}</th>
+                <th className="py-3 pr-4">{t("dashboard.statusDays")}</th>
                 <th className="py-3">{t("common.documents")}</th>
               </tr>
             </thead>
@@ -228,11 +230,10 @@ export default function ShipmentDashboard({
                   className="cursor-pointer text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
                 >
                   <td className="py-4 pr-4">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[job.status]}`}
-                    >
-                      {statusLabels[job.status]}
-                    </span>
+                    <StatusPeriodCell job={job} type="previous" />
+                  </td>
+                  <td className="py-4 pr-4">
+                    <StatusPeriodCell job={job} type="current" />
                   </td>
                   <td className="py-4 pr-4 font-semibold text-slate-950">
                     {job.invoice_number || "-"}
@@ -244,7 +245,7 @@ export default function ShipmentDashboard({
                     {job.shipper_name || "-"} / {job.consignee_name || "-"}
                   </td>
                   <td className="whitespace-nowrap py-4 pr-4">
-                    <WorkingDaysBadge job={job} />
+                    <StatusDaysCell job={job} />
                   </td>
                   <td className="py-4">
                     {(job.documents?.length ?? 0) +
@@ -279,69 +280,105 @@ function countBy(jobs: ShipmentJob[], getKey: (job: ShipmentJob) => string) {
   }, {});
 }
 
-function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
-  const workingDays = getWorkingDaysSpent(job);
+function StatusPeriodCell({
+  job,
+  type,
+}: {
+  job: ShipmentJob;
+  type: "previous" | "current";
+}) {
+  const statusUpdate = getLatestShipmentStatusUpdate(job);
+  const period =
+    type === "previous"
+      ? statusUpdate.previousPeriod
+      : statusUpdate.currentPeriod;
 
-  if (!workingDays) {
+  if (!period) {
     return <span className="text-slate-400">-</span>;
   }
 
   return (
-    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-      {workingDays}営業日
-    </span>
+    <div className="space-y-1.5">
+      <span
+        className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[period.status]}`}
+      >
+        {statusLabels[period.status]}
+      </span>
+      <div className="text-xs text-slate-500">
+        {formatDateRange(period.fromDate, period.toDate)}
+      </div>
+    </div>
   );
 }
 
-function getWorkingDaysSpent(job: ShipmentJob) {
-  if (job.status !== "under_process" && job.status !== "completed") {
-    return null;
-  }
+function StatusDaysCell({ job }: { job: ShipmentJob }) {
+  const statusUpdate = getLatestShipmentStatusUpdate(job);
 
-  const startDate = parseDate(job.created_at);
-  const endDate =
-    job.status === "completed" ? parseDate(job.updated_at) : new Date();
-
-  if (!startDate || !endDate) {
-    return null;
-  }
-
-  return countWorkingDays(startDate, endDate);
+  return (
+    <div className="space-y-1 text-xs text-slate-600">
+      <StatusDayLine
+        label={t("dashboard.previousStatusShort")}
+        days={statusUpdate.previousPeriod?.durationDays ?? null}
+      />
+      <StatusDayLine
+        label={t("dashboard.currentStatusShort")}
+        days={statusUpdate.currentPeriod.durationDays}
+      />
+      <StatusDayLine label={t("dashboard.totalShort")} days={statusUpdate.totalDays} bold />
+    </div>
+  );
 }
 
-function parseDate(value: string | null) {
+function StatusDayLine({
+  label,
+  days,
+  bold = false,
+}: {
+  label: string;
+  days: number | null;
+  bold?: boolean;
+}) {
+  return (
+    <div className={bold ? "font-bold text-slate-800" : ""}>
+      {label}: {formatWorkingDays(days)}
+    </div>
+  );
+}
+
+function formatWorkingDays(days: number | null) {
+  return typeof days === "number" ? `${days}営業日` : "-";
+}
+
+function formatDateRange(fromDate: string | null, toDate: string | null) {
+  const from = formatDate(fromDate);
+  const to = formatDate(toDate);
+
+  if (from && to) {
+    return `${from} - ${to}`;
+  }
+
+  if (from) {
+    return `${from} -`;
+  }
+
+  if (to) {
+    return `- ${to}`;
+  }
+
+  return "-";
+}
+
+function formatDate(value: string | null) {
   if (!value) {
-    return null;
+    return "";
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function countWorkingDays(startDate: Date, endDate: Date) {
-  const start = startOfLocalDay(startDate);
-  const end = startOfLocalDay(endDate);
-
-  if (end < start) {
-    return 0;
+  if (Number.isNaN(date.getTime())) {
+    return "";
   }
 
-  let count = 0;
-  const cursor = new Date(start);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-}
-
-function startOfLocalDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return date.toISOString().slice(0, 10);
 }
 
 function MetricCard({
@@ -352,7 +389,7 @@ function MetricCard({
   onClick,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: React.ReactNode;
   tone: "slate" | "blue" | "amber" | "emerald" | "rose";
   onClick?: () => void;

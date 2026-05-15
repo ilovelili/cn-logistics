@@ -7,6 +7,9 @@ import {
   ShipmentJob,
   ShipmentJobForm as ShipmentJobFormState,
   ShipmentTrackingEventTemplate,
+  shipmentStatusDateFields,
+  shipmentStatusOrder,
+  statusLabels,
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
@@ -77,6 +80,17 @@ export default function ShipmentJobForm({
       ...current,
       company_name: companyName,
       assigned_admin_user_ids: selectedAdminIds,
+    }));
+  };
+
+  const updateStatus = (status: ShipmentJobFormState["status"]) => {
+    const fromField = shipmentStatusDateFields[status]
+      .from as keyof ShipmentJobFormState;
+    setForm((current) => ({
+      ...current,
+      status,
+      [fromField]:
+        current[fromField] || new Date().toISOString().slice(0, 10),
     }));
   };
 
@@ -207,9 +221,7 @@ export default function ShipmentJobForm({
         <SelectField
           label={t("form.status")}
           value={form.status}
-          onChange={(value) =>
-            updateField("status", value as ShipmentJobFormState["status"])
-          }
+          onChange={(value) => updateStatus(value as ShipmentJobFormState["status"])}
           options={statusOptions}
         />
         <SelectField
@@ -306,6 +318,8 @@ export default function ShipmentJobForm({
         onChange={updateVesselFlightNumber}
       />
 
+      <StatusPeriodFields form={form} onChange={updateField} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUploadField
           label={t("common.documents")}
@@ -377,6 +391,59 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
+}
+
+function StatusPeriodFields({
+  form,
+  onChange,
+}: {
+  form: ShipmentJobFormState;
+  onChange: <Key extends keyof ShipmentJobFormState>(
+    key: Key,
+    value: ShipmentJobFormState[Key],
+  ) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("form.statusPeriods")}
+        </span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {shipmentStatusOrder.map((status) => {
+          const fields = shipmentStatusDateFields[status];
+          const fromField = fields.from as keyof ShipmentJobFormState;
+          const toField = fields.to as keyof ShipmentJobFormState;
+
+          return (
+            <div
+              key={status}
+              className="rounded-xl border border-slate-200 bg-white p-3"
+            >
+              <div className="mb-3 text-sm font-bold text-slate-900">
+                {statusLabels[status]}
+              </div>
+              <div className="grid gap-3">
+                <TextField
+                  label={t("common.fromDate")}
+                  type="date"
+                  value={String(form[fromField] ?? "")}
+                  onChange={(value) => onChange(fromField, value)}
+                />
+                <TextField
+                  label={t("common.toDate")}
+                  type="date"
+                  value={String(form[toField] ?? "")}
+                  onChange={(value) => onChange(toField, value)}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function AssignedAdminFields({

@@ -145,9 +145,6 @@ export default function BatchDocumentDownload({
             <h1 className="text-3xl font-black text-slate-950">
               {t("documents.title")}
             </h1>
-            <p className="mt-1 max-w-3xl text-slate-500">
-              {t("documents.batchDescription")}
-            </p>
           </div>
           <div className="rounded-2xl bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-900">
             {t("documents.batchSelected", { count: selectedCount })}
