@@ -28,6 +28,8 @@ import {
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
+  TradeMode,
+  TransportMode,
 } from "./lib/shipmentJobs";
 
 type View = "dashboard" | "jobs" | "documents";
@@ -89,6 +91,12 @@ function MainApp({
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
   const [jobsStatusFilter, setJobsStatusFilter] =
     useState<JobsStatusFilter>("all");
+  const [jobsTradeFilter, setJobsTradeFilter] = useState<TradeMode | "all">(
+    "all",
+  );
+  const [jobsTransportFilter, setJobsTransportFilter] = useState<
+    TransportMode | "all"
+  >("all");
   const [documentsApprovalFilter, setDocumentsApprovalFilter] =
     useState<DocumentApprovalFilter>("all");
   const [jobsLoading, setJobsLoading] = useState(true);
@@ -171,6 +179,22 @@ function MainApp({
 
   const openJobsWithStatus = (status: JobsStatusFilter) => {
     setJobsStatusFilter(status);
+    setJobsTradeFilter("all");
+    setJobsTransportFilter("all");
+    setCurrentView("jobs");
+  };
+
+  const openJobsWithTrade = (tradeMode: TradeMode) => {
+    setJobsStatusFilter("all");
+    setJobsTradeFilter(tradeMode);
+    setJobsTransportFilter("all");
+    setCurrentView("jobs");
+  };
+
+  const openJobsWithTransport = (transportMode: TransportMode) => {
+    setJobsStatusFilter("all");
+    setJobsTradeFilter("all");
+    setJobsTransportFilter(transportMode);
     setCurrentView("jobs");
   };
 
@@ -199,6 +223,8 @@ function MainApp({
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
+            onOpenJobsByTrade={openJobsWithTrade}
+            onOpenJobsByTransport={openJobsWithTransport}
             onOpenDocuments={openDocumentsWithFilter}
           />
         );
@@ -214,7 +240,11 @@ function MainApp({
             }
             onRefresh={loadJobs}
             statusFilter={jobsStatusFilter}
+            tradeFilter={jobsTradeFilter}
+            transportFilter={jobsTransportFilter}
             onStatusFilterChange={setJobsStatusFilter}
+            onTradeFilterChange={setJobsTradeFilter}
+            onTransportFilterChange={setJobsTransportFilter}
           />
         );
       case "documents":
@@ -245,6 +275,8 @@ function MainApp({
             loading={jobsLoading}
             error={jobsError}
             onOpenJobs={openJobsWithStatus}
+            onOpenJobsByTrade={openJobsWithTrade}
+            onOpenJobsByTransport={openJobsWithTransport}
             onOpenDocuments={openDocumentsWithFilter}
           />
         );

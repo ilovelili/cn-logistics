@@ -24,6 +24,8 @@ import {
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
+  TradeMode,
+  TransportMode,
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
@@ -47,7 +49,11 @@ interface ShipmentJobsProps {
   canManageShipments?: boolean;
   onRefresh: () => Promise<void>;
   statusFilter: StatusFilter;
+  tradeFilter: TradeMode | "all";
+  transportFilter: TransportMode | "all";
   onStatusFilterChange: (statusFilter: StatusFilter) => void;
+  onTradeFilterChange: (tradeFilter: TradeMode | "all") => void;
+  onTransportFilterChange: (transportFilter: TransportMode | "all") => void;
 }
 
 export default function ShipmentJobs({
@@ -58,11 +64,13 @@ export default function ShipmentJobs({
   canManageShipments = false,
   onRefresh,
   statusFilter,
+  tradeFilter,
+  transportFilter,
   onStatusFilterChange,
+  onTradeFilterChange,
+  onTransportFilterChange,
 }: ShipmentJobsProps) {
   const [query, setQuery] = useState("");
-  const [tradeFilter, setTradeFilter] = useState("all");
-  const [transportFilter, setTransportFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sortKey, setSortKey] = useState<ShipmentJobsTableSortKey | null>(null);
@@ -303,7 +311,7 @@ export default function ShipmentJobs({
           />
           <FilterSelect
             value={tradeFilter}
-            onChange={setTradeFilter}
+            onChange={(value) => onTradeFilterChange(value as TradeMode | "all")}
             options={[
               { value: "all", label: t("jobs.filter.allTrade") },
               ...tradeModeOptions,
@@ -311,7 +319,9 @@ export default function ShipmentJobs({
           />
           <FilterSelect
             value={transportFilter}
-            onChange={setTransportFilter}
+            onChange={(value) =>
+              onTransportFilterChange(value as TransportMode | "all")
+            }
             options={[
               { value: "all", label: t("jobs.filter.allTransport") },
               ...transportModeOptions,

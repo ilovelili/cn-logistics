@@ -16,6 +16,8 @@ import {
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
+  TradeMode,
+  TransportMode,
   statusAccentClasses,
   statusBadgeClasses,
   statusLabels,
@@ -29,6 +31,8 @@ interface ShipmentDashboardProps {
   loading: boolean;
   error: string | null;
   onOpenJobs: (status: ShipmentStatus | "all") => void;
+  onOpenJobsByTrade: (tradeMode: TradeMode) => void;
+  onOpenJobsByTransport: (transportMode: TransportMode) => void;
   onOpenDocuments: (filter?: "all" | "approved") => void;
 }
 
@@ -38,6 +42,8 @@ export default function ShipmentDashboard({
   loading,
   error,
   onOpenJobs,
+  onOpenJobsByTrade,
+  onOpenJobsByTransport,
   onOpenDocuments,
 }: ShipmentDashboardProps) {
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
@@ -136,12 +142,20 @@ export default function ShipmentDashboard({
         >
           <div className="space-y-4">
             {Object.entries(statusLabels).map(([status, label]) => {
-              const count = jobs.filter((job) => job.status === status).length;
+              const shipmentStatus = status as ShipmentStatus;
+              const count = jobs.filter(
+                (job) => job.status === shipmentStatus,
+              ).length;
               const width = jobs.length
                 ? Math.max((count / jobs.length) * 100, 4)
                 : 4;
               return (
-                <div key={status}>
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => onOpenJobs(shipmentStatus)}
+                  className="block w-full rounded-lg p-2 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 dark:hover:bg-gray-800 dark:focus:ring-gray-800"
+                >
                   <div className="mb-2 flex items-center justify-between text-sm">
                     <span className="font-semibold text-gray-700 dark:text-gray-300">
                       {label}
@@ -152,11 +166,11 @@ export default function ShipmentDashboard({
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-gray-800">
                     <div
-                      className={`h-full rounded-full ${statusAccentClasses[status as keyof typeof statusAccentClasses]}`}
+                      className={`h-full rounded-full ${statusAccentClasses[shipmentStatus]}`}
                       style={{ width: `${width}%` }}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -171,6 +185,7 @@ export default function ShipmentDashboard({
               label:
                 tradeModeLabels[key as keyof typeof tradeModeLabels] ?? key,
               count,
+              onClick: () => onOpenJobsByTrade(key as TradeMode),
             }))}
           />
         </Panel>
@@ -188,6 +203,10 @@ export default function ShipmentDashboard({
                       key as keyof typeof transportModeLabels
                     ] ?? key),
               count,
+              onClick:
+                key === "unknown"
+                  ? undefined
+                  : () => onOpenJobsByTransport(key as TransportMode),
             }))}
           />
         </Panel>
@@ -456,16 +475,18 @@ function Panel({
 function DistributionList({
   items,
 }: {
-  items: { label: string; count: number }[];
+  items: { label: string; count: number; onClick?: () => void }[];
 }) {
   const total = items.reduce((sum, item) => sum + item.count, 0) || 1;
 
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div
+        <button
+          type="button"
           key={item.label}
-          className="rounded-lg bg-slate-50 p-4 dark:bg-gray-950"
+          onClick={item.onClick}
+          className="w-full rounded-lg bg-slate-50 p-4 text-left transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100 dark:bg-gray-950 dark:hover:bg-gray-800 dark:focus:ring-gray-800"
         >
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-gray-700 dark:text-gray-300">
@@ -481,7 +502,7 @@ function DistributionList({
               style={{ width: `${Math.max((item.count / total) * 100, 4)}%` }}
             />
           </div>
-        </div>
+        </button>
       ))}
       {items.length === 0 && (
         <div className="text-sm text-gray-500 dark:text-gray-400">
