@@ -244,17 +244,17 @@ export default function ShipmentJobs({
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-black text-slate-950">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("jobs.title")}
             </h1>
           </div>
           {canManageShipments && (
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
             >
               <Plus className="h-4 w-4" />
               {t("jobs.new")}
@@ -264,10 +264,10 @@ export default function ShipmentJobs({
       </div>
 
       {canManageShipments && showCreate && (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-slate-950">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {t("jobs.createTitle")}
               </h2>
             </div>
@@ -281,7 +281,7 @@ export default function ShipmentJobs({
         </section>
       )}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -289,7 +289,7 @@ export default function ShipmentJobs({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("jobs.searchPlaceholder")}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900"
             />
           </div>
           <FilterSelect
@@ -338,6 +338,7 @@ export default function ShipmentJobs({
         onSelectJob={setSelectedJob}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
+        adminTheme
       />
       <ShipmentJobDetailModal
         job={selectedJob}
@@ -421,7 +422,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 ${icon ? "pl-10" : "pl-4"}`}
+        className={`w-full rounded-lg border border-gray-200 bg-gray-50 py-3 pr-4 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900 ${icon ? "pl-10" : "pl-4"}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

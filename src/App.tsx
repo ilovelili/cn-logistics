@@ -252,36 +252,33 @@ function MainApp({
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f2ec] dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="flex h-screen overflow-hidden">
         <aside
           className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${
             sidebarCollapsed ? "lg:hidden" : "lg:translate-x-0"
-          } fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transition-transform duration-200 ease-in-out lg:static`}
+          } fixed inset-y-0 left-0 z-50 w-60 border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:static`}
         >
           <div className="flex h-full flex-col">
-            <div className="border-b border-white/10 p-6">
+            <div className="border-b border-gray-200 p-4 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
-                    <ShipWheel className="h-6 w-6" />
-                  </div>
                   <div>
-                    <h1 className="text-xl font-black tracking-tight">
+                    <h1 className="font-bold text-gray-900 dark:text-white">
                       CN Logistics
                     </h1>
                   </div>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white lg:hidden"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
-            <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+            <nav className="flex-1 space-y-1 overflow-y-auto p-4">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
@@ -295,28 +292,26 @@ function MainApp({
                       setCurrentView(item.id);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-950/20"
-                        : "text-slate-300 hover:bg-white/10 hover:text-white"
+                        ? "bg-slate-100 text-slate-950 dark:bg-slate-800 dark:text-white"
+                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
                   >
-                    <span className="flex items-center gap-3 font-bold">
-                      <Icon className="h-5 w-5" />
-                      {item.name}
-                    </span>
+                    <Icon className="h-4 w-4" />
+                    {item.name}
                   </button>
                 );
               })}
             </nav>
 
-            <div className="space-y-3 border-t border-white/10 p-4">
+            <div className="space-y-3 border-t border-gray-200 p-4 dark:border-gray-800">
               <button
                 onClick={onLogout}
-                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
               >
-                <LogOut className="h-5 w-5" />
-                <span className="text-sm font-bold">{t("common.logout")}</span>
+                <LogOut className="h-4 w-4" />
+                {t("common.logout")}
               </button>
             </div>
           </div>
@@ -330,16 +325,16 @@ function MainApp({
         )}
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="border-b border-slate-200 bg-white/80 px-5 py-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
+          <header className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between">
               <button
                 onClick={handleSidebarToggle}
-                className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                className="rounded-xl bg-gray-100 p-2 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 aria-label="メニューを切り替え"
               >
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5" />
               </button>
-              <div className="ml-auto flex items-center gap-4">
+              <div className="ml-auto flex items-center gap-3">
                 {onBackToAdmin && (
                   <div className="hidden items-center gap-2 sm:flex">
                     <div className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900">
@@ -358,7 +353,7 @@ function MainApp({
                     </button>
                   </div>
                 )}
-                <div className="hidden text-sm font-medium text-slate-500 sm:block dark:text-gray-400">
+                <div className="hidden text-sm font-medium text-gray-500 sm:block dark:text-gray-400">
                   {new Date().toLocaleDateString("ja-JP", {
                     weekday: "long",
                     year: "numeric",
@@ -368,7 +363,7 @@ function MainApp({
                 </div>
                 <button
                   onClick={onToggleDark}
-                  className="relative rounded-xl bg-slate-100 p-2 transition hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                  className="relative rounded-xl bg-gray-100 p-2 transition hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
                   title={darkMode ? t("app.theme.light") : t("app.theme.dark")}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
@@ -376,7 +371,7 @@ function MainApp({
                       className={`absolute h-5 w-5 text-amber-500 transition-all duration-300 ${darkMode ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-50"}`}
                     />
                     <Moon
-                      className={`absolute h-5 w-5 text-slate-600 transition-all duration-300 dark:text-gray-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
+                      className={`absolute h-5 w-5 text-gray-600 transition-all duration-300 dark:text-gray-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
                     />
                   </span>
                 </button>
@@ -385,7 +380,7 @@ function MainApp({
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-5 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-6">
             {renderView()}
           </main>
         </div>

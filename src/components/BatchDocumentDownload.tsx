@@ -141,17 +141,17 @@ export default function BatchDocumentDownload({
         </div>
       )}
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-black text-slate-950">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("documents.title")}
             </h1>
           </div>
         </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
           <label className="relative block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -159,14 +159,14 @@ export default function BatchDocumentDownload({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("documents.batchSearchPlaceholder")}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900"
             />
           </label>
           <button
             type="button"
             onClick={selectVisibleDocuments}
             disabled={selectableVisibleDocumentIds.length === 0 || requesting}
-            className="inline-flex justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex justify-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             {t("documents.selectAllVisible")}
           </button>
@@ -174,7 +174,7 @@ export default function BatchDocumentDownload({
             type="button"
             onClick={() => setSelectedDocumentIds([])}
             disabled={selectedCount === 0 || requesting}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <X className="h-4 w-4" />
             {t("documents.clearSelection")}
@@ -183,14 +183,14 @@ export default function BatchDocumentDownload({
             type="button"
             onClick={submitBatchRequest}
             disabled={selectedCount === 0 || requesting}
-            className="inline-flex justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
           >
             {requesting ? t("common.saving") : t("documents.batchSubmit")}
           </button>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] table-fixed text-left text-sm">
             <colgroup>
@@ -202,7 +202,7 @@ export default function BatchDocumentDownload({
               <col className="w-[180px]" />
               <col className="w-[130px]" />
             </colgroup>
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
+            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-gray-950 dark:text-gray-400">
               <tr>
                 <th className="px-4 py-3"></th>
                 <th className="px-4 py-3">{t("common.invoice")}</th>
@@ -213,16 +213,16 @@ export default function BatchDocumentDownload({
                 <th className="px-4 py-3">{t("documents.approval")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                     {t("common.loadingDocuments")}
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                     {t("documents.noMatches")}
                   </td>
                 </tr>
@@ -234,7 +234,11 @@ export default function BatchDocumentDownload({
                   return (
                     <tr
                       key={document.id}
-                      className={canRequest ? "hover:bg-cyan-50/40" : "bg-slate-50/50"}
+                      className={
+                        canRequest
+                          ? "hover:bg-slate-50/80 dark:hover:bg-gray-800/70"
+                          : "bg-slate-50/50 dark:bg-gray-950/50"
+                      }
                     >
                       <td className="px-4 py-4">
                         <input
@@ -245,24 +249,24 @@ export default function BatchDocumentDownload({
                           className="h-4 w-4 rounded border-slate-300"
                         />
                       </td>
-                      <td className="px-4 py-4 font-mono font-bold text-slate-950">
+                      <td className="px-4 py-4 font-mono font-bold text-gray-900 dark:text-white">
                         {job.invoice_number || "-"}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex min-w-0 items-center gap-2">
                           <FileText className="h-4 w-4 shrink-0 text-slate-400" />
-                          <span className="truncate font-semibold text-slate-950">
+                          <span className="truncate font-semibold text-gray-900 dark:text-white">
                             {document.name}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-slate-700">
+                      <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
                         {job.shipper_name || "-"}
                       </td>
-                      <td className="px-4 py-4 text-slate-700">
+                      <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
                         {job.consignee_name || "-"}
                       </td>
-                      <td className="px-4 py-4 text-slate-700">
+                      <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
                         {[job.mbl_mawb, job.hbl_hawb].filter(Boolean).join(" / ") ||
                           "-"}
                       </td>

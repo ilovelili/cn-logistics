@@ -82,22 +82,16 @@ export default function ShipmentDashboard({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-[2rem] border border-slate-800 bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/20 overflow-hidden relative">
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="absolute right-32 bottom-0 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
-        <div className="relative">
-          <div>
-            <h1 className="text-4xl font-black tracking-tight">
-              {t("dashboard.title")}
-            </h1>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {t("dashboard.title")}
+        </h2>
       </div>
 
       {error && <SetupError error={error} />}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <MetricCard
           label={t("dashboard.totalJobs")}
           value={jobs.length}
@@ -149,12 +143,14 @@ export default function ShipmentDashboard({
               return (
                 <div key={status}>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">
                       {label}
                     </span>
-                    <span className="text-slate-500">{count}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {count}
+                    </span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-gray-800">
                     <div
                       className={`h-full rounded-full ${statusAccentClasses[status as keyof typeof statusAccentClasses]}`}
                       style={{ width: `${width}%` }}
@@ -204,7 +200,7 @@ export default function ShipmentDashboard({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.16em] text-slate-500">
+              <tr className="border-b border-gray-200 text-xs uppercase tracking-[0.14em] text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 <th className="py-3 pr-4">{t("dashboard.previousStatus")}</th>
                 <th className="py-3 pr-4">{t("dashboard.currentStatus")}</th>
                 <th className="py-3 pr-4">{t("common.invoice")}</th>
@@ -214,7 +210,7 @@ export default function ShipmentDashboard({
                 <th className="py-3">{t("common.documents")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {recentJobs.map((job) => (
                 <tr
                   key={job.id}
@@ -227,7 +223,7 @@ export default function ShipmentDashboard({
                       setSelectedJob(job);
                     }
                   }}
-                  className="cursor-pointer text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+                  className="cursor-pointer text-gray-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-800/70 dark:focus:bg-gray-800"
                 >
                   <td className="py-4 pr-4">
                     <StatusPeriodCell job={job} type="previous" />
@@ -235,7 +231,7 @@ export default function ShipmentDashboard({
                   <td className="py-4 pr-4">
                     <StatusPeriodCell job={job} type="current" />
                   </td>
-                  <td className="py-4 pr-4 font-semibold text-slate-950">
+                  <td className="py-4 pr-4 font-semibold text-gray-900 dark:text-white">
                     {job.invoice_number || "-"}
                   </td>
                   <td className="py-4 pr-4">
@@ -257,7 +253,7 @@ export default function ShipmentDashboard({
             </tbody>
           </table>
           {recentJobs.length === 0 && (
-            <div className="py-12 text-center text-slate-500">
+            <div className="py-12 text-center text-gray-500 dark:text-gray-400">
               {t("dashboard.noJobs")}
             </div>
           )}
@@ -304,7 +300,7 @@ function StatusPeriodCell({
       >
         {statusLabels[period.status]}
       </span>
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-gray-500 dark:text-gray-400">
         {formatDateRange(period.fromDate, period.toDate)}
       </div>
     </div>
@@ -315,7 +311,7 @@ function StatusDaysCell({ job }: { job: ShipmentJob }) {
   const statusUpdate = getLatestShipmentStatusUpdate(job);
 
   return (
-    <div className="space-y-1 text-xs text-slate-600">
+    <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
       <StatusDayLine
         label={t("dashboard.previousStatusShort")}
         days={statusUpdate.previousPeriod?.durationDays ?? null}
@@ -339,7 +335,7 @@ function StatusDayLine({
   bold?: boolean;
 }) {
   return (
-    <div className={bold ? "font-bold text-slate-800" : ""}>
+    <div className={bold ? "font-bold text-gray-800 dark:text-white" : ""}>
       {label}: {formatWorkingDays(days)}
     </div>
   );
@@ -408,19 +404,23 @@ function MetricCard({
     <Component
       type={onClick ? "button" : undefined}
       onClick={onClick}
-      className={`w-full rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
+      className={`w-full rounded-xl border border-gray-200 bg-white p-6 text-left transition dark:border-gray-800 dark:bg-gray-900 ${
         onClick
-          ? "cursor-pointer hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-slate-200"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-slate-200 dark:hover:border-cyan-700"
           : ""
       }`}
     >
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-medium text-slate-500">{label}</div>
-          <div className="mt-2 text-3xl font-black text-slate-950">{value}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {label}
+          </div>
+          <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+            {value}
+          </div>
         </div>
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tones[tone]}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-lg ${tones[tone]}`}
         >
           {icon}
         </div>
@@ -439,12 +439,14 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
           {icon}
         </div>
-        <h2 className="text-lg font-black text-slate-950">{title}</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          {title}
+        </h2>
       </div>
       {children}
     </section>
@@ -461,21 +463,30 @@ function DistributionList({
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div key={item.label} className="rounded-2xl bg-slate-50 p-4">
+        <div
+          key={item.label}
+          className="rounded-lg bg-slate-50 p-4 dark:bg-gray-950"
+        >
           <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold text-slate-700">{item.label}</span>
-            <span className="text-slate-500">{item.count}</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              {item.label}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              {item.count}
+            </span>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white dark:bg-gray-800">
             <div
-              className="h-full rounded-full bg-slate-950"
+              className="h-full rounded-full bg-slate-950 dark:bg-cyan-300"
               style={{ width: `${Math.max((item.count / total) * 100, 4)}%` }}
             />
           </div>
         </div>
       ))}
       {items.length === 0 && (
-        <div className="text-sm text-slate-500">{t("common.noData")}</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          {t("common.noData")}
+        </div>
       )}
     </div>
   );
@@ -483,7 +494,7 @@ function DistributionList({
 
 function SetupError({ error }: { error: string }) {
   return (
-    <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
       <div className="flex items-start gap-3">
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
@@ -499,12 +510,12 @@ function SetupError({ error }: { error: string }) {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-64 animate-pulse rounded-[2rem] bg-slate-200" />
+      <div className="h-12 animate-pulse rounded-xl bg-slate-200 dark:bg-gray-800" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         {[...Array(5)].map((_, index) => (
           <div
             key={index}
-            className="h-32 animate-pulse rounded-3xl bg-slate-100"
+            className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-gray-900"
           />
         ))}
       </div>
