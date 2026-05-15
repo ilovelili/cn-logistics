@@ -10,10 +10,12 @@ import { t } from "../lib/i18n";
 import {
   documentApprovalClasses,
   documentApprovalLabels,
+  isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
+import DocumentPreviewModal from "./DocumentPreviewModal";
 
 interface BatchDocumentDownloadProps {
   jobs: ShipmentJob[];
@@ -37,6 +39,8 @@ export default function BatchDocumentDownload({
 }: BatchDocumentDownloadProps) {
   const [query, setQuery] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [previewDocument, setPreviewDocument] =
+    useState<ShipmentDocument | null>(null);
   const [requesting, setRequesting] = useState(false);
   const [toast, setToast] = useState<{
     type: "success" | "error";
@@ -253,12 +257,10 @@ export default function BatchDocumentDownload({
                         {job.invoice_number || "-"}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <FileText className="h-4 w-4 shrink-0 text-slate-400" />
-                          <span className="truncate font-semibold text-gray-900 dark:text-white">
-                            {document.name}
-                          </span>
-                        </div>
+                        <DocumentNameCell
+                          document={document}
+                          onPreview={setPreviewDocument}
+                        />
                       </td>
                       <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
                         {job.shipper_name || "-"}
@@ -285,7 +287,59 @@ export default function BatchDocumentDownload({
           </table>
         </div>
       </section>
+      {previewDocument && (
+        <DocumentPreviewModal
+          document={previewDocument}
+          adminTheme
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function DocumentNameCell({
+  document,
+  onPreview,
+}: {
+  document: ShipmentDocument;
+  onPreview: (document: ShipmentDocument) => void;
+}) {
+  const canPreview = isCustomerDocumentDownloadable(document);
+  const content = (
+    <>
+      <FileText
+        className={`h-4 w-4 shrink-0 ${
+          canPreview
+            ? "text-cyan-600 dark:text-cyan-300"
+            : "text-slate-300 dark:text-gray-600"
+        }`}
+      />
+      <span
+        className={`truncate font-semibold ${
+          canPreview
+            ? "text-gray-900 dark:text-white"
+            : "text-slate-400 dark:text-gray-600"
+        }`}
+      >
+        {document.name}
+      </span>
+    </>
+  );
+
+  if (!canPreview) {
+    return <div className="flex min-w-0 items-center gap-2">{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onPreview(document)}
+      className="flex min-w-0 max-w-full items-center gap-2 rounded-lg text-left transition hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100 dark:hover:text-cyan-200 dark:focus:ring-cyan-950"
+      title={t("documents.preview")}
+    >
+      {content}
+    </button>
   );
 }
 

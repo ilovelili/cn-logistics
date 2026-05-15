@@ -339,6 +339,7 @@ export default function ShipmentJobs({
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
         adminTheme
+        approvedDocumentsOnly={!canManageShipments}
       />
       <ShipmentJobDetailModal
         job={selectedJob}

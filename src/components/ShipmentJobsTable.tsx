@@ -2,6 +2,7 @@ import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
+  isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
   statusLabels,
@@ -68,6 +69,7 @@ interface ShipmentJobsTableProps {
   visibleFrom: number;
   visibleTo: number;
   adminTheme?: boolean;
+  approvedDocumentsOnly?: boolean;
   companyOptions?: ShipmentJobsCompanyOption[];
   onSort: (sortKey: ShipmentJobsTableSortKey) => void;
   onSelectJob: (job: ShipmentJob) => void;
@@ -91,6 +93,7 @@ export default function ShipmentJobsTable({
   visibleFrom,
   visibleTo,
   adminTheme = false,
+  approvedDocumentsOnly = false,
   companyOptions = [],
   onSort,
   onSelectJob,
@@ -105,6 +108,7 @@ export default function ShipmentJobsTable({
         documentsByJob,
         adminTheme,
         showInternalDocuments,
+        approvedDocumentsOnly,
         companyOptions,
         setPreviewDocument,
       ),
@@ -112,6 +116,7 @@ export default function ShipmentJobsTable({
       adminTheme,
       companyOptions,
       documentsByJob,
+      approvedDocumentsOnly,
       showInternalDocuments,
       setPreviewDocument,
     ],
@@ -332,6 +337,7 @@ function buildColumns(
   documentsByJob: Record<string, ShipmentDocument[]>,
   adminTheme: boolean,
   showInternalDocuments: boolean,
+  approvedDocumentsOnly: boolean,
   companyOptions: ShipmentJobsCompanyOption[],
   onPreviewDocument: (document: ShipmentDocument) => void,
 ): ShipmentJobsTableColumn[] {
@@ -534,6 +540,7 @@ function buildColumns(
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "customer",
           )}
+          approvedOnly={approvedDocumentsOnly}
           onPreview={onPreviewDocument}
         />
       ),
@@ -563,10 +570,12 @@ function buildColumns(
 function DocumentPills({
   documents,
   muted = false,
+  approvedOnly = false,
   onPreview,
 }: {
   documents?: ShipmentDocument[];
   muted?: boolean;
+  approvedOnly?: boolean;
   onPreview: (document: ShipmentDocument) => void;
 }) {
   if (!documents?.length) {
@@ -575,25 +584,48 @@ function DocumentPills({
 
   return (
     <div className="flex flex-col items-start gap-1.5">
-      {documents.map((document) => (
-        <button
-          type="button"
-          key={document.id}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPreview(document);
-          }}
-          className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-            muted
-              ? "bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
-          }`}
-          title={document.name}
-        >
-          <FileText className="h-3 w-3 shrink-0" />
-          <span className="min-w-0 truncate">{document.name}</span>
-        </button>
-      ))}
+      {documents.map((document) => {
+        const canPreview =
+          !approvedOnly || isCustomerDocumentDownloadable(document);
+        const pillClass =
+          muted || !canPreview
+            ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
+            : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950";
+        const content = (
+          <>
+            <FileText className="h-3 w-3 shrink-0" />
+            <span className="min-w-0 truncate">{document.name}</span>
+          </>
+        );
+
+        if (!canPreview) {
+          return (
+            <span
+              key={document.id}
+              onClick={(event) => event.stopPropagation()}
+              className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}
+              title={document.name}
+            >
+              {content}
+            </span>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            key={document.id}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPreview(document);
+            }}
+            className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}
+            title={document.name}
+          >
+            {content}
+          </button>
+        );
+      })}
     </div>
   );
 }
