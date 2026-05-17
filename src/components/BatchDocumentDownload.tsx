@@ -16,6 +16,10 @@ import {
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
 import DocumentPreviewModal from "./DocumentPreviewModal";
+import PaginationControls from "./PaginationControls";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import { usePagination } from "./usePagination";
 
 interface BatchDocumentDownloadProps {
   jobs: ShipmentJob[];
@@ -42,6 +46,8 @@ export default function BatchDocumentDownload({
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -80,8 +86,18 @@ export default function BatchDocumentDownload({
         .includes(normalizedQuery),
     );
   }, [query, rows]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedRows,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(filteredRows);
 
-  const selectableVisibleDocumentIds = filteredRows
+  const selectableVisibleDocumentIds = paginatedRows
     .filter(({ document }) => canRequestDocument(document))
     .map(({ document }) => document.id);
   const selectedCount = selectedDocumentIds.length;
@@ -201,7 +217,20 @@ export default function BatchDocumentDownload({
       </section>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="overflow-x-auto">
+        <div className="flex justify-end border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+          <StickyTableHeaderToggle
+            adminTheme
+            enabled={stickyHeaderEnabled}
+            onToggle={toggleStickyHeader}
+          />
+        </div>
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table className="w-full min-w-[960px] table-fixed text-left text-sm">
             <colgroup>
               <col className="w-[56px]" />
@@ -212,7 +241,9 @@ export default function BatchDocumentDownload({
               <col className="w-[180px]" />
               <col className="w-[130px]" />
             </colgroup>
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-gray-950 dark:text-gray-400">
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-gray-950 dark:text-gray-400`}
+            >
               <tr>
                 <th className="px-4 py-3"></th>
                 <th className="px-4 py-3">{t("common.invoice")}</th>
@@ -237,7 +268,7 @@ export default function BatchDocumentDownload({
                   </td>
                 </tr>
               ) : (
-                filteredRows.map(({ job, document }) => {
+                paginatedRows.map(({ job, document }) => {
                   const canRequest = canRequestDocument(document);
                   const checked = selectedDocumentIds.includes(document.id);
 
@@ -292,6 +323,17 @@ export default function BatchDocumentDownload({
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={filteredRows.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
       {previewDocument && isCustomerDocumentDownloadable(previewDocument) && (
         <DocumentPreviewModal

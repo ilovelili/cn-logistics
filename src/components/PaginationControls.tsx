@@ -1,3 +1,4 @@
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { t } from "../lib/i18n";
 
 interface PaginationControlsProps {
@@ -28,6 +29,13 @@ export default function PaginationControls({
   onPageSizeChange,
 }: PaginationControlsProps) {
   const pageItems = getPaginationItems(currentPage, pageCount);
+  const runWithoutViewportJump = (callback: () => void) => {
+    const scrollY = window.scrollY;
+    callback();
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollY });
+    });
+  };
   const borderClass = adminTheme
     ? "border-gray-200 dark:border-gray-800"
     : "border-slate-100";
@@ -46,6 +54,7 @@ export default function PaginationControls({
   const activeButtonClass = adminTheme
     ? "bg-gray-950 text-white dark:bg-cyan-300 dark:text-gray-950"
     : "bg-slate-950 text-white";
+  const inactiveStateClass = "cursor-not-allowed opacity-40";
 
   return (
     <div
@@ -60,45 +69,55 @@ export default function PaginationControls({
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
-        <div className={`inline-flex overflow-hidden rounded-xl border ${groupClass}`}>
+        <div
+          className={`inline-flex overflow-hidden rounded-xl border ${groupClass}`}
+        >
           <button
             type="button"
-            disabled={currentPage === 1}
-            onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
-            className={`border-r px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${dividerClass} ${inactiveButtonClass}`}
+            aria-disabled={currentPage === 1}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (currentPage !== 1) {
+                runWithoutViewportJump(() => onPageChange(1));
+              }
+            }}
+            className={`inline-flex min-w-10 items-center justify-center border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${inactiveButtonClass} ${
+              currentPage === 1 ? inactiveStateClass : ""
+            }`}
+            aria-label={t("jobs.pagination.first")}
           >
-            {t("jobs.pagination.previous")}
+            <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          {pageItems.map((pageItem, index) =>
-            pageItem === "ellipsis" ? (
-              <span
-                key={`ellipsis-${index}`}
-                className={`min-w-10 border-r px-3 py-2 text-center text-sm font-semibold text-slate-400 dark:text-gray-500 ${dividerClass}`}
-              >
-                ...
-              </span>
-            ) : (
-              <button
-                key={pageItem}
-                type="button"
-                onClick={() => onPageChange(pageItem)}
-                className={`min-w-10 border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${
-                  pageItem === currentPage
-                    ? activeButtonClass
-                    : inactiveButtonClass
-                }`}
-              >
-                {pageItem}
-              </button>
-            ),
-          )}
+          {pageItems.map((pageItem) => (
+            <button
+              key={pageItem}
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() =>
+                runWithoutViewportJump(() => onPageChange(pageItem))
+              }
+              className={`min-w-10 border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${
+                pageItem === currentPage ? activeButtonClass : inactiveButtonClass
+              }`}
+            >
+              {pageItem}
+            </button>
+          ))}
           <button
             type="button"
-            disabled={currentPage === pageCount}
-            onClick={() => onPageChange(Math.min(currentPage + 1, pageCount))}
-            className={`border-l px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${dividerClass} ${inactiveButtonClass}`}
+            aria-disabled={currentPage === pageCount}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (currentPage !== pageCount) {
+                runWithoutViewportJump(() => onPageChange(pageCount));
+              }
+            }}
+            className={`inline-flex min-w-10 items-center justify-center px-3 py-2 text-sm font-semibold transition ${inactiveButtonClass} ${
+              currentPage === pageCount ? inactiveStateClass : ""
+            }`}
+            aria-label={t("jobs.pagination.last")}
           >
-            {t("jobs.pagination.next")}
+            <ChevronsRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -111,7 +130,10 @@ export default function PaginationControls({
               <button
                 key={option}
                 type="button"
-                onClick={() => onPageSizeChange(option)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() =>
+                  runWithoutViewportJump(() => onPageSizeChange(option))
+                }
                 className={`min-w-10 border-r px-3 py-2 text-sm font-semibold transition last:border-r-0 ${dividerClass} ${
                   option === pageSize
                     ? activeButtonClass
@@ -128,36 +150,10 @@ export default function PaginationControls({
   );
 }
 
-function getPaginationItems(
-  currentPage: number,
-  pageCount: number,
-): Array<number | "ellipsis"> {
-  if (pageCount <= 5) {
-    return Array.from({ length: pageCount }, (_, index) => index + 1);
-  }
+function getPaginationItems(currentPage: number, pageCount: number): number[] {
+  const windowSize = Math.min(5, pageCount);
+  const maxStart = pageCount - windowSize + 1;
+  const start = Math.max(Math.min(currentPage - 2, maxStart), 1);
 
-  if (currentPage <= 3) {
-    return [1, 2, 3, 4, "ellipsis", pageCount];
-  }
-
-  if (currentPage >= pageCount - 2) {
-    return [
-      1,
-      "ellipsis",
-      pageCount - 3,
-      pageCount - 2,
-      pageCount - 1,
-      pageCount,
-    ];
-  }
-
-  return [
-    1,
-    "ellipsis",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis",
-    pageCount,
-  ];
+  return Array.from({ length: windowSize }, (_, index) => start + index);
 }

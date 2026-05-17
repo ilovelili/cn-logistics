@@ -64,6 +64,8 @@ const ja = {
   "common.admin": "管理者",
   "common.superAdmin": "スーパー管理者",
   "common.logout": "ログアウト",
+  "table.stickyHeader.enable": "ヘッダー固定を有効にする",
+  "table.stickyHeader.disable": "ヘッダー固定を解除する",
 
   "tracking.title": "追跡履歴",
   "tracking.add": "履歴を追加",
@@ -113,9 +115,14 @@ const ja = {
   "jobs.filter.allTransport": "すべての輸送",
   "jobs.list": "案件一覧",
   "jobs.count": "{total}件中 {filtered}件",
+  "jobs.tableScrollHint": "横にスクロール",
+  "jobs.tableScrollLeft": "左へスクロール",
+  "jobs.tableScrollRight": "右へスクロール",
   "jobs.noMatches": "現在の条件に一致する出荷案件はありません。",
   "jobs.pagination.previous": "前へ",
   "jobs.pagination.next": "次へ",
+  "jobs.pagination.first": "最初のページへ",
+  "jobs.pagination.last": "最後のページへ",
 
   "feedback.title": "評価",
   "feedback.open": "評価を入力",

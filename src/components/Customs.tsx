@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   FileText,
   Search,
@@ -8,6 +8,10 @@ import {
   XCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import PaginationControls from "./PaginationControls";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import { usePagination } from "./usePagination";
 
 interface CustomsDeclaration {
   id: string;
@@ -43,6 +47,8 @@ export default function Customs() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
 
   useEffect(() => {
     loadDeclarations();
@@ -72,23 +78,37 @@ export default function Customs() {
     }
   };
 
-  const filteredDeclarations = declarations.filter((declaration) => {
-    const matchesSearch =
-      declaration.declaration_number
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      declaration.parcel?.tracking_number
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      declaration.parcel?.order?.order_number
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  const filteredDeclarations = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.toLowerCase();
 
-    const matchesStatus =
-      statusFilter === "all" || declaration.status === statusFilter;
+    return declarations.filter((declaration) => {
+      const matchesSearch =
+        declaration.declaration_number
+          .toLowerCase()
+          .includes(normalizedSearchTerm) ||
+        declaration.parcel?.tracking_number
+          ?.toLowerCase()
+          .includes(normalizedSearchTerm) ||
+        declaration.parcel?.order?.order_number
+          ?.toLowerCase()
+          .includes(normalizedSearchTerm);
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus =
+        statusFilter === "all" || declaration.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [declarations, searchTerm, statusFilter]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedDeclarations,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(filteredDeclarations);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -202,9 +222,24 @@ export default function Customs() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="flex justify-end border-b border-gray-200 px-5 py-3">
+          <StickyTableHeaderToggle
+            adminTheme
+            enabled={stickyHeaderEnabled}
+            onToggle={toggleStickyHeader}
+          />
+        </div>
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
+            >
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   申告書
@@ -230,7 +265,7 @@ export default function Customs() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredDeclarations.map((declaration) => (
+              {paginatedDeclarations.map((declaration) => (
                 <tr
                   key={declaration.id}
                   className="hover:bg-gray-50 transition-colors"
@@ -307,6 +342,17 @@ export default function Customs() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={filteredDeclarations.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {filteredDeclarations.length === 0 && (

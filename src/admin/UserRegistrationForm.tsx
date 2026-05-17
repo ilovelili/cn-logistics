@@ -20,9 +20,13 @@ import {
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
+import PaginationControls from "../components/PaginationControls";
+import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { usePagination } from "../components/usePagination";
 import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
 
 function getStaffRoleLabel(role: AdminOperatorStaffRole) {
@@ -70,6 +74,8 @@ export default function UserRegistrationForm({
   >("all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{
@@ -215,6 +221,16 @@ export default function UserRegistrationForm({
       return String(aValue).localeCompare(String(bValue), "ja") * direction;
     });
   }, [filteredUsers, sortDirection, sortKey]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedUsers,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(sortedUsers);
 
   const changeSort = (nextSortKey: SortKey) => {
     if (sortKey === nextSortKey) {
@@ -482,6 +498,11 @@ export default function UserRegistrationForm({
                   count: filteredUsers.length,
                 })}
               </span>
+              <StickyTableHeaderToggle
+                adminTheme
+                enabled={stickyHeaderEnabled}
+                onToggle={toggleStickyHeader}
+              />
               <TableColumnSettingsButton
                 columns={orderedColumnConfigs}
                 visibleColumnIds={visibleColumnIds}
@@ -545,67 +566,88 @@ export default function UserRegistrationForm({
               {t("admin.userRegistration.noMatches")}
             </div>
           ) : (
-            <div className="overflow-hidden">
-              <table
-                className="w-full table-fixed text-left text-sm"
-                style={{ minWidth: "320px" }}
+            <>
+              <div
+                className={
+                  stickyHeaderEnabled
+                    ? "max-h-[70vh] overflow-auto overscroll-contain"
+                    : "overflow-x-auto"
+                }
               >
-                <colgroup>
-                  {visibleTableColumns.map((column) => (
-                    <col
-                      key={column.id}
-                      style={{
-                        width: `${(column.width / visibleColumnWeight) * 100}%`,
-                      }}
-                    />
-                  ))}
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                    {visibleTableColumns.map((column) =>
-                      column.sortKey ? (
-                        <SortableTableHeader
-                          key={column.id}
-                          label={column.label}
-                          sortKey={column.sortKey}
-                          activeSortKey={sortKey}
-                          direction={sortDirection}
-                          onSort={changeSort}
-                          className="py-3 pr-4 font-bold"
-                          buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                          activeClassName="text-gray-900 dark:text-white"
-                          inactiveClassName="text-gray-500 dark:text-gray-400"
-                        />
-                      ) : (
-                        <th
-                          key={column.id}
-                          className="py-3 pr-4 text-left font-bold"
-                        >
-                          {column.label}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
-                    >
-                      {visibleTableColumns.map((column) => (
-                        <td
-                          key={column.id}
-                          className="overflow-hidden py-4 pr-4"
-                        >
-                          {column.render(user)}
-                        </td>
-                      ))}
+                <table
+                  className="w-full table-fixed text-left text-sm"
+                  style={{ minWidth: "320px" }}
+                >
+                  <colgroup>
+                    {visibleTableColumns.map((column) => (
+                      <col
+                        key={column.id}
+                        style={{
+                          width: `${(column.width / visibleColumnWeight) * 100}%`,
+                        }}
+                      />
+                    ))}
+                  </colgroup>
+                  <thead
+                    className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+                  >
+                    <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                      {visibleTableColumns.map((column) =>
+                        column.sortKey ? (
+                          <SortableTableHeader
+                            key={column.id}
+                            label={column.label}
+                            sortKey={column.sortKey}
+                            activeSortKey={sortKey}
+                            direction={sortDirection}
+                            onSort={changeSort}
+                            className="py-3 pr-4 font-bold"
+                            buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                            activeClassName="text-gray-900 dark:text-white"
+                            inactiveClassName="text-gray-500 dark:text-gray-400"
+                          />
+                        ) : (
+                          <th
+                            key={column.id}
+                            className="py-3 pr-4 text-left font-bold"
+                          >
+                            {column.label}
+                          </th>
+                        ),
+                      )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedUsers.map((user) => (
+                      <tr
+                        key={user.id}
+                        className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
+                      >
+                        {visibleTableColumns.map((column) => (
+                          <td
+                            key={column.id}
+                            className="overflow-hidden py-4 pr-4"
+                          >
+                            {column.render(user)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                adminTheme
+                currentPage={currentPage}
+                pageCount={pageCount}
+                pageSize={pageSize}
+                total={sortedUsers.length}
+                visibleFrom={visibleFrom}
+                visibleTo={visibleTo}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
+            </>
           )}
         </section>
       )}

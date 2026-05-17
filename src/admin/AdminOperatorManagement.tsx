@@ -19,9 +19,13 @@ import {
 import { t } from "../lib/i18n";
 import type { TranslationKey } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
+import PaginationControls from "../components/PaginationControls";
+import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { usePagination } from "../components/usePagination";
 import { UserDetailModal } from "./UserRegistrationForm";
 
 interface AdminOperatorManagementProps {
@@ -74,6 +78,8 @@ export default function AdminOperatorManagement({
     useState<CompanyUser | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -150,6 +156,16 @@ export default function AdminOperatorManagement({
       return String(aValue).localeCompare(String(bValue), "ja") * direction;
     });
   }, [filteredOperators, sortDirection, sortKey]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedOperators,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(sortedOperators);
 
   const changeSort = (nextSortKey: SortKey) => {
     if (sortKey === nextSortKey) {
@@ -562,18 +578,31 @@ export default function AdminOperatorManagement({
                 className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
             </label>
-            <TableColumnSettingsButton
-              columns={orderedColumnConfigs}
-              visibleColumnIds={visibleColumnIds}
-              onVisibilityChange={setColumnVisibility}
-              onMoveColumn={moveColumn}
-              onReset={resetColumns}
-              adminTheme
-            />
+            <div className="flex items-center gap-2">
+              <StickyTableHeaderToggle
+                adminTheme
+                enabled={stickyHeaderEnabled}
+                onToggle={toggleStickyHeader}
+              />
+              <TableColumnSettingsButton
+                columns={orderedColumnConfigs}
+                visibleColumnIds={visibleColumnIds}
+                onVisibilityChange={setColumnVisibility}
+                onMoveColumn={moveColumn}
+                onReset={resetColumns}
+                adminTheme
+              />
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table
             className="w-full table-fixed text-left text-sm"
             style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
@@ -583,7 +612,9 @@ export default function AdminOperatorManagement({
                 <col key={column.id} style={{ width: `${column.width}px` }} />
               ))}
             </colgroup>
-            <thead>
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+            >
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 {visibleTableColumns.map((column) =>
                   column.sortKey ? (
@@ -626,7 +657,7 @@ export default function AdminOperatorManagement({
                   </td>
                 </tr>
               ) : (
-                sortedOperators.map((operator) => (
+                paginatedOperators.map((operator) => (
                   <tr key={operator.id}>
                     {visibleTableColumns.map((column) => (
                       <td key={column.id} className="py-4 pr-4 text-left">
@@ -639,6 +670,17 @@ export default function AdminOperatorManagement({
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={sortedOperators.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
     </div>
   );

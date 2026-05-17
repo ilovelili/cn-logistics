@@ -1,5 +1,18 @@
-import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  MoreHorizontal,
+} from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { t } from "../lib/i18n";
 import {
   isCustomerDocumentDownloadable,
@@ -12,6 +25,8 @@ import {
 import PaginationControls from "./PaginationControls";
 import DocumentPreviewModal from "./DocumentPreviewModal";
 import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
@@ -102,6 +117,14 @@ export default function ShipmentJobsTable({
 }: ShipmentJobsTableProps) {
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollState, setScrollState] = useState({
+    canScroll: false,
+    atStart: true,
+    atEnd: true,
+  });
   const columns = useMemo(
     () =>
       buildColumns(
@@ -151,6 +174,53 @@ export default function ShipmentJobsTable({
     (total, column) => total + (columnsById.get(column.id)?.width ?? 0),
     0,
   );
+  const updateScrollState = useCallback(() => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    const canScroll = maxScrollLeft > 1;
+
+    setScrollState({
+      canScroll,
+      atStart: element.scrollLeft <= 1,
+      atEnd: element.scrollLeft >= maxScrollLeft - 1,
+    });
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
+  }, [tableMinWidth, visibleTableColumns.length, updateScrollState]);
+
+  useEffect(() => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    updateScrollState();
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateScrollState);
+    resizeObserver?.observe(element);
+
+    return () => {
+      element.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+      resizeObserver?.disconnect();
+    };
+  }, [updateScrollState]);
+
+  const scrollTableBy = (direction: -1 | 1) => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    element.scrollBy({
+      left: direction * Math.max(element.clientWidth * 0.7, 240),
+      behavior: "smooth",
+    });
+  };
 
   return (
     <section
@@ -190,126 +260,208 @@ export default function ShipmentJobsTable({
             </p>
           </div>
         </div>
-        <TableColumnSettingsButton
-          columns={orderedColumnConfigs}
-          visibleColumnIds={visibleColumnIds}
-          onVisibilityChange={setColumnVisibility}
-          onMoveColumn={moveColumn}
-          onReset={resetColumns}
-          adminTheme={adminTheme}
-        />
+        <div className="flex items-center gap-2">
+          <StickyTableHeaderToggle
+            adminTheme={adminTheme}
+            enabled={stickyHeaderEnabled}
+            onToggle={toggleStickyHeader}
+          />
+          <TableColumnSettingsButton
+            columns={orderedColumnConfigs}
+            visibleColumnIds={visibleColumnIds}
+            onVisibilityChange={setColumnVisibility}
+            onMoveColumn={moveColumn}
+            onReset={resetColumns}
+            adminTheme={adminTheme}
+          />
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table
-          className="w-full table-fixed text-left text-sm"
-          style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+      {scrollState.canScroll && (
+        <div
+          className={`flex justify-end border-b px-5 py-2 ${
+            adminTheme
+              ? "border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-950/40"
+              : "border-slate-200 bg-slate-50/70"
+          }`}
         >
-          <colgroup>
-            {visibleTableColumns.map((column) => (
-              <col key={column.id} style={{ width: `${column.width}px` }} />
-            ))}
-          </colgroup>
-          <thead
-            className={`text-xs uppercase tracking-[0.14em] text-slate-500 ${
-              adminTheme
-                ? "bg-slate-50 dark:bg-gray-950 dark:text-gray-400"
-                : "bg-slate-50"
-            }`}
-          >
-            <tr>
-              {visibleTableColumns.map((column, index) =>
-                column.sortKey ? (
-                  <SortableTableHeader
-                    key={column.id}
-                    label={column.label}
-                    sortKey={column.sortKey}
-                    activeSortKey={sortKey}
-                    direction={sortDirection}
-                    onSort={onSort}
-                    buttonClassName={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition ${
-                      adminTheme
-                        ? "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-gray-800 dark:hover:text-white"
-                        : "hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                    activeClassName={
-                      adminTheme
-                        ? "text-slate-950 dark:text-white"
-                        : "text-slate-950"
-                    }
-                    inactiveClassName={
-                      adminTheme ? "text-slate-500 dark:text-gray-400" : ""
-                    }
-                    className={
-                      index === 0
-                        ? "whitespace-nowrap py-3 pl-3 pr-5"
-                        : "whitespace-nowrap px-3 py-3"
-                    }
-                  />
-                ) : (
-                  <th
-                    key={column.id}
-                    className="whitespace-nowrap px-3 py-3 text-left"
-                  >
-                    {column.label}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody
-            className={`divide-y ${
-              adminTheme
-                ? "divide-gray-100 dark:divide-gray-800"
-                : "divide-slate-100"
-            }`}
-          >
-            {paginatedJobs.map((job) => (
-              <tr
-                key={job.id}
-                tabIndex={0}
-                role="button"
-                onClick={() => onSelectJob(job)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelectJob(job);
-                  }
-                }}
-                className={`cursor-pointer align-top transition focus:outline-none ${
-                  selectedJobId === job.id
-                    ? "bg-cyan-50/80 dark:bg-cyan-950/20"
-                    : adminTheme
-                      ? "hover:bg-slate-50/80 focus:bg-slate-50 dark:hover:bg-gray-800/70 dark:focus:bg-gray-800"
-                      : "hover:bg-slate-50/80 focus:bg-slate-50"
-                }`}
-              >
-                {visibleTableColumns.map((column) => (
-                  <td key={column.id} className="px-3 py-4">
-                    {column.render(job)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!loading && sortedJobs.length === 0 && (
           <div
-            className={`py-16 text-center ${
+            className={`inline-flex items-center gap-1.5 rounded-full border p-1 text-xs font-semibold ${
               adminTheme
-                ? "text-slate-500 dark:text-gray-400"
-                : "text-slate-500"
+                ? "border-cyan-200 bg-white text-cyan-800 dark:border-cyan-900/70 dark:bg-gray-900 dark:text-cyan-200"
+                : "border-cyan-200 bg-white text-cyan-800"
             }`}
           >
-            <MoreHorizontal className="mx-auto mb-3 h-8 w-8" />
-            {t("jobs.noMatches")}
+            <button
+              type="button"
+              onClick={() => scrollTableBy(-1)}
+              disabled={scrollState.atStart}
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
+                adminTheme
+                  ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
+                  : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
+              }`}
+              aria-label={t("jobs.tableScrollLeft")}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <span className="px-1">{t("jobs.tableScrollHint")}</span>
+            <button
+              type="button"
+              onClick={() => scrollTableBy(1)}
+              disabled={scrollState.atEnd}
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
+                adminTheme
+                  ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
+                  : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
+              }`}
+              aria-label={t("jobs.tableScrollRight")}
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
+        </div>
+      )}
+
+      <div className="relative">
+        {scrollState.canScroll && !scrollState.atStart && (
+          <div
+            className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-8 ${
+              adminTheme
+                ? "bg-gradient-to-r from-white via-white/85 to-transparent dark:from-gray-900 dark:via-gray-900/85"
+                : "bg-gradient-to-r from-white via-white/85 to-transparent"
+            }`}
+            aria-hidden="true"
+          />
         )}
-        {loading && (
-          <div className="py-16 text-center text-slate-500">
-            {t("common.loadingJobs")}
-          </div>
+        {scrollState.canScroll && !scrollState.atEnd && (
+          <div
+            className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-8 ${
+              adminTheme
+                ? "bg-gradient-to-l from-white via-white/85 to-transparent dark:from-gray-900 dark:via-gray-900/85"
+                : "bg-gradient-to-l from-white via-white/85 to-transparent"
+            }`}
+            aria-hidden="true"
+          />
         )}
+        <div
+          ref={scrollContainerRef}
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
+          <table
+            className="w-full table-fixed text-left text-sm"
+            style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+          >
+            <colgroup>
+              {visibleTableColumns.map((column) => (
+                <col key={column.id} style={{ width: `${column.width}px` }} />
+              ))}
+            </colgroup>
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} text-xs uppercase tracking-[0.14em] text-slate-500 ${
+                adminTheme
+                  ? "bg-slate-50 dark:bg-gray-950 dark:text-gray-400"
+                  : "bg-slate-50"
+              }`}
+            >
+              <tr>
+                {visibleTableColumns.map((column, index) =>
+                  column.sortKey ? (
+                    <SortableTableHeader
+                      key={column.id}
+                      label={column.label}
+                      sortKey={column.sortKey}
+                      activeSortKey={sortKey}
+                      direction={sortDirection}
+                      onSort={onSort}
+                      buttonClassName={`inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition ${
+                        adminTheme
+                          ? "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-gray-800 dark:hover:text-white"
+                          : "hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                      activeClassName={
+                        adminTheme
+                          ? "text-slate-950 dark:text-white"
+                          : "text-slate-950"
+                      }
+                      inactiveClassName={
+                        adminTheme ? "text-slate-500 dark:text-gray-400" : ""
+                      }
+                      className={
+                        index === 0
+                          ? "whitespace-nowrap py-3 pl-3 pr-5"
+                          : "whitespace-nowrap px-3 py-3"
+                      }
+                    />
+                  ) : (
+                    <th
+                      key={column.id}
+                      className="whitespace-nowrap px-3 py-3 text-left"
+                    >
+                      {column.label}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody
+              className={`divide-y ${
+                adminTheme
+                  ? "divide-gray-100 dark:divide-gray-800"
+                  : "divide-slate-100"
+              }`}
+            >
+              {paginatedJobs.map((job) => (
+                <tr
+                  key={job.id}
+                  tabIndex={0}
+                  role="button"
+                  onClick={() => onSelectJob(job)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelectJob(job);
+                    }
+                  }}
+                  className={`cursor-pointer align-top transition focus:outline-none ${
+                    selectedJobId === job.id
+                      ? "bg-cyan-50/80 dark:bg-cyan-950/20"
+                      : adminTheme
+                        ? "hover:bg-slate-50/80 focus:bg-slate-50 dark:hover:bg-gray-800/70 dark:focus:bg-gray-800"
+                        : "hover:bg-slate-50/80 focus:bg-slate-50"
+                  }`}
+                >
+                  {visibleTableColumns.map((column) => (
+                    <td key={column.id} className="px-3 py-4">
+                      {column.render(job)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!loading && sortedJobs.length === 0 && (
+            <div
+              className={`py-16 text-center ${
+                adminTheme
+                  ? "text-slate-500 dark:text-gray-400"
+                  : "text-slate-500"
+              }`}
+            >
+              <MoreHorizontal className="mx-auto mb-3 h-8 w-8" />
+              {t("jobs.noMatches")}
+            </div>
+          )}
+          {loading && (
+            <div className="py-16 text-center text-slate-500">
+              {t("common.loadingJobs")}
+            </div>
+          )}
+        </div>
       </div>
       <PaginationControls
         adminTheme={adminTheme}

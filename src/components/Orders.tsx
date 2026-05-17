@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ShoppingCart, Search, Filter } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import PaginationControls from "./PaginationControls";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import { usePagination } from "./usePagination";
 
 interface Order {
   id: string;
@@ -28,6 +32,8 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
 
   useEffect(() => {
     loadOrders();
@@ -49,17 +55,31 @@ export default function Orders() {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_email.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredOrders = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.toLowerCase();
 
-    const matchesStatus =
-      statusFilter === "all" || order.status === statusFilter;
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.order_number.toLowerCase().includes(normalizedSearchTerm) ||
+        order.customer_name.toLowerCase().includes(normalizedSearchTerm) ||
+        order.customer_email.toLowerCase().includes(normalizedSearchTerm);
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus =
+        statusFilter === "all" || order.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedOrders,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(filteredOrders);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -130,9 +150,24 @@ export default function Orders() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="flex justify-end border-b border-gray-200 px-5 py-3">
+          <StickyTableHeaderToggle
+            adminTheme
+            enabled={stickyHeaderEnabled}
+            onToggle={toggleStickyHeader}
+          />
+        </div>
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
+            >
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   注文番号
@@ -155,7 +190,7 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
+              {paginatedOrders.map((order) => (
                 <tr
                   key={order.id}
                   className="hover:bg-gray-50 transition-colors"
@@ -201,6 +236,17 @@ export default function Orders() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={filteredOrders.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {filteredOrders.length === 0 && (

@@ -23,6 +23,8 @@ import {
 import PaginationControls from "./PaginationControls";
 import DocumentPreviewModal from "./DocumentPreviewModal";
 import SortableTableHeader from "./SortableTableHeader";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
@@ -97,6 +99,8 @@ export default function DocumentControl({
   >(null);
   const [previewDocument, setPreviewDocument] =
     React.useState<ShipmentDocument | null>(null);
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const [toast, setToast] = React.useState<{
     type: "success" | "error";
     message: string;
@@ -627,16 +631,29 @@ export default function DocumentControl({
               {t("documents.count", { count: sortedRows.length })}
             </p>
           </div>
-          <TableColumnSettingsButton
-            columns={orderedColumnConfigs}
-            visibleColumnIds={visibleColumnIds}
-            onVisibilityChange={setColumnVisibility}
-            onMoveColumn={moveColumn}
-            onReset={resetColumns}
-            adminTheme={isAdminStyle}
-          />
+          <div className="flex items-center gap-2">
+            <StickyTableHeaderToggle
+              adminTheme={isAdminStyle}
+              enabled={stickyHeaderEnabled}
+              onToggle={toggleStickyHeader}
+            />
+            <TableColumnSettingsButton
+              columns={orderedColumnConfigs}
+              visibleColumnIds={visibleColumnIds}
+              onVisibilityChange={setColumnVisibility}
+              onMoveColumn={moveColumn}
+              onReset={resetColumns}
+              adminTheme={isAdminStyle}
+            />
+          </div>
         </div>
-        <div className="overflow-x-auto">
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table
             className="w-full table-fixed text-left text-sm"
             style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
@@ -649,8 +666,8 @@ export default function DocumentControl({
             <thead
               className={
                 isAdminStyle
-                  ? "text-xs uppercase text-gray-500 dark:text-gray-400"
-                  : "bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500"
+                  ? `${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white text-xs uppercase text-gray-500 dark:bg-gray-900 dark:text-gray-400`
+                  : `${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500`
               }
             >
               <tr

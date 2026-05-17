@@ -7,11 +7,15 @@ import {
 import type { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 import { t } from "../lib/i18n";
 import ShipmentJobDetailModal from "../components/ShipmentJobDetailModal";
+import PaginationControls from "../components/PaginationControls";
 import SortableTableHeader, {
   SortDirection,
 } from "../components/SortableTableHeader";
+import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { usePagination } from "../components/usePagination";
 
 interface FeedbackReviewPanelProps {
   superAdminEmail: string;
@@ -49,6 +53,8 @@ export default function FeedbackReviewPanel({
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<FeedbackColumnId>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const [selectedShipmentJobId, setSelectedShipmentJobId] = useState<
     string | null
   >(null);
@@ -94,6 +100,16 @@ export default function FeedbackReviewPanel({
       ),
     );
   }, [filteredFeedback, sortDirection, sortKey]);
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedFeedback,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(sortedFeedback);
 
   const columns = useMemo<FeedbackTableColumn[]>(
     () => [
@@ -265,18 +281,31 @@ export default function FeedbackReviewPanel({
                 className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
               />
             </label>
-            <TableColumnSettingsButton
-              columns={orderedColumnConfigs}
-              visibleColumnIds={visibleColumnIds}
-              onVisibilityChange={setColumnVisibility}
-              onMoveColumn={moveColumn}
-              onReset={resetColumns}
-              adminTheme
-            />
+            <div className="flex items-center gap-2">
+              <StickyTableHeaderToggle
+                adminTheme
+                enabled={stickyHeaderEnabled}
+                onToggle={toggleStickyHeader}
+              />
+              <TableColumnSettingsButton
+                columns={orderedColumnConfigs}
+                visibleColumnIds={visibleColumnIds}
+                onVisibilityChange={setColumnVisibility}
+                onMoveColumn={moveColumn}
+                onReset={resetColumns}
+                adminTheme
+              />
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table
             className="w-full table-fixed text-left text-sm"
             style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
@@ -286,7 +315,9 @@ export default function FeedbackReviewPanel({
                 <col key={column.id} style={{ width: `${column.width}px` }} />
               ))}
             </colgroup>
-            <thead>
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+            >
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 {visibleTableColumns.map((column) => (
                   <SortableTableHeader
@@ -324,7 +355,7 @@ export default function FeedbackReviewPanel({
                   </td>
                 </tr>
               ) : (
-                sortedFeedback.map((item) => (
+                paginatedFeedback.map((item) => (
                   <tr
                     key={`${item.id}-${item.admin_operator_email ?? "none"}`}
                     onClick={() => setSelectedShipmentJobId(item.shipment_job_id)}
@@ -341,6 +372,17 @@ export default function FeedbackReviewPanel({
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={sortedFeedback.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
 
       <ShipmentJobDetailModal

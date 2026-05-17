@@ -9,6 +9,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
+import PaginationControls from "./PaginationControls";
+import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
+import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import { usePagination } from "./usePagination";
 import { t } from "../lib/i18n";
 import {
   getLatestShipmentStatusUpdate,
@@ -47,6 +51,8 @@ export default function ShipmentDashboard({
   onOpenDocuments,
 }: ShipmentDashboardProps) {
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const underProcess = jobs.filter(
     (job) => job.status === "under_process",
   ).length;
@@ -73,10 +79,19 @@ export default function ShipmentDashboard({
           (first, second) =>
             new Date(getLatestShipmentStatusUpdate(second).updatedAt).getTime() -
             new Date(getLatestShipmentStatusUpdate(first).updatedAt).getTime(),
-        )
-        .slice(0, 5),
+        ),
     [jobs],
   );
+  const {
+    currentPage,
+    pageCount,
+    pageSize,
+    paginatedItems: paginatedRecentJobs,
+    visibleFrom,
+    visibleTo,
+    setCurrentPage,
+    setPageSize,
+  } = usePagination(recentJobs);
   const documentsByJob = useMemo(() => {
     return Object.fromEntries(
       jobs.map((job) => [job.id, getDocumentsForJob(documents, job.id)]),
@@ -216,9 +231,24 @@ export default function ShipmentDashboard({
         title={t("dashboard.recentJobs")}
         icon={<FileStack className="h-5 w-5" />}
       >
-        <div className="overflow-x-auto">
+        <div className="mb-3 flex justify-end">
+          <StickyTableHeaderToggle
+            adminTheme
+            enabled={stickyHeaderEnabled}
+            onToggle={toggleStickyHeader}
+          />
+        </div>
+        <div
+          className={
+            stickyHeaderEnabled
+              ? "max-h-[70vh] overflow-auto overscroll-contain"
+              : "overflow-x-auto"
+          }
+        >
           <table className="w-full min-w-[1100px] text-left text-sm">
-            <thead>
+            <thead
+              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+            >
               <tr className="border-b border-gray-200 text-xs uppercase tracking-[0.14em] text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 <th className="py-3 pr-4">{t("dashboard.previousStatus")}</th>
                 <th className="py-3 pr-4">{t("dashboard.currentStatus")}</th>
@@ -230,7 +260,7 @@ export default function ShipmentDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-              {recentJobs.map((job) => (
+              {paginatedRecentJobs.map((job) => (
                 <tr
                   key={job.id}
                   tabIndex={0}
@@ -277,6 +307,17 @@ export default function ShipmentDashboard({
             </div>
           )}
         </div>
+        <PaginationControls
+          adminTheme
+          currentPage={currentPage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={recentJobs.length}
+          visibleFrom={visibleFrom}
+          visibleTo={visibleTo}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </Panel>
       <ShipmentJobDetailModal
         job={selectedJob}
