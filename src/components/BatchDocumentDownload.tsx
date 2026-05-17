@@ -16,6 +16,7 @@ import {
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
 import DocumentPreviewModal from "./DocumentPreviewModal";
+import InstantTooltip from "./InstantTooltip";
 import PaginationControls from "./PaginationControls";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
@@ -380,14 +381,18 @@ function DocumentNameCell({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onPreview(document)}
-      className="flex min-w-0 max-w-full items-center gap-2 rounded-lg text-left transition hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100 dark:hover:text-cyan-200 dark:focus:ring-cyan-950"
-      title={t("documents.preview")}
-    >
-      {content}
-    </button>
+    <InstantTooltip label={t("documents.preview")} align="left">
+      {(tooltipId) => (
+        <button
+          type="button"
+          onClick={() => onPreview(document)}
+          className="flex min-w-0 max-w-full items-center gap-2 rounded-lg text-left transition hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100 dark:hover:text-cyan-200 dark:focus:ring-cyan-950"
+          aria-describedby={tooltipId}
+        >
+          {content}
+        </button>
+      )}
+    </InstantTooltip>
   );
 }
 

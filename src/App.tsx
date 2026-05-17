@@ -12,6 +12,7 @@ import {
 import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
 import BatchDocumentDownload from "./components/BatchDocumentDownload";
+import InstantTooltip from "./components/InstantTooltip";
 import LoginPage from "./components/LoginPage";
 import ProfileButton from "./components/ProfileButton";
 import DocumentControl, {
@@ -385,20 +386,29 @@ function MainApp({
                     day: "numeric",
                   })}
                 </div>
-                <button
-                  onClick={onToggleDark}
-                  className="relative rounded-xl bg-gray-100 p-2 transition hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
-                  title={darkMode ? t("app.theme.light") : t("app.theme.dark")}
+                <InstantTooltip
+                  label={darkMode ? t("app.theme.light") : t("app.theme.dark")}
                 >
-                  <span className="relative flex h-5 w-5 items-center justify-center">
-                    <Sun
-                      className={`absolute h-5 w-5 text-amber-500 transition-all duration-300 ${darkMode ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-50"}`}
-                    />
-                    <Moon
-                      className={`absolute h-5 w-5 text-gray-600 transition-all duration-300 dark:text-gray-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
-                    />
-                  </span>
-                </button>
+                  {(tooltipId) => (
+                    <button
+                      onClick={onToggleDark}
+                      className="relative rounded-xl bg-gray-100 p-2 transition hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                      aria-label={
+                        darkMode ? t("app.theme.light") : t("app.theme.dark")
+                      }
+                      aria-describedby={tooltipId}
+                    >
+                      <span className="relative flex h-5 w-5 items-center justify-center">
+                        <Sun
+                          className={`absolute h-5 w-5 text-amber-500 transition-all duration-300 ${darkMode ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-50"}`}
+                        />
+                        <Moon
+                          className={`absolute h-5 w-5 text-gray-600 transition-all duration-300 dark:text-gray-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
+                        />
+                      </span>
+                    </button>
+                  )}
+                </InstantTooltip>
                 <ProfileButton email={profileEmail} />
                 <button
                   onClick={onLogout}

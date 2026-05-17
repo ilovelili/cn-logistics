@@ -16,6 +16,7 @@ import {
   uploadAppUserAvatar,
 } from "../lib/auth";
 import { t } from "../lib/i18n";
+import InstantTooltip from "./InstantTooltip";
 
 interface ProfileButtonProps {
   email: string;
@@ -411,14 +412,19 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
-        title={t("profile.title")}
-      >
-        {loading ? <UserRound className="h-5 w-5 animate-pulse" /> : avatar}
-      </button>
+      <InstantTooltip label={t("profile.title")}>
+        {(tooltipId) => (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-700"
+            aria-label={t("profile.title")}
+            aria-describedby={tooltipId}
+          >
+            {loading ? <UserRound className="h-5 w-5 animate-pulse" /> : avatar}
+          </button>
+        )}
+      </InstantTooltip>
 
       {modal ? createPortal(modal, document.body) : null}
       {toast &&

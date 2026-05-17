@@ -1,5 +1,6 @@
 import { GripVertical, RotateCcw, Settings } from "lucide-react";
 import { useState } from "react";
+import InstantTooltip from "./InstantTooltip";
 import type { TableColumnConfig } from "./useTableColumnSettings";
 
 export type { TableColumnConfig } from "./useTableColumnSettings";
@@ -28,19 +29,23 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-          adminTheme
-            ? "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            : "border-slate-200 text-slate-600 hover:bg-slate-50"
-        }`}
-        aria-label="列設定"
-        title="列設定"
-      >
-        <Settings className="h-4 w-4" />
-      </button>
+      <InstantTooltip label="列設定">
+        {(tooltipId) => (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+              adminTheme
+                ? "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+            aria-label="列設定"
+            aria-describedby={tooltipId}
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+        )}
+      </InstantTooltip>
 
       {open && (
         <div
