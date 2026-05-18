@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,6 +12,8 @@ import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import PaginationControls from "./PaginationControls";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
+import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { usePagination } from "./usePagination";
 import { t } from "../lib/i18n";
 import {
@@ -53,6 +55,8 @@ export default function ShipmentDashboard({
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const underProcess = jobs.filter(
     (job) => job.status === "under_process",
   ).length;
@@ -239,6 +243,17 @@ export default function ShipmentDashboard({
           />
         </div>
         <div
+          className={`mb-3 flex justify-end sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

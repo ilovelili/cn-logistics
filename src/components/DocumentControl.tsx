@@ -25,8 +25,10 @@ import DocumentPreviewModal from "./DocumentPreviewModal";
 import SortableTableHeader from "./SortableTableHeader";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
+import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import {
   getResponsibleAdminNames,
   type ShipmentJobsCompanyOption,
@@ -101,6 +103,8 @@ export default function DocumentControl({
     React.useState<ShipmentDocument | null>(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [toast, setToast] = React.useState<{
     type: "success" | "error";
     message: string;
@@ -648,6 +652,21 @@ export default function DocumentControl({
           </div>
         </div>
         <div
+          className={`flex justify-end border-b px-5 py-2 sm:${scrollHint.canScroll ? "flex" : "hidden"} ${
+            isAdminStyle
+              ? "border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-950/40"
+              : "border-slate-200 bg-slate-50/70"
+          }`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme={isAdminStyle}
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

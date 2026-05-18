@@ -1,18 +1,5 @@
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  MoreHorizontal,
-} from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../lib/i18n";
 import {
   isCustomerDocumentDownloadable,
@@ -27,7 +14,9 @@ import DocumentPreviewModal from "./DocumentPreviewModal";
 import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
+import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
   getResponsibleAdminNames,
@@ -120,11 +109,7 @@ export default function ShipmentJobsTable({
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [scrollState, setScrollState] = useState({
-    canScroll: false,
-    atStart: true,
-    atEnd: true,
-  });
+  const scrollHint = useHorizontalScrollHint(scrollContainerRef);
   const columns = useMemo(
     () =>
       buildColumns(
@@ -174,54 +159,6 @@ export default function ShipmentJobsTable({
     (total, column) => total + (columnsById.get(column.id)?.width ?? 0),
     0,
   );
-  const updateScrollState = useCallback(() => {
-    const element = scrollContainerRef.current;
-    if (!element) return;
-
-    const maxScrollLeft = element.scrollWidth - element.clientWidth;
-    const canScroll = maxScrollLeft > 1;
-
-    setScrollState({
-      canScroll,
-      atStart: element.scrollLeft <= 1,
-      atEnd: element.scrollLeft >= maxScrollLeft - 1,
-    });
-  }, []);
-
-  useEffect(() => {
-    updateScrollState();
-  }, [tableMinWidth, visibleTableColumns.length, updateScrollState]);
-
-  useEffect(() => {
-    const element = scrollContainerRef.current;
-    if (!element) return;
-
-    updateScrollState();
-    element.addEventListener("scroll", updateScrollState, { passive: true });
-    window.addEventListener("resize", updateScrollState);
-    const resizeObserver =
-      typeof ResizeObserver === "undefined"
-        ? null
-        : new ResizeObserver(updateScrollState);
-    resizeObserver?.observe(element);
-
-    return () => {
-      element.removeEventListener("scroll", updateScrollState);
-      window.removeEventListener("resize", updateScrollState);
-      resizeObserver?.disconnect();
-    };
-  }, [updateScrollState]);
-
-  const scrollTableBy = (direction: -1 | 1) => {
-    const element = scrollContainerRef.current;
-    if (!element) return;
-
-    element.scrollBy({
-      left: direction * Math.max(element.clientWidth * 0.7, 240),
-      behavior: "smooth",
-    });
-  };
-
   return (
     <section
       className={`overflow-hidden border bg-white shadow-sm ${
@@ -277,54 +214,25 @@ export default function ShipmentJobsTable({
         </div>
       </div>
 
-      {scrollState.canScroll && (
+      {(scrollHint.canScroll || tableMinWidth > 320) && (
         <div
-          className={`flex justify-end border-b px-5 py-2 ${
+          className={`flex justify-end border-b px-5 py-2 sm:${scrollHint.canScroll ? "flex" : "hidden"} ${
             adminTheme
               ? "border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-950/40"
               : "border-slate-200 bg-slate-50/70"
           }`}
         >
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border p-1 text-xs font-semibold ${
-              adminTheme
-                ? "border-cyan-200 bg-white text-cyan-800 dark:border-cyan-900/70 dark:bg-gray-900 dark:text-cyan-200"
-                : "border-cyan-200 bg-white text-cyan-800"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => scrollTableBy(-1)}
-              disabled={scrollState.atStart}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
-                adminTheme
-                  ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
-                  : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
-              }`}
-              aria-label={t("jobs.tableScrollLeft")}
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <span className="px-1">{t("jobs.tableScrollHint")}</span>
-            <button
-              type="button"
-              onClick={() => scrollTableBy(1)}
-              disabled={scrollState.atEnd}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
-                adminTheme
-                  ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
-                  : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
-              }`}
-              aria-label={t("jobs.tableScrollRight")}
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+          <TableHorizontalScrollHint
+            adminTheme={adminTheme}
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
         </div>
       )}
 
       <div className="relative">
-        {scrollState.canScroll && !scrollState.atStart && (
+        {scrollHint.canScroll && !scrollHint.atStart && (
           <div
             className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-8 ${
               adminTheme
@@ -334,7 +242,7 @@ export default function ShipmentJobsTable({
             aria-hidden="true"
           />
         )}
-        {scrollState.canScroll && !scrollState.atEnd && (
+        {scrollHint.canScroll && !scrollHint.atEnd && (
           <div
             className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-8 ${
               adminTheme

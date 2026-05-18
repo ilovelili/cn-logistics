@@ -28,7 +28,7 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
   );
 
   return (
-    <div className="relative">
+    <div className="relative inline-flex">
       <InstantTooltip label="列設定">
         {(tooltipId) => (
           <button
@@ -49,7 +49,7 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
 
       {open && (
         <div
-          className="absolute right-0 top-12 z-30 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-xl dark:border-gray-800 dark:bg-gray-900"
+          className="fixed left-4 right-4 top-28 z-50 max-h-[70vh] overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-xl dark:border-gray-800 dark:bg-gray-900 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-72"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -66,7 +66,7 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
               リセット
             </button>
           </div>
-          <div className="max-h-80 space-y-1 overflow-y-auto">
+          <div className="max-h-[52vh] space-y-1 overflow-y-auto sm:max-h-80">
             {columns.map((column) => (
               <div
                 key={column.id}

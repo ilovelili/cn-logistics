@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Star } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
@@ -13,8 +13,10 @@ import SortableTableHeader, {
 } from "../components/SortableTableHeader";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 
 interface FeedbackReviewPanelProps {
@@ -55,6 +57,8 @@ export default function FeedbackReviewPanel({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [selectedShipmentJobId, setSelectedShipmentJobId] = useState<
     string | null
   >(null);
@@ -300,6 +304,18 @@ export default function FeedbackReviewPanel({
         </div>
 
         <div
+          className={`mb-3 flex justify-end sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

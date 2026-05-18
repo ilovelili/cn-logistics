@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Save, Search, X, XCircle } from "lucide-react";
 import {
   AdminOperator,
@@ -22,8 +22,10 @@ import SortableTableHeader from "../components/SortableTableHeader";
 import PaginationControls from "../components/PaginationControls";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
+import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { usePagination } from "../components/usePagination";
 import { UserDetailModal } from "./UserRegistrationForm";
@@ -80,6 +82,8 @@ export default function AdminOperatorManagement({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -478,7 +482,7 @@ export default function AdminOperatorManagement({
         />
       )}
 
-      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:rounded-3xl sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-black text-gray-900 dark:text-white">
@@ -563,7 +567,7 @@ export default function AdminOperatorManagement({
         </form>
       )}
 
-      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:rounded-3xl sm:p-6">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-black text-gray-900 dark:text-white">
             {t("superAdmin.operators.list")}
@@ -597,6 +601,18 @@ export default function AdminOperatorManagement({
         </div>
 
         <div
+          className={`mb-3 flex justify-end sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

@@ -1,9 +1,11 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { ShoppingCart, Search, Filter } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import PaginationControls from "./PaginationControls";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
+import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { usePagination } from "./usePagination";
 
 interface Order {
@@ -34,6 +36,8 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
 
   useEffect(() => {
     loadOrders();
@@ -158,6 +162,17 @@ export default function Orders() {
           />
         </div>
         <div
+          className={`flex justify-end border-b border-gray-200 px-5 py-2 sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

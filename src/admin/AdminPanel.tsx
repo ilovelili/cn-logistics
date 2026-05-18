@@ -71,6 +71,7 @@ export default function AdminPanel({
   const { isAdminAuthenticated, logout } = useAdminAuth();
   const [view, setView] = useState<AdminView>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
   const [switchableOperators, setSwitchableOperators] = useState<
     AdminOperator[]
@@ -184,29 +185,37 @@ export default function AdminPanel({
       : []),
   ];
 
+  const handleSidebarToggle = () => {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      setSidebarCollapsed((collapsed) => !collapsed);
+    } else {
+      setSidebarOpen(true);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+      <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+              onClick={handleSidebarToggle}
               className="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
               aria-label="メニューを切り替え"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div>
-              <span className="font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0">
+              <span className="block truncate font-bold text-gray-900 dark:text-white sm:inline">
                 CN Logistics
               </span>
-              <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
+              <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:ml-2 sm:mt-0">
                 {isSuperAdmin ? t("common.superAdmin") : t("common.admin")}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
             {onSwitchToUser && (
               <select
                 value=""
@@ -221,7 +230,7 @@ export default function AdminPanel({
                     );
                   }
                 }}
-                className="max-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:max-w-56 sm:flex-none"
               >
                 <option value="">
                   {isSuperAdmin
@@ -294,18 +303,28 @@ export default function AdminPanel({
             <ProfileButton email={profileEmail} />
             <button
               onClick={onLogout ?? logout}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 sm:px-4"
             >
               <LogOut className="w-4 h-4" />
-              {t("common.logout")}
+              <span className="hidden sm:inline">{t("common.logout")}</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         {!sidebarCollapsed && (
-          <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 flex flex-col">
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-gray-200 bg-white p-4 transition-transform duration-200 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:static lg:translate-x-0 ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -321,6 +340,7 @@ export default function AdminPanel({
                         setDocumentApprovalFilter("all");
                       }
                       setView(item.id);
+                      setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isActive
@@ -337,7 +357,7 @@ export default function AdminPanel({
           </aside>
         )}
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           {view === "dashboard" && (
             <AdminDashboard
               jobs={jobs}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle,
@@ -20,6 +20,8 @@ import InstantTooltip from "./InstantTooltip";
 import PaginationControls from "./PaginationControls";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
+import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { usePagination } from "./usePagination";
 
 interface BatchDocumentDownloadProps {
@@ -49,6 +51,8 @@ export default function BatchDocumentDownload({
   const [requesting, setRequesting] = useState(false);
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -226,6 +230,17 @@ export default function BatchDocumentDownload({
           />
         </div>
         <div
+          className={`flex justify-end border-b border-gray-200 px-5 py-2 dark:border-gray-800 sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+        >
+          <TableHorizontalScrollHint
+            adminTheme
+            atStart={scrollHint.atStart}
+            atEnd={scrollHint.atEnd}
+            onScroll={scrollHint.scrollByDirection}
+          />
+        </div>
+        <div
+          ref={tableScrollRef}
           className={
             stickyHeaderEnabled
               ? "max-h-[70vh] overflow-auto overscroll-contain"

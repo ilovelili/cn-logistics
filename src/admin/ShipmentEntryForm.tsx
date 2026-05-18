@@ -78,7 +78,13 @@ export default function ShipmentEntryForm({
     message: string;
   } | null>(null);
   const companyNames = useMemo(
-    () => companyOptions.map((company) => company.company_name),
+    () => [
+      ...new Set(
+        companyOptions
+          .map((company) => company.company_name.trim())
+          .filter(Boolean),
+      ),
+    ],
     [companyOptions],
   );
 
@@ -282,10 +288,10 @@ export default function ShipmentEntryForm({
         </h2>
       </div>
 
-      <div className="flex gap-2 rounded-xl bg-gray-100 dark:bg-gray-900 p-1 w-fit">
+      <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900 sm:inline-grid sm:w-auto">
         <button
           onClick={() => setMode("update")}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${
+          className={`inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold sm:px-4 ${
             mode === "update"
               ? "bg-white dark:bg-gray-800 text-gray-950 dark:text-white shadow-sm"
               : "text-gray-600 dark:text-gray-400"
@@ -299,7 +305,7 @@ export default function ShipmentEntryForm({
             setMode("create");
             setSelectedJob(null);
           }}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${
+          className={`inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold sm:px-4 ${
             mode === "create"
               ? "bg-white dark:bg-gray-800 text-gray-950 dark:text-white shadow-sm"
               : "text-gray-600 dark:text-gray-400"

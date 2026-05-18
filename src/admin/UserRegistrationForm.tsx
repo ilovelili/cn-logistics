@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle, Plus, Save, Search, X, XCircle } from "lucide-react";
 import {
   AdminOperator,
@@ -23,9 +23,11 @@ import SortableTableHeader from "../components/SortableTableHeader";
 import PaginationControls from "../components/PaginationControls";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
+import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
 
@@ -76,6 +78,8 @@ export default function UserRegistrationForm({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{
@@ -568,6 +572,17 @@ export default function UserRegistrationForm({
           ) : (
             <>
               <div
+                className={`mb-3 flex justify-end sm:${scrollHint.canScroll ? "flex" : "hidden"}`}
+              >
+                <TableHorizontalScrollHint
+                  adminTheme
+                  atStart={scrollHint.atStart}
+                  atEnd={scrollHint.atEnd}
+                  onScroll={scrollHint.scrollByDirection}
+                />
+              </div>
+              <div
+                ref={tableScrollRef}
                 className={
                   stickyHeaderEnabled
                     ? "max-h-[70vh] overflow-auto overscroll-contain"
