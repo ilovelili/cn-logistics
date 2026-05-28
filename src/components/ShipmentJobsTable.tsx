@@ -649,12 +649,11 @@ function DocumentPills({
       {documents.map((document) => {
         const canPreview =
           !approvedOnly || isCustomerDocumentDownloadable(document);
-        const pillClass =
-          muted
-            ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100 transition hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-200 dark:ring-indigo-900 dark:hover:bg-indigo-950"
-            : !canPreview
-              ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
-            : "bg-cyan-50 text-cyan-800 transition hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950";
+        const pillClass = muted
+          ? "border border-indigo-200 bg-transparent text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-950/40"
+          : !canPreview
+            ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
+            : "border border-cyan-200 bg-transparent text-cyan-800 transition hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40";
         const content = (
           <>
             <FileText className="h-3 w-3 shrink-0" />

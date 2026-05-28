@@ -748,7 +748,7 @@ function AssignedCompanyUsers({
           type="button"
           key={companyUser.id}
           onClick={() => onSelect(companyUser)}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900 dark:hover:bg-cyan-950"
+          className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
           title={companyUser.email}
         >
           <span className="min-w-0 truncate">{companyUser.company_name}</span>

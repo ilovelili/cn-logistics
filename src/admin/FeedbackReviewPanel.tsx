@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, Star } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
   ShipmentFeedbackReview,
@@ -374,7 +374,9 @@ export default function FeedbackReviewPanel({
                 paginatedFeedback.map((item) => (
                   <tr
                     key={`${item.id}-${item.admin_operator_email ?? "none"}`}
-                    onClick={() => setSelectedShipmentJobId(item.shipment_job_id)}
+                    onClick={() =>
+                      setSelectedShipmentJobId(item.shipment_job_id)
+                    }
                     className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
                   >
                     {visibleTableColumns.map((column) => (
@@ -467,8 +469,7 @@ function RatingPill({ value }: { value: number }) {
   const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800">
-      <Star className="h-3.5 w-3.5" fill="currentColor" />
+    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-transparent px-2.5 py-1 text-xs font-black text-amber-700 dark:border-amber-900 dark:text-amber-200">
       {displayValue}
     </span>
   );

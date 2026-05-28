@@ -390,7 +390,7 @@ export default function BatchDocumentDownload({
                           onClick={() => void downloadDocument(document)}
                           className={`inline-flex min-w-[88px] items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition ${
                             canDownload
-                              ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
+                              ? "border-cyan-200 bg-transparent text-cyan-800 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
                               : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-600"
                           }`}
                           title={

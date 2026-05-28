@@ -175,6 +175,10 @@ const ja = {
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
   "documents.downloadFailed": "ダウンロードに失敗しました",
+  "documents.deleted": "書類を削除しました",
+  "documents.deleteFailed": "書類削除に失敗しました",
+  "documents.deleteConfirm":
+    "この書類を削除します。削除後は書類台帳に表示されません。",
   "documents.batchTitle": "書類DL",
   "documents.batchSearchPlaceholder":
     "インボイス#、書類名、荷主、荷受人、POL/AOL、POD/AOD、BL/AWBで検索...",

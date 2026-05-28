@@ -483,6 +483,23 @@ export async function updateShipmentDocumentApproval(
   }
 }
 
+export async function softDeleteShipmentDocument(
+  id: string,
+  requesterEmail?: string,
+) {
+  const { error } = await supabase
+    .from("shipment_documents")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: requesterEmail?.trim().toLowerCase() || null,
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export function getOpenDocumentCount(job: ShipmentJob): number {
   return (job.documents?.length ?? 0) + (job.internal_documents?.length ?? 0);
 }

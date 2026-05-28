@@ -8,6 +8,7 @@ import {
   FileClock,
   LockKeyhole,
   Search,
+  Trash2,
 } from "lucide-react";
 import { t } from "../lib/i18n";
 import {
@@ -16,6 +17,7 @@ import {
   DocumentApprovalStatus,
   ShipmentDocument,
   ShipmentJob,
+  softDeleteShipmentDocument,
   statusBadgeClasses,
   statusLabels,
   updateShipmentDocumentApproval,
@@ -100,6 +102,9 @@ export default function DocumentControl({
     string | null
   >(null);
   const [downloadingDocumentId, setDownloadingDocumentId] = React.useState<
+    string | null
+  >(null);
+  const [deletingDocumentId, setDeletingDocumentId] = React.useState<
     string | null
   >(null);
   const [previewDocument, setPreviewDocument] =
@@ -314,6 +319,26 @@ export default function DocumentControl({
     [isAdminAuthenticated, showToast],
   );
 
+  const handleAdminDelete = React.useCallback(
+    async (document: ShipmentDocument) => {
+      if (!window.confirm(t("documents.deleteConfirm"))) {
+        return;
+      }
+
+      setDeletingDocumentId(document.id);
+      try {
+        await softDeleteShipmentDocument(document.id, requesterEmail);
+        await onRefresh();
+        showToast("success", t("documents.deleted"));
+      } catch {
+        showToast("error", t("documents.deleteFailed"));
+      } finally {
+        setDeletingDocumentId(null);
+      }
+    },
+    [onRefresh, requesterEmail, showToast],
+  );
+
   const columns = React.useMemo<DocumentColumn[]>(() => {
     const documentColumns: DocumentColumn[] = [
       {
@@ -429,7 +454,7 @@ export default function DocumentControl({
         label: isAdminAuthenticated
           ? t("documents.adminReview")
           : t("documents.downloadRequest"),
-        width: isAdminAuthenticated ? 340 : 160,
+        width: isAdminAuthenticated ? 430 : 160,
         sortKey: "approval",
         render: (row) => (
           <DocumentActionButton
@@ -437,10 +462,12 @@ export default function DocumentControl({
             isAdminAuthenticated={isAdminAuthenticated}
             requesting={requestingDocumentId === row.document.id}
             downloading={downloadingDocumentId === row.document.id}
+            deleting={deletingDocumentId === row.document.id}
             onRequest={handleDownloadRequest}
             onReview={handleAdminApproval}
             onPreview={setPreviewDocument}
             onDownload={handleAdminDownload}
+            onDelete={handleAdminDelete}
           />
         ),
       },
@@ -476,8 +503,10 @@ export default function DocumentControl({
     return documentColumns;
   }, [
     handleAdminApproval,
+    handleAdminDelete,
     handleAdminDownload,
     handleDownloadRequest,
+    deletingDocumentId,
     downloadingDocumentId,
     isAdminAuthenticated,
     requestingDocumentId,
@@ -847,15 +876,18 @@ function DocumentActionButton({
   isAdminAuthenticated,
   requesting,
   downloading,
+  deleting,
   onRequest,
   onReview,
   onPreview,
   onDownload,
+  onDelete,
 }: {
   row: DocumentRow;
   isAdminAuthenticated: boolean;
   requesting: boolean;
   downloading: boolean;
+  deleting: boolean;
   onRequest: (document: ShipmentDocument) => Promise<void>;
   onReview: (
     document: ShipmentDocument,
@@ -863,6 +895,7 @@ function DocumentActionButton({
   ) => Promise<void>;
   onPreview: (document: ShipmentDocument) => void;
   onDownload: (document: ShipmentDocument) => Promise<void>;
+  onDelete: (document: ShipmentDocument) => Promise<void>;
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
@@ -900,7 +933,7 @@ function DocumentActionButton({
           type="button"
           disabled={requesting}
           onClick={() => onPreview(document)}
-          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-transparent px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60 dark:border-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
         >
           <Eye className="h-3.5 w-3.5" />
           {t("common.view")}
@@ -909,10 +942,19 @@ function DocumentActionButton({
           type="button"
           disabled={downloading}
           onClick={() => void onDownload(document)}
-          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-cyan-900 bg-cyan-950/40 px-3 py-2 text-xs font-bold text-cyan-200 transition hover:bg-cyan-950 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-cyan-200 bg-transparent px-3 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 disabled:cursor-wait disabled:opacity-60 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
         >
           <Download className="h-3.5 w-3.5" />
           {downloading ? t("common.saving") : t("documents.downloadColumn")}
+        </button>
+        <button
+          type="button"
+          disabled={deleting}
+          onClick={() => void onDelete(document)}
+          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-transparent px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          {deleting ? t("common.saving") : t("common.delete")}
         </button>
         {canReview && (
           <>
@@ -920,7 +962,7 @@ function DocumentActionButton({
               type="button"
               disabled={requesting}
               onClick={() => void onReview(document, "approved")}
-              className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-w-[72px] items-center justify-center rounded-xl border border-cyan-200 bg-transparent px-3 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 disabled:cursor-wait disabled:opacity-60 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
             >
               {requesting ? t("common.saving") : t("common.approve")}
             </button>
@@ -928,7 +970,7 @@ function DocumentActionButton({
               type="button"
               disabled={requesting}
               onClick={() => void onReview(document, "rejected")}
-              className="inline-flex min-w-[72px] items-center justify-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-w-[72px] items-center justify-center rounded-xl border border-rose-200 bg-transparent px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40"
             >
               {t("common.reject")}
             </button>
@@ -945,9 +987,9 @@ function DocumentActionButton({
       onClick={handleClick}
       className={`inline-flex min-w-[96px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-bold transition ${
         canDownload
-          ? "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+          ? "border-cyan-200 bg-transparent text-cyan-800 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
           : canRequest
-            ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
+            ? "border-cyan-200 bg-transparent text-cyan-800 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
             : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500"
       }`}
       title={!canDownload && !canRequest ? lockedTitle : undefined}

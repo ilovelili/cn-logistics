@@ -4,10 +4,13 @@ type TableActionButtonVariant = "primary" | "success" | "warning" | "danger";
 
 const variantClasses: Record<TableActionButtonVariant, string> = {
   primary:
-    "bg-slate-950 text-white hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200",
-  success: "bg-emerald-600 text-white hover:bg-emerald-700",
-  warning: "bg-amber-500 text-white hover:bg-amber-600",
-  danger: "bg-rose-600 text-white hover:bg-rose-700",
+    "border border-slate-200 bg-transparent text-slate-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800",
+  success:
+    "border border-emerald-200 bg-transparent text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40",
+  warning:
+    "border border-amber-200 bg-transparent text-amber-700 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-200 dark:hover:bg-amber-950/40",
+  danger:
+    "border border-rose-200 bg-transparent text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40",
 };
 
 interface TableActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
