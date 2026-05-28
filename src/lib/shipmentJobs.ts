@@ -275,11 +275,12 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     internal_documents: formatDocumentList(job.internal_documents ?? []),
     document_files: [],
     internal_document_files: [],
-    tracking_events: job.tracking_events?.map((event) => ({
-      event_date: event.event_date,
-      location: event.location ?? "",
-      description: event.description,
-    })) ?? [],
+    tracking_events:
+      job.tracking_events?.map((event) => ({
+        event_date: event.event_date,
+        location: event.location ?? "",
+        description: event.description,
+      })) ?? [],
     notes: job.notes ?? "",
   };
 }
@@ -525,7 +526,10 @@ export function getShipmentStatusPeriods(job: ShipmentJob) {
         },
       ];
     }),
-  ) as Record<ShipmentStatus, { fromDate: string | null; toDate: string | null }>;
+  ) as Record<
+    ShipmentStatus,
+    { fromDate: string | null; toDate: string | null }
+  >;
 
   return shipmentStatusOrder
     .map((status, index) => {
@@ -607,9 +611,13 @@ export function getShipmentTotalWorkingDays(job: ShipmentJob) {
   return countWorkingDays(startDate, endDate);
 }
 
-export async function downloadShipmentDocument(document: ShipmentDocument) {
+export async function downloadShipmentDocument(
+  document: ShipmentDocument,
+  options: { allowUnapprovedCustomer?: boolean } = {},
+) {
   if (
     document.scope === "customer" &&
+    !options.allowUnapprovedCustomer &&
     !isCustomerDocumentDownloadable(document)
   ) {
     throw new Error("Document download is not approved.");
@@ -647,7 +655,9 @@ function buildFallbackCurrentStatusPeriod(
 ): ShipmentStatusPeriod {
   const fromDate = job.created_at;
   const toDate =
-    job.status === "completed" ? (job.completed_to_date ?? job.updated_at) : null;
+    job.status === "completed"
+      ? (job.completed_to_date ?? job.updated_at)
+      : null;
   const effectiveToDate = toDate ?? new Date().toISOString();
   const parsedFromDate = parseDate(fromDate);
   const parsedToDate = parseDate(effectiveToDate);

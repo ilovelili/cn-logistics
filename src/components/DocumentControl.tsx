@@ -99,6 +99,9 @@ export default function DocumentControl({
   const [requestingDocumentId, setRequestingDocumentId] = React.useState<
     string | null
   >(null);
+  const [downloadingDocumentId, setDownloadingDocumentId] = React.useState<
+    string | null
+  >(null);
   const [previewDocument, setPreviewDocument] =
     React.useState<ShipmentDocument | null>(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
@@ -295,6 +298,22 @@ export default function DocumentControl({
     [onRefresh, requesterEmail, showToast],
   );
 
+  const handleAdminDownload = React.useCallback(
+    async (document: ShipmentDocument) => {
+      setDownloadingDocumentId(document.id);
+      try {
+        await downloadShipmentDocument(document, {
+          allowUnapprovedCustomer: isAdminAuthenticated,
+        });
+      } catch {
+        showToast("error", t("documents.downloadFailed"));
+      } finally {
+        setDownloadingDocumentId(null);
+      }
+    },
+    [isAdminAuthenticated, showToast],
+  );
+
   const columns = React.useMemo<DocumentColumn[]>(() => {
     const documentColumns: DocumentColumn[] = [
       {
@@ -327,9 +346,7 @@ export default function DocumentControl({
               width: 170,
               sortKey: "responsibleAdmins" as const,
               render: (row: DocumentRow) => (
-                <ResponsibleAdminNames
-                  names={row.responsibleAdminNames}
-                />
+                <ResponsibleAdminNames names={row.responsibleAdminNames} />
               ),
             },
           ]
@@ -412,16 +429,18 @@ export default function DocumentControl({
         label: isAdminAuthenticated
           ? t("documents.adminReview")
           : t("documents.downloadRequest"),
-        width: isAdminAuthenticated ? 250 : 160,
+        width: isAdminAuthenticated ? 340 : 160,
         sortKey: "approval",
         render: (row) => (
           <DocumentActionButton
             row={row}
             isAdminAuthenticated={isAdminAuthenticated}
             requesting={requestingDocumentId === row.document.id}
+            downloading={downloadingDocumentId === row.document.id}
             onRequest={handleDownloadRequest}
             onReview={handleAdminApproval}
             onPreview={setPreviewDocument}
+            onDownload={handleAdminDownload}
           />
         ),
       },
@@ -457,7 +476,9 @@ export default function DocumentControl({
     return documentColumns;
   }, [
     handleAdminApproval,
+    handleAdminDownload,
     handleDownloadRequest,
+    downloadingDocumentId,
     isAdminAuthenticated,
     requestingDocumentId,
   ]);
@@ -583,9 +604,7 @@ export default function DocumentControl({
                 }
                 className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
               >
-                <option value="all">
-                  {t("documents.filter.allApproval")}
-                </option>
+                <option value="all">{t("documents.filter.allApproval")}</option>
                 <option value="pending">
                   {t("documents.approval.pending")}
                 </option>
@@ -827,19 +846,23 @@ function DocumentActionButton({
   row,
   isAdminAuthenticated,
   requesting,
+  downloading,
   onRequest,
   onReview,
   onPreview,
+  onDownload,
 }: {
   row: DocumentRow;
   isAdminAuthenticated: boolean;
   requesting: boolean;
+  downloading: boolean;
   onRequest: (document: ShipmentDocument) => Promise<void>;
   onReview: (
     document: ShipmentDocument,
     approvalStatus: Extract<DocumentApprovalStatus, "approved" | "rejected">,
   ) => Promise<void>;
   onPreview: (document: ShipmentDocument) => void;
+  onDownload: (document: ShipmentDocument) => Promise<void>;
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
@@ -881,6 +904,15 @@ function DocumentActionButton({
         >
           <Eye className="h-3.5 w-3.5" />
           {t("common.view")}
+        </button>
+        <button
+          type="button"
+          disabled={downloading}
+          onClick={() => void onDownload(document)}
+          className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-cyan-900 bg-cyan-950/40 px-3 py-2 text-xs font-bold text-cyan-200 transition hover:bg-cyan-950 disabled:cursor-wait disabled:opacity-60"
+        >
+          <Download className="h-3.5 w-3.5" />
+          {downloading ? t("common.saving") : t("documents.downloadColumn")}
         </button>
         {canReview && (
           <>

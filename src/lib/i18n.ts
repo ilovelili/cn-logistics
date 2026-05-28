@@ -174,6 +174,7 @@ const ja = {
   "documents.downloadRequestApplied": "承認中",
   "documents.downloadRequested": "ダウンロード申請を登録しました",
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
+  "documents.downloadFailed": "ダウンロードに失敗しました",
   "documents.batchTitle": "書類DL",
   "documents.batchSearchPlaceholder":
     "インボイス#、書類名、荷主、荷受人、POL/AOL、POD/AOD、BL/AWBで検索...",

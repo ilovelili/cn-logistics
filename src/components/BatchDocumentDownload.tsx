@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle,
+  Download,
   FileText,
   Search,
   X,
@@ -10,6 +11,7 @@ import { t } from "../lib/i18n";
 import {
   documentApprovalClasses,
   documentApprovalLabels,
+  downloadShipmentDocument,
   isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
@@ -49,6 +51,9 @@ export default function BatchDocumentDownload({
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState<
+    string | null
+  >(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -145,11 +150,27 @@ export default function BatchDocumentDownload({
       const requestedCount = selectedDocumentIds.length;
       setSelectedDocumentIds([]);
       await onRefresh();
-      showToast("success", t("documents.batchRequested", { count: requestedCount }));
+      showToast(
+        "success",
+        t("documents.batchRequested", { count: requestedCount }),
+      );
     } catch {
       showToast("error", t("documents.batchRequestFailed"));
     } finally {
       setRequesting(false);
+    }
+  };
+
+  const downloadDocument = async (document: ShipmentDocument) => {
+    if (!isCustomerDocumentDownloadable(document)) return;
+
+    setDownloadingDocumentId(document.id);
+    try {
+      await downloadShipmentDocument(document);
+    } catch {
+      showToast("error", t("documents.downloadFailed"));
+    } finally {
+      setDownloadingDocumentId(null);
     }
   };
 
@@ -183,7 +204,13 @@ export default function BatchDocumentDownload({
       </section>
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
+        <div
+          className={`grid gap-3 lg:items-center ${
+            selectableVisibleDocumentIds.length > 0 || selectedCount > 0
+              ? "lg:grid-cols-[1fr_auto_auto_auto]"
+              : "lg:grid-cols-1"
+          }`}
+        >
           <label className="relative block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -193,31 +220,37 @@ export default function BatchDocumentDownload({
               className="w-full rounded-lg border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900"
             />
           </label>
-          <button
-            type="button"
-            onClick={selectVisibleDocuments}
-            disabled={selectableVisibleDocumentIds.length === 0 || requesting}
-            className="inline-flex justify-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            {t("documents.selectAllVisible")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDocumentIds([])}
-            disabled={selectedCount === 0 || requesting}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            <X className="h-4 w-4" />
-            {t("documents.clearSelection")}
-          </button>
-          <button
-            type="button"
-            onClick={submitBatchRequest}
-            disabled={selectedCount === 0 || requesting}
-            className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
-          >
-            {requesting ? t("common.saving") : t("documents.batchSubmit")}
-          </button>
+          {(selectableVisibleDocumentIds.length > 0 || selectedCount > 0) && (
+            <>
+              <button
+                type="button"
+                onClick={selectVisibleDocuments}
+                disabled={
+                  selectableVisibleDocumentIds.length === 0 || requesting
+                }
+                className="inline-flex justify-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                {t("documents.selectAllVisible")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDocumentIds([])}
+                disabled={selectedCount === 0 || requesting}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                <X className="h-4 w-4" />
+                {t("documents.clearSelection")}
+              </button>
+              <button
+                type="button"
+                onClick={submitBatchRequest}
+                disabled={selectedCount === 0 || requesting}
+                className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+              >
+                {requesting ? t("common.saving") : t("documents.batchSubmit")}
+              </button>
+            </>
+          )}
         </div>
       </section>
 
@@ -247,7 +280,7 @@ export default function BatchDocumentDownload({
               : "overflow-x-auto"
           }
         >
-          <table className="w-full min-w-[960px] table-fixed text-left text-sm">
+          <table className="w-full min-w-[1080px] table-fixed text-left text-sm">
             <colgroup>
               <col className="w-[56px]" />
               <col className="w-[140px]" />
@@ -256,6 +289,7 @@ export default function BatchDocumentDownload({
               <col className="w-[190px]" />
               <col className="w-[180px]" />
               <col className="w-[130px]" />
+              <col className="w-[120px]" />
             </colgroup>
             <thead
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-gray-950 dark:text-gray-400`}
@@ -268,24 +302,32 @@ export default function BatchDocumentDownload({
                 <th className="px-4 py-3">{t("common.consignee")}</th>
                 <th className="px-4 py-3">BL/AWB</th>
                 <th className="px-4 py-3">{t("documents.approval")}</th>
+                <th className="px-4 py-3">{t("documents.action")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                  <td
+                    colSpan={8}
+                    className="px-4 py-10 text-center text-gray-500 dark:text-gray-400"
+                  >
                     {t("common.loadingDocuments")}
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                  <td
+                    colSpan={8}
+                    className="px-4 py-10 text-center text-gray-500 dark:text-gray-400"
+                  >
                     {t("documents.noMatches")}
                   </td>
                 </tr>
               ) : (
                 paginatedRows.map(({ job, document }) => {
                   const canRequest = canRequestDocument(document);
+                  const canDownload = isCustomerDocumentDownloadable(document);
                   const checked = selectedDocumentIds.includes(document.id);
 
                   return (
@@ -298,13 +340,18 @@ export default function BatchDocumentDownload({
                       }
                     >
                       <td className="px-4 py-4">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={!canRequest || requesting}
-                          onChange={() => toggleDocument(document.id)}
-                          className="h-4 w-4 rounded border-slate-300"
-                        />
+                        {canRequest ? (
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={requesting}
+                            onChange={() => toggleDocument(document.id)}
+                            className="h-4 w-4 rounded border-slate-300"
+                            aria-label={`${document.name} ${t("documents.downloadRequest")}`}
+                          />
+                        ) : (
+                          <span className="block h-4 w-4" aria-hidden="true" />
+                        )}
                       </td>
                       <td className="px-4 py-4 font-mono font-bold text-gray-900 dark:text-white">
                         {job.invoice_number || "-"}
@@ -322,8 +369,9 @@ export default function BatchDocumentDownload({
                         {job.consignee_name || "-"}
                       </td>
                       <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                        {[job.mbl_mawb, job.hbl_hawb].filter(Boolean).join(" / ") ||
-                          "-"}
+                        {[job.mbl_mawb, job.hbl_hawb]
+                          .filter(Boolean)
+                          .join(" / ") || "-"}
                       </td>
                       <td className="px-4 py-4">
                         <span
@@ -331,6 +379,31 @@ export default function BatchDocumentDownload({
                         >
                           {documentApprovalLabels[document.approval_status]}
                         </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <button
+                          type="button"
+                          disabled={
+                            !canDownload ||
+                            downloadingDocumentId === document.id
+                          }
+                          onClick={() => void downloadDocument(document)}
+                          className={`inline-flex min-w-[88px] items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                            canDownload
+                              ? "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950"
+                              : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-600"
+                          }`}
+                          title={
+                            canDownload
+                              ? undefined
+                              : t("documents.downloadLocked")
+                          }
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          {downloadingDocumentId === document.id
+                            ? t("common.saving")
+                            : t("documents.downloadColumn")}
+                        </button>
                       </td>
                     </tr>
                   );
