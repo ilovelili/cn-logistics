@@ -107,6 +107,11 @@ export default function DocumentControl({
   const [deletingDocumentId, setDeletingDocumentId] = React.useState<
     string | null
   >(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<DocumentRow | null>(
+    null,
+  );
+  const [locallyDeletedDocumentIds, setLocallyDeletedDocumentIds] =
+    React.useState<Set<string>>(() => new Set());
   const [previewDocument, setPreviewDocument] =
     React.useState<ShipmentDocument | null>(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
@@ -161,6 +166,8 @@ export default function DocumentControl({
       : documents.filter((document) => document.scope !== "internal");
 
     return visibleDocuments.flatMap((document) => {
+      if (locallyDeletedDocumentIds.has(document.id)) return [];
+
       const job = jobsById.get(document.shipment_job_id);
       if (!job) return [];
 
@@ -173,7 +180,13 @@ export default function DocumentControl({
         },
       ];
     });
-  }, [companyOptions, documents, isAdminAuthenticated, jobs]);
+  }, [
+    companyOptions,
+    documents,
+    isAdminAuthenticated,
+    jobs,
+    locallyDeletedDocumentIds,
+  ]);
 
   const filteredRows = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -319,25 +332,34 @@ export default function DocumentControl({
     [isAdminAuthenticated, showToast],
   );
 
-  const handleAdminDelete = React.useCallback(
-    async (document: ShipmentDocument) => {
-      if (!window.confirm(t("documents.deleteConfirm"))) {
-        return;
-      }
+  const handleAdminDelete = React.useCallback(async () => {
+    if (!deleteTarget) {
+      return;
+    }
 
-      setDeletingDocumentId(document.id);
-      try {
-        await softDeleteShipmentDocument(document.id, requesterEmail);
-        await onRefresh();
-        showToast("success", t("documents.deleted"));
-      } catch {
-        showToast("error", t("documents.deleteFailed"));
-      } finally {
-        setDeletingDocumentId(null);
-      }
-    },
-    [onRefresh, requesterEmail, showToast],
-  );
+    setDeletingDocumentId(deleteTarget.document.id);
+    try {
+      await softDeleteShipmentDocument(
+        deleteTarget.document.id,
+        requesterEmail,
+      );
+      setLocallyDeletedDocumentIds((current) => {
+        const next = new Set(current);
+        next.add(deleteTarget.document.id);
+        return next;
+      });
+      setDeleteTarget(null);
+      showToast(
+        "success",
+        t("documents.deletedWithName", { name: deleteTarget.document.name }),
+      );
+      await onRefresh().catch(() => undefined);
+    } catch {
+      showToast("error", t("documents.deleteFailed"));
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  }, [deleteTarget, onRefresh, requesterEmail, showToast]);
 
   const columns = React.useMemo<DocumentColumn[]>(() => {
     const documentColumns: DocumentColumn[] = [
@@ -467,7 +489,7 @@ export default function DocumentControl({
             onReview={handleAdminApproval}
             onPreview={setPreviewDocument}
             onDownload={handleAdminDownload}
-            onDelete={handleAdminDelete}
+            onDelete={setDeleteTarget}
           />
         ),
       },
@@ -847,6 +869,14 @@ export default function DocumentControl({
           onClose={() => setPreviewDocument(null)}
         />
       )}
+      {deleteTarget && (
+        <DocumentDeleteConfirmModal
+          row={deleteTarget}
+          deleting={deletingDocumentId === deleteTarget.document.id}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleAdminDelete}
+        />
+      )}
     </div>
   );
 }
@@ -895,7 +925,7 @@ function DocumentActionButton({
   ) => Promise<void>;
   onPreview: (document: ShipmentDocument) => void;
   onDownload: (document: ShipmentDocument) => Promise<void>;
-  onDelete: (document: ShipmentDocument) => Promise<void>;
+  onDelete: (row: DocumentRow) => void;
 }) {
   const { document } = row;
   const isCustomerDocument = document.scope === "customer";
@@ -950,7 +980,7 @@ function DocumentActionButton({
         <button
           type="button"
           disabled={deleting}
-          onClick={() => void onDelete(document)}
+          onClick={() => onDelete(row)}
           className="inline-flex min-w-[72px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-transparent px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -997,6 +1027,59 @@ function DocumentActionButton({
       {canDownload && <Download className="h-3.5 w-3.5" />}
       {requesting ? t("common.saving") : buttonLabel}
     </button>
+  );
+}
+
+function DocumentDeleteConfirmModal({
+  row,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  row: DocumentRow;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("admin.userRegistration.confirmTitle", {
+            action: t("common.delete"),
+          })}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("documents.deleteConfirm")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">
+            {row.document.name}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {row.job.invoice_number || "-"}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? t("common.saving") : t("common.delete")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

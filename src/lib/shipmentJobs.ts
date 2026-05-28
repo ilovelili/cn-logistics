@@ -487,16 +487,39 @@ export async function softDeleteShipmentDocument(
   id: string,
   requesterEmail?: string,
 ) {
-  const { error } = await supabase
+  if (requesterEmail) {
+    const { error } = await supabase.rpc(
+      "soft_delete_accessible_shipment_document",
+      {
+        requester_email: requesterEmail,
+        target_document_id: id,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
+
+  const { data, error } = await supabase
     .from("shipment_documents")
     .update({
       deleted_at: new Date().toISOString(),
       deleted_by: requesterEmail?.trim().toLowerCase() || null,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error("Shipment document was not deleted.");
   }
 }
 

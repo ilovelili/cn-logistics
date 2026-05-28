@@ -176,6 +176,7 @@ const ja = {
   "documents.downloadRequestFailed": "ダウンロード申請に失敗しました",
   "documents.downloadFailed": "ダウンロードに失敗しました",
   "documents.deleted": "書類を削除しました",
+  "documents.deletedWithName": "{name} を削除しました",
   "documents.deleteFailed": "書類削除に失敗しました",
   "documents.deleteConfirm":
     "この書類を削除します。削除後は書類台帳に表示されません。",
