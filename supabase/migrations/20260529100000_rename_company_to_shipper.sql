@@ -119,6 +119,7 @@ DROP FUNCTION IF EXISTS create_registered_normal_user(text, text, text, text, te
 DROP FUNCTION IF EXISTS list_admin_operators(text);
 DROP FUNCTION IF EXISTS list_accessible_shipment_jobs(text);
 DROP FUNCTION IF EXISTS list_accessible_shipment_documents(text);
+DROP FUNCTION IF EXISTS list_accessible_shipment_tracking_events(text);
 DROP FUNCTION IF EXISTS request_accessible_shipment_document_download(text, uuid);
 DROP FUNCTION IF EXISTS update_accessible_shipment_document_approval(text, uuid, text);
 DROP FUNCTION IF EXISTS soft_delete_accessible_shipment_document(text, uuid);
@@ -890,6 +891,62 @@ $$;
 
 REVOKE ALL ON FUNCTION list_accessible_shipment_documents(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION list_accessible_shipment_documents(text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION list_accessible_shipment_tracking_events(requester_email text)
+RETURNS TABLE(
+  id uuid,
+  shipment_job_id uuid,
+  event_date date,
+  location text,
+  description text,
+  sort_order integer,
+  deleted_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH requester AS (
+    SELECT app_users.id, app_users.email, app_users.role
+    FROM app_users
+    WHERE lower(app_users.email) = lower(trim(requester_email))
+      AND app_users.role IN ('normal', 'admin', 'super_admin')
+      AND app_users.is_active = true
+      AND app_users.deleted_at IS NULL
+    LIMIT 1
+  )
+  SELECT
+    shipment_tracking_events.id,
+    shipment_tracking_events.shipment_job_id,
+    shipment_tracking_events.event_date,
+    shipment_tracking_events.location,
+    shipment_tracking_events.description,
+    shipment_tracking_events.sort_order,
+    shipment_tracking_events.deleted_at,
+    shipment_tracking_events.created_at,
+    shipment_tracking_events.updated_at
+  FROM shipment_tracking_events
+  JOIN shipment_jobs
+    ON shipment_jobs.id = shipment_tracking_events.shipment_job_id
+  CROSS JOIN requester
+  WHERE shipment_tracking_events.deleted_at IS NULL
+    AND shipment_jobs.shipper_name IS NOT NULL
+    AND can_requester_access_shipment_shipper(
+      requester.id,
+      requester.email,
+      requester.role,
+      shipment_jobs.shipper_name
+    )
+  ORDER BY
+    shipment_tracking_events.event_date DESC,
+    shipment_tracking_events.sort_order ASC,
+    shipment_tracking_events.created_at ASC;
+$$;
+
+REVOKE ALL ON FUNCTION list_accessible_shipment_tracking_events(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION list_accessible_shipment_tracking_events(text) TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION request_accessible_shipment_document_download(
   requester_email text,
