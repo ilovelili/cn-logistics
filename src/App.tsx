@@ -13,6 +13,7 @@ import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
 import BatchDocumentDownload from "./components/BatchDocumentDownload";
 import InstantTooltip from "./components/InstantTooltip";
+import LanguageSelect from "./components/LanguageSelect";
 import LoginPage from "./components/LoginPage";
 import ProfileButton from "./components/ProfileButton";
 import DocumentControl, {
@@ -363,12 +364,12 @@ function MainApp({
                 {onBackToAdmin && (
                   <div className="hidden items-center gap-2 sm:flex">
                     <div className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900">
-                    {t("admin.switch.currentlySwitchedAs", {
-                      name:
-                        switchedAccountName.trim() ||
-                        profileCompanyName?.trim() ||
-                        profileEmail,
-                    })}
+                      {t("admin.switch.currentlySwitchedAs", {
+                        name:
+                          switchedAccountName.trim() ||
+                          profileCompanyName?.trim() ||
+                          profileEmail,
+                      })}
                     </div>
                     <button
                       onClick={onBackToAdmin}
@@ -417,13 +418,12 @@ function MainApp({
                   <LogOut className="h-4 w-4" />
                   {t("common.logout")}
                 </button>
+                <LanguageSelect />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-6">
-            {renderView()}
-          </main>
+          <main className="flex-1 overflow-y-auto p-6">{renderView()}</main>
         </div>
       </div>
     </div>

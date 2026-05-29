@@ -21,6 +21,7 @@ import DocumentControl, {
   DocumentApprovalFilter,
 } from "../components/DocumentControl";
 import ProfileButton from "../components/ProfileButton";
+import LanguageSelect from "../components/LanguageSelect";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
 import { AppUserRole } from "../lib/auth";
@@ -308,6 +309,7 @@ export default function AdminPanel({
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">{t("common.logout")}</span>
             </button>
+            <LanguageSelect />
           </div>
         </div>
       </header>
