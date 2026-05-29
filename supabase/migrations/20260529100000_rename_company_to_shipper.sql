@@ -116,6 +116,7 @@ DROP FUNCTION IF EXISTS update_normal_user_approval_status(text, uuid, text);
 DROP FUNCTION IF EXISTS update_normal_user_admin_assignments(text, uuid, uuid[]);
 DROP FUNCTION IF EXISTS update_pending_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text);
 DROP FUNCTION IF EXISTS create_registered_normal_user(text, text, text, text, text, numeric, text, text, text);
+DROP FUNCTION IF EXISTS create_registered_normal_user(text, text, text, text, numeric, jsonb, text, text);
 DROP FUNCTION IF EXISTS list_admin_operators(text);
 DROP FUNCTION IF EXISTS list_accessible_shipment_jobs(text);
 DROP FUNCTION IF EXISTS list_accessible_shipment_documents(text);
@@ -297,6 +298,134 @@ REVOKE ALL ON FUNCTION list_registered_normal_users(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION list_registered_normal_users(text) TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION create_registered_normal_user(
+  user_shipper_name text,
+  user_zipcode text,
+  user_shipper_address text,
+  user_telephone text,
+  user_budget numeric,
+  user_contacts jsonb,
+  user_notes text,
+  admin_email text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  normalized_admin_email text := lower(trim(admin_email));
+  contact_record jsonb;
+  normalized_user_email text;
+  normalized_contact_person text;
+BEGIN
+  IF jsonb_typeof(user_contacts) <> 'array' OR jsonb_array_length(user_contacts) = 0 THEN
+    RAISE EXCEPTION 'At least one shipper contact is required';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(user_contacts) AS contact(value)
+    WHERE NULLIF(trim(contact.value->>'email'), '') IS NULL
+      OR NULLIF(trim(contact.value->>'contact_person'), '') IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Each shipper contact requires a name and email';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM (
+      SELECT lower(trim(contact.value->>'email')) AS email
+      FROM jsonb_array_elements(user_contacts) AS contact(value)
+    ) normalized_contacts
+    GROUP BY normalized_contacts.email
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Duplicate contact email in request';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM app_users
+    JOIN jsonb_array_elements(user_contacts) AS contact(value)
+      ON lower(app_users.email) = lower(trim(contact.value->>'email'))
+    WHERE app_users.deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'User email already exists';
+  END IF;
+
+  FOR contact_record IN
+    SELECT value FROM jsonb_array_elements(user_contacts) AS contact(value)
+  LOOP
+    normalized_user_email := lower(trim(contact_record->>'email'));
+    normalized_contact_person := trim(contact_record->>'contact_person');
+
+    INSERT INTO app_users (
+      email,
+      role,
+      temporary_password,
+      user_name,
+      shipper_name,
+      zipcode,
+      shipper_address,
+      telephone,
+      budget,
+      contact_person,
+      notes,
+      approval_status,
+      created_by,
+      is_active,
+      deleted_at,
+      deleted_by
+    )
+    VALUES (
+      normalized_user_email,
+      'normal',
+      '12345',
+      trim(user_shipper_name),
+      trim(user_shipper_name),
+      trim(user_zipcode),
+      trim(user_shipper_address),
+      trim(user_telephone),
+      user_budget,
+      normalized_contact_person,
+      NULLIF(trim(user_notes), ''),
+      'to_be_approved',
+      normalized_admin_email,
+      true,
+      NULL,
+      NULL
+    )
+    ON CONFLICT (email) DO UPDATE
+    SET
+      role = 'normal',
+      temporary_password = '12345',
+      user_name = EXCLUDED.user_name,
+      shipper_name = EXCLUDED.shipper_name,
+      zipcode = EXCLUDED.zipcode,
+      shipper_address = EXCLUDED.shipper_address,
+      telephone = EXCLUDED.telephone,
+      budget = EXCLUDED.budget,
+      contact_person = EXCLUDED.contact_person,
+      notes = EXCLUDED.notes,
+      approval_status = 'to_be_approved',
+      created_by = normalized_admin_email,
+      is_active = true,
+      deleted_at = NULL,
+      deleted_by = NULL,
+      updated_at = now()
+    WHERE app_users.deleted_at IS NOT NULL;
+  END LOOP;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION create_registered_normal_user(text, text, text, text, numeric, jsonb, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_registered_normal_user(text, text, text, text, numeric, jsonb, text, text) TO anon, authenticated;
+
+/*
+  Compatibility wrapper for older clients. The app now calls the jsonb contact
+  version above.
+*/
+CREATE OR REPLACE FUNCTION create_registered_normal_user(
   user_email text,
   user_shipper_name text,
   user_zipcode text,
@@ -312,74 +441,22 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  normalized_user_email text := lower(trim(user_email));
-  normalized_admin_email text := lower(trim(admin_email));
 BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM app_users
-    WHERE lower(app_users.email) = normalized_user_email
-      AND app_users.deleted_at IS NULL
-  ) THEN
-    RAISE EXCEPTION 'User email already exists';
-  END IF;
-
-  INSERT INTO app_users (
-    email,
-    role,
-    temporary_password,
-    user_name,
-    shipper_name,
-    zipcode,
-    shipper_address,
-    telephone,
-    budget,
-    contact_person,
-    notes,
-    approval_status,
-    created_by,
-    is_active,
-    deleted_at,
-    deleted_by
-  )
-  VALUES (
-    normalized_user_email,
-    'normal',
-    '12345',
-    trim(user_shipper_name),
-    trim(user_shipper_name),
-    trim(user_zipcode),
-    trim(user_shipper_address),
-    trim(user_telephone),
+  PERFORM create_registered_normal_user(
+    user_shipper_name,
+    user_zipcode,
+    user_shipper_address,
+    user_telephone,
     user_budget,
-    NULLIF(trim(user_contact_person), ''),
-    NULLIF(trim(user_notes), ''),
-    'to_be_approved',
-    normalized_admin_email,
-    true,
-    NULL,
-    NULL
-  )
-  ON CONFLICT (email) DO UPDATE
-  SET
-    role = 'normal',
-    temporary_password = '12345',
-    user_name = EXCLUDED.user_name,
-    shipper_name = EXCLUDED.shipper_name,
-    zipcode = EXCLUDED.zipcode,
-    shipper_address = EXCLUDED.shipper_address,
-    telephone = EXCLUDED.telephone,
-    budget = EXCLUDED.budget,
-    contact_person = EXCLUDED.contact_person,
-    notes = EXCLUDED.notes,
-    approval_status = 'to_be_approved',
-    created_by = normalized_admin_email,
-    is_active = true,
-    deleted_at = NULL,
-    deleted_by = NULL,
-    updated_at = now()
-  WHERE app_users.deleted_at IS NOT NULL;
+    jsonb_build_array(
+      jsonb_build_object(
+        'email', user_email,
+        'contact_person', user_contact_person
+      )
+    ),
+    user_notes,
+    admin_email
+  );
 END;
 $$;
 

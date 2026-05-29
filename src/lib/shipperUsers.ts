@@ -8,7 +8,13 @@ export interface ShipperUserForm {
   telephone: string;
   budget: string;
   contact_person: string;
+  contacts: ShipperUserContact[];
   notes: string;
+}
+
+export interface ShipperUserContact {
+  email: string;
+  contact_person: string;
 }
 
 export type ShipperUserApprovalStatus =
@@ -50,6 +56,7 @@ export const defaultShipperUserForm: ShipperUserForm = {
   telephone: "",
   budget: "",
   contact_person: "",
+  contacts: [{ email: "", contact_person: "" }],
   notes: "",
 };
 
@@ -58,13 +65,17 @@ export async function createShipperUser(
   createdBy: string,
 ) {
   const { error } = await supabase.rpc("create_registered_normal_user", {
-    user_email: form.email.trim(),
     user_shipper_name: form.shipper_name.trim(),
     user_zipcode: form.zipcode.trim(),
     user_shipper_address: form.shipper_address.trim(),
     user_telephone: form.telephone.trim(),
     user_budget: Number(form.budget || 0),
-    user_contact_person: form.contact_person.trim(),
+    user_contacts: form.contacts
+      .map((contact) => ({
+        email: contact.email.trim(),
+        contact_person: contact.contact_person.trim(),
+      }))
+      .filter((contact) => contact.email && contact.contact_person),
     user_notes: form.notes.trim(),
     admin_email: createdBy,
   });

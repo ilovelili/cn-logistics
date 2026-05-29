@@ -95,6 +95,38 @@ export default function UserRegistrationForm({
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
   };
 
+  const updateContact = (
+    index: number,
+    field: "email" | "contact_person",
+    value: string,
+  ) => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      contacts: currentForm.contacts.map((contact, contactIndex) =>
+        contactIndex === index ? { ...contact, [field]: value } : contact,
+      ),
+    }));
+  };
+
+  const addContact = () => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      contacts: [...currentForm.contacts, { email: "", contact_person: "" }],
+    }));
+  };
+
+  const removeContact = (index: number) => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      contacts:
+        currentForm.contacts.length === 1
+          ? currentForm.contacts
+          : currentForm.contacts.filter(
+              (_, contactIndex) => contactIndex !== index,
+            ),
+    }));
+  };
+
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
@@ -713,13 +745,6 @@ export default function UserRegistrationForm({
         >
           <div className="grid gap-5 lg:grid-cols-2">
             <Field
-              label={t("admin.userRegistration.email")}
-              type="email"
-              value={form.email}
-              onChange={(value) => updateField("email", value)}
-              required
-            />
-            <Field
               label={t("admin.userRegistration.shipperName")}
               value={form.shipper_name}
               onChange={(value) => updateField("shipper_name", value)}
@@ -765,15 +790,15 @@ export default function UserRegistrationForm({
               required
               suffix={t("admin.userRegistration.budgetUnit")}
             />
-            <Field
-              label={t("admin.userRegistration.contactPerson")}
-              value={form.contact_person}
-              onChange={(value) => updateField("contact_person", value)}
-              required
-            />
           </div>
 
           <div className="mt-5 grid gap-5">
+            <ContactFields
+              contacts={form.contacts}
+              onChange={updateContact}
+              onAdd={addContact}
+              onRemove={removeContact}
+            />
             <TextArea
               label={t("admin.userRegistration.shipperAddress")}
               value={form.shipper_address}
@@ -838,6 +863,12 @@ export function UserDetailModal({
     telephone: user.telephone,
     budget: String(user.budget),
     contact_person: user.contact_person ?? "",
+    contacts: [
+      {
+        email: user.email,
+        contact_person: user.contact_person ?? "",
+      },
+    ],
     notes: user.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
@@ -1318,6 +1349,70 @@ function StatusBadge({ status }: { status: ShipperUser["approval_status"] }) {
     <span className={`rounded-full px-3 py-1 text-xs font-bold ${classes}`}>
       {label}
     </span>
+  );
+}
+
+function ContactFields({
+  contacts,
+  onChange,
+  onAdd,
+  onRemove,
+}: {
+  contacts: ShipperUserForm["contacts"];
+  onChange: (
+    index: number,
+    field: "email" | "contact_person",
+    value: string,
+  ) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="font-bold text-gray-900 dark:text-white">
+          {t("admin.userRegistration.contacts")}
+        </h4>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          <Plus className="h-4 w-4" />
+          {t("admin.userRegistration.addContact")}
+        </button>
+      </div>
+      <div className="space-y-3">
+        {contacts.map((contact, index) => (
+          <div
+            key={index}
+            className="grid gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          >
+            <Field
+              label={t("admin.userRegistration.contactPerson")}
+              value={contact.contact_person}
+              onChange={(value) => onChange(index, "contact_person", value)}
+              required
+            />
+            <Field
+              label={t("admin.userRegistration.email")}
+              type="email"
+              value={contact.email}
+              onChange={(value) => onChange(index, "email", value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              disabled={contacts.length === 1}
+              className="self-end rounded-lg border border-rose-300 px-3 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950"
+            >
+              {t("common.delete")}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
