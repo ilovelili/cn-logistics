@@ -73,7 +73,7 @@ export default function AdminOperatorManagement({
     shipper_user_ids: string[];
   }>({
     user_name: "",
-    staff_role: "other",
+    staff_role: "sales",
     shipper_user_ids: [],
   });
   const [selectedShipperUser, setSelectedShipperUser] =

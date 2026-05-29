@@ -24,14 +24,9 @@ export const adminOperatorStaffRoleOptions: {
 }[] = [
   { value: "sales", labelKey: "superAdmin.operators.staffRole.sales" },
   {
-    value: "customer_service",
-    labelKey: "superAdmin.operators.staffRole.customer_service",
-  },
-  {
     value: "operations",
     labelKey: "superAdmin.operators.staffRole.operations",
   },
-  { value: "other", labelKey: "superAdmin.operators.staffRole.other" },
 ];
 
 export interface AssignedShipperUser {
@@ -60,7 +55,7 @@ export interface AdminOperatorForm {
 export const defaultAdminOperatorForm: AdminOperatorForm = {
   email: "",
   user_name: "",
-  staff_role: "other",
+  staff_role: "sales",
   password: "12345",
 };
 
