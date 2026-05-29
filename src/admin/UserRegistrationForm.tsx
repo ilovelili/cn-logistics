@@ -456,6 +456,20 @@ export default function UserRegistrationForm({
           </div>
         ),
       },
+      ...(isSuperAdmin
+        ? [
+            {
+              id: "admins" as const,
+              label: t("admin.userRegistration.assignedAdmins"),
+              width: 14,
+              render: (user: ShipperUserRow) => (
+                <AssignedAdminsSummary
+                  assignments={user.admin_assignments ?? []}
+                />
+              ),
+            },
+          ]
+        : []),
       {
         id: "budget",
         label: t("admin.userRegistration.budget"),
@@ -486,20 +500,6 @@ export default function UserRegistrationForm({
           </span>
         ),
       },
-      ...(isSuperAdmin
-        ? [
-            {
-              id: "admins" as const,
-              label: t("admin.userRegistration.assignedAdmins"),
-              width: 14,
-              render: (user: ShipperUserRow) => (
-                <AssignedAdminsSummary
-                  assignments={user.admin_assignments ?? []}
-                />
-              ),
-            },
-          ]
-        : []),
       {
         id: "action" as const,
         label: t("admin.userRegistration.action"),
