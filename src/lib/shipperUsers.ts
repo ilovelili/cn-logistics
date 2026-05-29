@@ -13,6 +13,7 @@ export interface ShipperUserForm {
 }
 
 export interface ShipperUserContact {
+  id?: string;
   email: string;
   contact_person: string;
 }
@@ -97,21 +98,44 @@ export async function fetchShipperUsersByAdmin(createdBy: string) {
   return (data ?? []) as ShipperUser[];
 }
 
-export async function updatePendingShipperUser(
-  id: string,
-  form: ShipperUserForm,
-) {
+export async function updateShipperUser(id: string, form: ShipperUserForm) {
+  const { data, error } = await supabase.rpc("update_registered_normal_user", {
+    user_id: id,
+    user_email: form.email.trim(),
+    user_shipper_name: form.shipper_name.trim(),
+    user_zipcode: form.zipcode.trim(),
+    user_shipper_address: form.shipper_address.trim(),
+    user_telephone: form.telephone.trim(),
+    user_budget: Number(form.budget || 0),
+    user_contact_person: form.contact_person.trim(),
+    user_notes: form.notes.trim(),
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const [updatedUser] = (data ?? []) as ShipperUser[];
+  return updatedUser;
+}
+
+export async function updateShipperContacts(id: string, form: ShipperUserForm) {
   const { data, error } = await supabase.rpc(
-    "update_pending_registered_normal_user",
+    "update_registered_shipper_contacts",
     {
-      user_id: id,
-      user_email: form.email.trim(),
+      target_user_id: id,
       user_shipper_name: form.shipper_name.trim(),
       user_zipcode: form.zipcode.trim(),
       user_shipper_address: form.shipper_address.trim(),
       user_telephone: form.telephone.trim(),
       user_budget: Number(form.budget || 0),
-      user_contact_person: form.contact_person.trim(),
+      user_contacts: form.contacts
+        .map((contact) => ({
+          id: contact.id,
+          email: contact.email.trim(),
+          contact_person: contact.contact_person.trim(),
+        }))
+        .filter((contact) => contact.email && contact.contact_person),
       user_notes: form.notes.trim(),
     },
   );
@@ -120,8 +144,7 @@ export async function updatePendingShipperUser(
     throw error;
   }
 
-  const [updatedUser] = (data ?? []) as ShipperUser[];
-  return updatedUser;
+  return (data ?? []) as ShipperUser[];
 }
 
 export async function updateShipperUserApprovalStatus({

@@ -464,20 +464,17 @@ export default function AdminOperatorManagement({
         <UserDetailModal
           user={selectedShipperUser}
           isSuperAdmin
-          actionLoading={false}
           adminOperators={operators}
           superAdminEmail={superAdminEmail}
           detailsReadOnly
-          showActions={false}
-          onSaved={(updatedUser) => {
-            setSelectedShipperUser(updatedUser);
+          onSaved={(updatedUsers) => {
+            setSelectedShipperUser(updatedUsers[0] ?? selectedShipperUser);
             void loadOperators();
           }}
           onAssignmentsSaved={(updatedUser) => {
             setSelectedShipperUser(updatedUser);
             void loadOperators();
           }}
-          onRequestAction={() => undefined}
           onClose={() => setSelectedShipperUser(null)}
         />
       )}
@@ -751,9 +748,7 @@ function AssignedShipperUsers({
           className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
           title={shipperUser.email}
         >
-          <span className="min-w-0 truncate">
-            {shipperUser.shipper_name}
-          </span>
+          <span className="min-w-0 truncate">{shipperUser.shipper_name}</span>
         </button>
       ))}
     </div>

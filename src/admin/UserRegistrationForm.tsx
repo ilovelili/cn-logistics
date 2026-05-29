@@ -15,7 +15,7 @@ import {
   fetchShipperUsersByAdmin,
   updateShipperUserApprovalStatus,
   updateShipperUserAdminAssignments,
-  updatePendingShipperUser,
+  updateShipperContacts,
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
@@ -35,6 +35,13 @@ function getStaffRoleLabel(role: AdminOperatorStaffRole) {
   return t(`superAdmin.operators.staffRole.${role}`);
 }
 
+function isSameShipperGroup(first: ShipperUser, second: ShipperUser) {
+  return (
+    first.shipper_name === second.shipper_name &&
+    (first.created_by ?? "") === (second.created_by ?? "")
+  );
+}
+
 interface UserRegistrationFormProps {
   adminEmail: string;
   isSuperAdmin?: boolean;
@@ -48,7 +55,7 @@ type SortKey =
   | "approval_status"
   | "created_at";
 type SortDirection = "asc" | "desc";
-type UserColumnId = SortKey | "admins" | "action";
+type UserColumnId = SortKey | "contact" | "admins" | "action";
 export type UserAction = "approve" | "reject" | "delete";
 
 interface UserTableColumn {
@@ -366,17 +373,25 @@ export default function UserRegistrationForm({
         ),
       },
       {
-        id: "email",
-        label: t("admin.userRegistration.email"),
-        width: isSuperAdmin ? 18 : 32,
+        id: "contact",
+        label: t("admin.userRegistration.contactAndEmail"),
+        width: isSuperAdmin ? 20 : 34,
         sortKey: "email",
         render: (user) => (
-          <span
-            className="block truncate text-gray-600 dark:text-gray-300"
-            title={user.email}
-          >
-            {user.email}
-          </span>
+          <div className="min-w-0">
+            <div
+              className="truncate font-semibold text-gray-700 dark:text-gray-200"
+              title={user.contact_person ?? ""}
+            >
+              {user.contact_person || t("common.unset")}
+            </div>
+            <div
+              className="truncate font-mono text-xs text-gray-500 dark:text-gray-400"
+              title={user.email}
+            >
+              {user.email}
+            </div>
+          </div>
         ),
       },
       {
@@ -469,7 +484,7 @@ export default function UserRegistrationForm({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "admin_user_registration_table_columns_v4",
+    "admin_user_registration_table_columns_v5",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -702,21 +717,32 @@ export default function UserRegistrationForm({
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}
-          onSaved={(updatedUser) => {
+          users={users}
+          onSaved={(updatedUsers) => {
             setUsers((currentUsers) =>
-              currentUsers.map((user) =>
-                user.id === updatedUser.id ? updatedUser : user,
+              [
+                ...currentUsers.filter(
+                  (currentUser) =>
+                    !isSameShipperGroup(currentUser, selectedUser),
+                ),
+                ...updatedUsers,
+              ].sort(
+                (first, second) =>
+                  new Date(second.created_at).getTime() -
+                  new Date(first.created_at).getTime(),
               ),
             );
-            setSelectedUser(updatedUser);
+            setSelectedUser(
+              updatedUsers.find(
+                (updatedUser) => updatedUser.id === selectedUser.id,
+              ) ??
+                updatedUsers[0] ??
+                null,
+            );
           }}
           isSuperAdmin={isSuperAdmin}
-          actionLoading={actionLoadingId === selectedUser.id}
           adminOperators={adminOperators}
           superAdminEmail={adminEmail}
-          onRequestAction={(action) =>
-            setPendingAction({ user: selectedUser, action })
-          }
           onAssignmentsSaved={(updatedUser) => {
             setUsers((currentUsers) =>
               currentUsers.map((user) =>
@@ -830,31 +856,33 @@ export default function UserRegistrationForm({
 
 export function UserDetailModal({
   user,
+  users = [user],
   onSaved,
   isSuperAdmin,
-  actionLoading,
   adminOperators,
   superAdminEmail,
   detailsReadOnly = false,
-  showActions = true,
-  onRequestAction,
   onAssignmentsSaved,
   onClose,
 }: {
   user: ShipperUser;
-  onSaved: (user: ShipperUser) => void;
+  users?: ShipperUser[];
+  onSaved: (users: ShipperUser[]) => void;
   isSuperAdmin: boolean;
-  actionLoading: boolean;
   adminOperators: AdminOperator[];
   superAdminEmail: string;
   detailsReadOnly?: boolean;
-  showActions?: boolean;
-  onRequestAction: (action: UserAction) => void;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
 }) {
-  const isEditable =
-    user.approval_status === "to_be_approved" && !detailsReadOnly;
+  const isEditable = !detailsReadOnly;
+  const shipperContacts = useMemo(() => {
+    const matchingUsers = users.filter((currentUser) =>
+      isSameShipperGroup(currentUser, user),
+    );
+
+    return matchingUsers.length > 0 ? matchingUsers : [user];
+  }, [user, users]);
   const [form, setForm] = useState<ShipperUserForm>({
     email: user.email,
     shipper_name: user.shipper_name,
@@ -863,12 +891,11 @@ export function UserDetailModal({
     telephone: user.telephone,
     budget: String(user.budget),
     contact_person: user.contact_person ?? "",
-    contacts: [
-      {
-        email: user.email,
-        contact_person: user.contact_person ?? "",
-      },
-    ],
+    contacts: shipperContacts.map((contactUser) => ({
+      id: contactUser.id,
+      email: contactUser.email,
+      contact_person: contactUser.contact_person ?? "",
+    })),
     notes: user.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
@@ -889,6 +916,24 @@ export function UserDetailModal({
       ),
     );
   }, [user.admin_assignments, user.id]);
+
+  useEffect(() => {
+    setForm({
+      email: user.email,
+      shipper_name: user.shipper_name,
+      zipcode: user.zipcode ?? "",
+      shipper_address: user.shipper_address,
+      telephone: user.telephone,
+      budget: String(user.budget),
+      contact_person: user.contact_person ?? "",
+      contacts: shipperContacts.map((contactUser) => ({
+        id: contactUser.id,
+        email: contactUser.email,
+        contact_person: contactUser.contact_person ?? "",
+      })),
+      notes: user.notes ?? "",
+    });
+  }, [shipperContacts, user]);
 
   const updateField = (field: keyof ShipperUserForm, value: string) => {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
@@ -920,8 +965,8 @@ export function UserDetailModal({
     setError("");
 
     try {
-      const updatedUser = await updatePendingShipperUser(user.id, form);
-      onSaved(updatedUser);
+      const updatedUsers = await updateShipperContacts(user.id, form);
+      onSaved(updatedUsers);
     } catch {
       setError(t("admin.userRegistration.updateFailed"));
     } finally {
@@ -1053,14 +1098,7 @@ export function UserDetailModal({
             <DetailItem label="ID" value={user.id} mono />
             <DetailItem
               label={t("admin.userRegistration.status")}
-              value={t("admin.userRegistration.status.toBeApproved")}
-            />
-            <Field
-              label={t("admin.userRegistration.email")}
-              type="email"
-              value={form.email}
-              onChange={(value) => updateField("email", value)}
-              required
+              value={getApprovalStatusLabel(user.approval_status)}
             />
             <Field
               label={t("admin.userRegistration.shipperName")}
@@ -1103,12 +1141,42 @@ export function UserDetailModal({
               required
               suffix={t("admin.userRegistration.budgetUnit")}
             />
-            <Field
-              label={t("admin.userRegistration.contactPerson")}
-              value={form.contact_person}
-              onChange={(value) => updateField("contact_person", value)}
-              required
-            />
+            <div className="md:col-span-2">
+              <ContactFields
+                contacts={form.contacts}
+                onChange={(index, field, value) => {
+                  setForm((currentForm) => ({
+                    ...currentForm,
+                    contacts: currentForm.contacts.map(
+                      (contact, contactIndex) =>
+                        contactIndex === index
+                          ? { ...contact, [field]: value }
+                          : contact,
+                    ),
+                  }));
+                }}
+                onAdd={() => {
+                  setForm((currentForm) => ({
+                    ...currentForm,
+                    contacts: [
+                      ...currentForm.contacts,
+                      { email: "", contact_person: "" },
+                    ],
+                  }));
+                }}
+                onRemove={(index) => {
+                  setForm((currentForm) => ({
+                    ...currentForm,
+                    contacts:
+                      currentForm.contacts.length === 1
+                        ? currentForm.contacts
+                        : currentForm.contacts.filter(
+                            (_, contactIndex) => contactIndex !== index,
+                          ),
+                  }));
+                }}
+              />
+            </div>
             <div className="md:col-span-2">
               <TextArea
                 label={t("admin.userRegistration.shipperAddress")}
@@ -1136,17 +1204,6 @@ export function UserDetailModal({
         )}
 
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-5 dark:border-gray-800">
-          {isSuperAdmin && showActions && (
-            <ApprovalButtons
-              disabled={
-                actionLoading || user.approval_status !== "to_be_approved"
-              }
-              deleteDisabled={actionLoading}
-              onApprove={() => onRequestAction("approve")}
-              onReject={() => onRequestAction("reject")}
-              onDelete={() => onRequestAction("delete")}
-            />
-          )}
           <button
             type="button"
             onClick={onClose}
@@ -1332,12 +1389,7 @@ function DetailItem({
 }
 
 function StatusBadge({ status }: { status: ShipperUser["approval_status"] }) {
-  const label =
-    status === "approved"
-      ? t("admin.userRegistration.status.approved")
-      : status === "rejected"
-        ? t("admin.userRegistration.status.rejected")
-        : t("admin.userRegistration.status.toBeApproved");
+  const label = getApprovalStatusLabel(status);
   const classes =
     status === "approved"
       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
@@ -1350,6 +1402,14 @@ function StatusBadge({ status }: { status: ShipperUser["approval_status"] }) {
       {label}
     </span>
   );
+}
+
+function getApprovalStatusLabel(status: ShipperUser["approval_status"]) {
+  return status === "approved"
+    ? t("admin.userRegistration.status.approved")
+    : status === "rejected"
+      ? t("admin.userRegistration.status.rejected")
+      : t("admin.userRegistration.status.toBeApproved");
 }
 
 function ContactFields({
@@ -1382,11 +1442,11 @@ function ContactFields({
           {t("admin.userRegistration.addContact")}
         </button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-3 overflow-x-auto pb-1">
         {contacts.map((contact, index) => (
           <div
             key={index}
-            className="grid gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+            className="grid min-w-[620px] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
           >
             <Field
               label={t("admin.userRegistration.contactPerson")}

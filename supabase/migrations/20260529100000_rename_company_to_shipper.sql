@@ -114,6 +114,8 @@ DROP FUNCTION IF EXISTS update_app_user_avatar(text, text);
 DROP FUNCTION IF EXISTS list_registered_normal_users(text);
 DROP FUNCTION IF EXISTS update_normal_user_approval_status(text, uuid, text);
 DROP FUNCTION IF EXISTS update_normal_user_admin_assignments(text, uuid, uuid[]);
+DROP FUNCTION IF EXISTS update_registered_shipper_contacts(uuid, text, text, text, text, numeric, jsonb, text);
+DROP FUNCTION IF EXISTS update_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text);
 DROP FUNCTION IF EXISTS update_pending_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text);
 DROP FUNCTION IF EXISTS create_registered_normal_user(text, text, text, text, text, numeric, text, text, text);
 DROP FUNCTION IF EXISTS create_registered_normal_user(text, text, text, text, numeric, jsonb, text, text);
@@ -463,7 +465,7 @@ $$;
 REVOKE ALL ON FUNCTION create_registered_normal_user(text, text, text, text, text, numeric, text, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION create_registered_normal_user(text, text, text, text, text, numeric, text, text, text) TO anon, authenticated;
 
-CREATE OR REPLACE FUNCTION update_pending_registered_normal_user(
+CREATE OR REPLACE FUNCTION update_registered_normal_user(
   user_id uuid,
   user_email text,
   user_shipper_name text,
@@ -508,7 +510,6 @@ AS $$
     updated_at = now()
   WHERE app_users.id = user_id
     AND app_users.role = 'normal'
-    AND app_users.approval_status = 'to_be_approved'
     AND app_users.deleted_at IS NULL
   RETURNING
     app_users.id,
@@ -525,6 +526,290 @@ AS $$
     app_users.created_at,
     app_users.updated_at,
     get_normal_user_admin_assignments(app_users.id);
+$$;
+
+REVOKE ALL ON FUNCTION update_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION update_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION update_registered_shipper_contacts(
+  target_user_id uuid,
+  user_shipper_name text,
+  user_zipcode text,
+  user_shipper_address text,
+  user_telephone text,
+  user_budget numeric,
+  user_contacts jsonb,
+  user_notes text
+)
+RETURNS TABLE(
+  id uuid,
+  email text,
+  shipper_name text,
+  zipcode text,
+  shipper_address text,
+  telephone text,
+  budget numeric,
+  contact_person text,
+  notes text,
+  approval_status text,
+  created_by text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  admin_assignments jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  target_record record;
+  contact_record jsonb;
+  contact_id uuid;
+  contact_ids uuid[] := ARRAY[]::uuid[];
+  normalized_user_email text;
+  normalized_contact_person text;
+  inserted_user_id uuid;
+BEGIN
+  SELECT *
+  INTO target_record
+  FROM app_users
+  WHERE app_users.id = target_user_id
+    AND app_users.role = 'normal'
+    AND app_users.deleted_at IS NULL
+  LIMIT 1;
+
+  IF target_record.id IS NULL THEN
+    RAISE EXCEPTION 'Target normal user was not found';
+  END IF;
+
+  IF jsonb_typeof(user_contacts) <> 'array' OR jsonb_array_length(user_contacts) = 0 THEN
+    RAISE EXCEPTION 'At least one shipper contact is required';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(user_contacts) AS contact(value)
+    WHERE NULLIF(trim(contact.value->>'email'), '') IS NULL
+      OR NULLIF(trim(contact.value->>'contact_person'), '') IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Each shipper contact requires a name and email';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM (
+      SELECT lower(trim(contact.value->>'email')) AS email
+      FROM jsonb_array_elements(user_contacts) AS contact(value)
+    ) normalized_contacts
+    GROUP BY normalized_contacts.email
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Duplicate contact email in request';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM app_users existing_user
+    JOIN jsonb_array_elements(user_contacts) AS contact(value)
+      ON lower(existing_user.email) = lower(trim(contact.value->>'email'))
+    WHERE existing_user.deleted_at IS NULL
+      AND NOT (
+        existing_user.role = 'normal'
+        AND existing_user.shipper_name = target_record.shipper_name
+        AND coalesce(existing_user.created_by, '') = coalesce(target_record.created_by, '')
+      )
+  ) THEN
+    RAISE EXCEPTION 'User email already exists';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(user_contacts) AS contact(value)
+    WHERE NULLIF(contact.value->>'id', '') IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM app_users existing_contact
+        WHERE existing_contact.id = (contact.value->>'id')::uuid
+          AND existing_contact.role = 'normal'
+          AND existing_contact.shipper_name = target_record.shipper_name
+          AND coalesce(existing_contact.created_by, '') = coalesce(target_record.created_by, '')
+          AND existing_contact.deleted_at IS NULL
+      )
+  ) THEN
+    RAISE EXCEPTION 'Shipper contact was not found';
+  END IF;
+
+  SELECT coalesce(array_agg((contact.value->>'id')::uuid), ARRAY[]::uuid[])
+  INTO contact_ids
+  FROM jsonb_array_elements(user_contacts) AS contact(value)
+  WHERE NULLIF(contact.value->>'id', '') IS NOT NULL;
+
+  UPDATE app_users
+  SET
+    is_active = false,
+    deleted_at = now(),
+    deleted_by = 'shipper_contact_update',
+    updated_at = now()
+  WHERE app_users.role = 'normal'
+    AND app_users.shipper_name = target_record.shipper_name
+    AND coalesce(app_users.created_by, '') = coalesce(target_record.created_by, '')
+    AND app_users.deleted_at IS NULL
+    AND NOT (app_users.id = ANY(contact_ids));
+
+  FOR contact_record IN
+    SELECT value FROM jsonb_array_elements(user_contacts) AS contact(value)
+  LOOP
+    contact_id := NULLIF(contact_record->>'id', '')::uuid;
+    normalized_user_email := lower(trim(contact_record->>'email'));
+    normalized_contact_person := trim(contact_record->>'contact_person');
+
+    IF contact_id IS NULL THEN
+      INSERT INTO app_users (
+        email,
+        role,
+        temporary_password,
+        user_name,
+        shipper_name,
+        zipcode,
+        shipper_address,
+        telephone,
+        budget,
+        contact_person,
+        notes,
+        approval_status,
+        created_by,
+        is_active,
+        deleted_at,
+        deleted_by
+      )
+      VALUES (
+        normalized_user_email,
+        'normal',
+        '12345',
+        trim(user_shipper_name),
+        trim(user_shipper_name),
+        trim(user_zipcode),
+        trim(user_shipper_address),
+        trim(user_telephone),
+        user_budget,
+        normalized_contact_person,
+        NULLIF(trim(user_notes), ''),
+        target_record.approval_status,
+        target_record.created_by,
+        true,
+        NULL,
+        NULL
+      )
+      RETURNING app_users.id INTO inserted_user_id;
+
+      INSERT INTO app_user_admin_assignments (
+        normal_user_id,
+        admin_user_id,
+        assigned_by
+      )
+      SELECT
+        inserted_user_id,
+        assignment.admin_user_id,
+        assignment.assigned_by
+      FROM app_user_admin_assignments assignment
+      WHERE assignment.normal_user_id = target_record.id
+      ON CONFLICT (normal_user_id, admin_user_id) DO UPDATE
+      SET
+        assigned_by = EXCLUDED.assigned_by,
+        updated_at = now();
+    ELSE
+      UPDATE app_users
+      SET
+        email = normalized_user_email,
+        user_name = trim(user_shipper_name),
+        shipper_name = trim(user_shipper_name),
+        zipcode = trim(user_zipcode),
+        shipper_address = trim(user_shipper_address),
+        telephone = trim(user_telephone),
+        budget = user_budget,
+        contact_person = normalized_contact_person,
+        notes = NULLIF(trim(user_notes), ''),
+        updated_at = now()
+      WHERE app_users.id = contact_id
+        AND app_users.role = 'normal'
+        AND app_users.deleted_at IS NULL;
+    END IF;
+  END LOOP;
+
+  RETURN QUERY
+  SELECT
+    app_users.id,
+    app_users.email,
+    app_users.shipper_name,
+    app_users.zipcode,
+    app_users.shipper_address,
+    app_users.telephone,
+    app_users.budget,
+    app_users.contact_person,
+    app_users.notes,
+    app_users.approval_status,
+    app_users.created_by,
+    app_users.created_at,
+    app_users.updated_at,
+    get_normal_user_admin_assignments(app_users.id)
+  FROM app_users
+  WHERE app_users.role = 'normal'
+    AND app_users.shipper_name = trim(user_shipper_name)
+    AND coalesce(app_users.created_by, '') = coalesce(target_record.created_by, '')
+    AND app_users.deleted_at IS NULL
+  ORDER BY app_users.created_at DESC;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION update_registered_shipper_contacts(uuid, text, text, text, text, numeric, jsonb, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION update_registered_shipper_contacts(uuid, text, text, text, text, numeric, jsonb, text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION update_pending_registered_normal_user(
+  user_id uuid,
+  user_email text,
+  user_shipper_name text,
+  user_zipcode text,
+  user_shipper_address text,
+  user_telephone text,
+  user_budget numeric,
+  user_contact_person text,
+  user_notes text
+)
+RETURNS TABLE(
+  id uuid,
+  email text,
+  shipper_name text,
+  zipcode text,
+  shipper_address text,
+  telephone text,
+  budget numeric,
+  contact_person text,
+  notes text,
+  approval_status text,
+  created_by text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  admin_assignments jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT *
+  FROM update_registered_normal_user(
+    user_id,
+    user_email,
+    user_shipper_name,
+    user_zipcode,
+    user_shipper_address,
+    user_telephone,
+    user_budget,
+    user_contact_person,
+    user_notes
+  );
+END;
 $$;
 
 REVOKE ALL ON FUNCTION update_pending_registered_normal_user(uuid, text, text, text, text, text, numeric, text, text) FROM PUBLIC;
