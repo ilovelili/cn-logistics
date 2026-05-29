@@ -63,7 +63,11 @@ interface UserTableColumn {
   label: string;
   width: number;
   sortKey?: SortKey;
-  render: (user: ShipperUser) => React.ReactNode;
+  render: (user: ShipperUserRow) => React.ReactNode;
+}
+
+interface ShipperUserRow extends ShipperUser {
+  contact_users: ShipperUser[];
 }
 
 export default function UserRegistrationForm({
@@ -90,7 +94,7 @@ export default function UserRegistrationForm({
   const [selectedUser, setSelectedUser] = useState<ShipperUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{
-    user: ShipperUser;
+    user: ShipperUserRow;
     action: UserAction;
   } | null>(null);
   const [toast, setToast] = useState<{
@@ -216,11 +220,39 @@ export default function UserRegistrationForm({
     }
   };
 
+  const groupedUsers = useMemo<ShipperUserRow[]>(() => {
+    const groups = new Map<string, ShipperUser[]>();
+
+    users.forEach((user) => {
+      const key = `${user.shipper_name}::${user.created_by ?? ""}`;
+      groups.set(key, [...(groups.get(key) ?? []), user]);
+    });
+
+    return [...groups.values()].map((groupUsers) => {
+      const contactUsers = [...groupUsers].sort(
+        (first, second) =>
+          new Date(first.created_at).getTime() -
+          new Date(second.created_at).getTime(),
+      );
+      const representative = contactUsers[0];
+
+      return {
+        ...representative,
+        contact_users: contactUsers,
+      };
+    });
+  }, [users]);
+
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return users.filter((user) => {
-      if (statusFilter !== "all" && user.approval_status !== statusFilter) {
+    return groupedUsers.filter((user) => {
+      if (
+        statusFilter !== "all" &&
+        !user.contact_users.some(
+          (contactUser) => contactUser.approval_status === statusFilter,
+        )
+      ) {
         return false;
       }
 
@@ -234,6 +266,11 @@ export default function UserRegistrationForm({
         user.shipper_address,
         user.telephone,
         user.contact_person,
+        ...user.contact_users.flatMap((contactUser) => [
+          contactUser.id,
+          contactUser.email,
+          contactUser.contact_person,
+        ]),
         ...(user.admin_assignments ?? []).flatMap((assignment) => [
           assignment.email,
           assignment.user_name,
@@ -244,7 +281,7 @@ export default function UserRegistrationForm({
         .toLowerCase()
         .includes(normalizedQuery);
     });
-  }, [query, statusFilter, users]);
+  }, [groupedUsers, query, statusFilter]);
 
   const sortedUsers = useMemo(() => {
     return [...filteredUsers].sort((a, b) => {
@@ -286,23 +323,35 @@ export default function UserRegistrationForm({
   };
 
   const handleApprovalChange = async (
-    user: ShipperUser,
+    user: ShipperUserRow,
     status: "approved" | "rejected",
   ) => {
     setActionLoadingId(user.id);
     try {
-      const updatedUser = await updateShipperUserApprovalStatus({
-        superAdminEmail: adminEmail,
-        userId: user.id,
-        status,
-      });
+      const targetUsers = user.contact_users.filter(
+        (contactUser) => contactUser.approval_status === "to_be_approved",
+      );
+      const updatedUsers = await Promise.all(
+        targetUsers.map((contactUser) =>
+          updateShipperUserApprovalStatus({
+            superAdminEmail: adminEmail,
+            userId: contactUser.id,
+            status,
+          }),
+        ),
+      );
+      const updatedUsersById = new Map(
+        updatedUsers.map((updatedUser) => [updatedUser.id, updatedUser]),
+      );
       setUsers((currentUsers) =>
-        currentUsers.map((currentUser) =>
-          currentUser.id === updatedUser.id ? updatedUser : currentUser,
+        currentUsers.map(
+          (currentUser) => updatedUsersById.get(currentUser.id) ?? currentUser,
         ),
       );
       setSelectedUser((currentUser) =>
-        currentUser?.id === updatedUser.id ? updatedUser : currentUser,
+        currentUser
+          ? (updatedUsersById.get(currentUser.id) ?? currentUser)
+          : null,
       );
       showToast(
         "success",
@@ -317,18 +366,27 @@ export default function UserRegistrationForm({
     }
   };
 
-  const handleDeleteUser = async (user: ShipperUser) => {
+  const handleDeleteUser = async (user: ShipperUserRow) => {
     setActionLoadingId(user.id);
     try {
-      await deleteShipperUser({
-        superAdminEmail: adminEmail,
-        userId: user.id,
-      });
+      await Promise.all(
+        user.contact_users.map((contactUser) =>
+          deleteShipperUser({
+            superAdminEmail: adminEmail,
+            userId: contactUser.id,
+          }),
+        ),
+      );
+      const deletedUserIds = new Set(
+        user.contact_users.map((contactUser) => contactUser.id),
+      );
       setUsers((currentUsers) =>
-        currentUsers.filter((currentUser) => currentUser.id !== user.id),
+        currentUsers.filter(
+          (currentUser) => !deletedUserIds.has(currentUser.id),
+        ),
       );
       setSelectedUser((currentUser) =>
-        currentUser?.id === user.id ? null : currentUser,
+        currentUser && deletedUserIds.has(currentUser.id) ? null : currentUser,
       );
       showToast("success", t("admin.userRegistration.deleted"));
     } catch {
@@ -378,19 +436,23 @@ export default function UserRegistrationForm({
         width: isSuperAdmin ? 20 : 34,
         sortKey: "email",
         render: (user) => (
-          <div className="min-w-0">
-            <div
-              className="truncate font-semibold text-gray-700 dark:text-gray-200"
-              title={user.contact_person ?? ""}
-            >
-              {user.contact_person || t("common.unset")}
-            </div>
-            <div
-              className="truncate font-mono text-xs text-gray-500 dark:text-gray-400"
-              title={user.email}
-            >
-              {user.email}
-            </div>
+          <div className="min-w-0 space-y-2">
+            {user.contact_users.map((contactUser) => (
+              <div key={contactUser.id} className="min-w-0">
+                <div
+                  className="truncate font-semibold text-gray-700 dark:text-gray-200"
+                  title={contactUser.contact_person ?? ""}
+                >
+                  {contactUser.contact_person || t("common.unset")}
+                </div>
+                <div
+                  className="truncate font-mono text-xs text-gray-500 dark:text-gray-400"
+                  title={contactUser.email}
+                >
+                  {contactUser.email}
+                </div>
+              </div>
+            ))}
           </div>
         ),
       },
@@ -430,7 +492,7 @@ export default function UserRegistrationForm({
               id: "admins" as const,
               label: t("admin.userRegistration.assignedAdmins"),
               width: 14,
-              render: (user: ShipperUser) => (
+              render: (user: ShipperUserRow) => (
                 <AssignedAdminsSummary
                   assignments={user.admin_assignments ?? []}
                 />
@@ -442,7 +504,7 @@ export default function UserRegistrationForm({
         id: "action" as const,
         label: t("admin.userRegistration.action"),
         width: isSuperAdmin ? 23 : 8,
-        render: (user: ShipperUser) => (
+        render: (user: ShipperUserRow) => (
           <div className="flex flex-nowrap gap-1.5">
             <TableActionButton
               variant="primary"
@@ -454,7 +516,10 @@ export default function UserRegistrationForm({
               <ApprovalButtons
                 disabled={
                   actionLoadingId === user.id ||
-                  user.approval_status !== "to_be_approved"
+                  !user.contact_users.some(
+                    (contactUser) =>
+                      contactUser.approval_status === "to_be_approved",
+                  )
                 }
                 deleteDisabled={actionLoadingId === user.id}
                 onApprove={() => {
