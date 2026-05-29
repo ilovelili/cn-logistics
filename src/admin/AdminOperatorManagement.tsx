@@ -3,7 +3,7 @@ import { Plus, Save, Search, X, XCircle } from "lucide-react";
 import {
   AdminOperator,
   AdminOperatorStaffRole,
-  AssignedCompanyUser,
+  AssignedShipperUser,
   adminOperatorStaffRoleOptions,
   createAdminOperator,
   defaultAdminOperatorForm,
@@ -12,10 +12,10 @@ import {
   updateAdminOperator,
 } from "../lib/adminOperators";
 import {
-  fetchCompanyUsersByAdmin,
-  updateCompanyUserAdminAssignments,
-  type CompanyUser,
-} from "../lib/companyUsers";
+  fetchShipperUsersByAdmin,
+  updateShipperUserAdminAssignments,
+  type ShipperUser,
+} from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
 import type { TranslationKey } from "../lib/i18n";
 import SortableTableHeader from "../components/SortableTableHeader";
@@ -36,7 +36,7 @@ interface AdminOperatorManagementProps {
 
 type SortKey = "id" | "email" | "user_name" | "staff_role" | "created_at";
 type SortDirection = "asc" | "desc";
-type OperatorColumnId = SortKey | "assigned_company_users" | "action";
+type OperatorColumnId = SortKey | "assigned_shipper_users" | "action";
 
 interface OperatorTableColumn {
   id: OperatorColumnId;
@@ -54,10 +54,10 @@ export default function AdminOperatorManagement({
   superAdminEmail,
 }: AdminOperatorManagementProps) {
   const [operators, setOperators] = useState<AdminOperator[]>([]);
-  const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
+  const [shipperUsers, setShipperUsers] = useState<ShipperUser[]>([]);
   const [query, setQuery] = useState("");
   const [form, setForm] = useState(defaultAdminOperatorForm);
-  const [selectedCompanyUserIds, setSelectedCompanyUserIds] = useState<
+  const [selectedShipperUserIds, setSelectedShipperUserIds] = useState<
     string[]
   >([]);
   const [showForm, setShowForm] = useState(false);
@@ -70,14 +70,14 @@ export default function AdminOperatorManagement({
   const [editForm, setEditForm] = useState<{
     user_name: string;
     staff_role: AdminOperatorStaffRole;
-    company_user_ids: string[];
+    shipper_user_ids: string[];
   }>({
     user_name: "",
     staff_role: "other",
-    company_user_ids: [],
+    shipper_user_ids: [],
   });
-  const [selectedCompanyUser, setSelectedCompanyUser] =
-    useState<CompanyUser | null>(null);
+  const [selectedShipperUser, setSelectedShipperUser] =
+    useState<ShipperUser | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
@@ -109,17 +109,17 @@ export default function AdminOperatorManagement({
     void loadOperators();
   }, [loadOperators]);
 
-  const loadCompanyUsers = useCallback(async () => {
+  const loadShipperUsers = useCallback(async () => {
     try {
-      setCompanyUsers(await fetchCompanyUsersByAdmin(superAdminEmail));
+      setShipperUsers(await fetchShipperUsersByAdmin(superAdminEmail));
     } catch {
-      setCompanyUsers([]);
+      setShipperUsers([]);
     }
   }, [superAdminEmail]);
 
   useEffect(() => {
-    void loadCompanyUsers();
-  }, [loadCompanyUsers]);
+    void loadShipperUsers();
+  }, [loadShipperUsers]);
 
   const filteredOperators = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -131,9 +131,9 @@ export default function AdminOperatorManagement({
         operator.email,
         operator.user_name,
         t(getStaffRoleLabelKey(operator.staff_role)),
-        ...(operator.assigned_company_users ?? []).flatMap((companyUser) => [
-          companyUser.company_name,
-          companyUser.email,
+        ...(operator.assigned_shipper_users ?? []).flatMap((shipperUser) => [
+          shipperUser.shipper_name,
+          shipperUser.email,
         ]),
       ]
         .filter(Boolean)
@@ -192,22 +192,22 @@ export default function AdminOperatorManagement({
           operator.email.toLowerCase() === form.email.trim().toLowerCase(),
       );
 
-      if (createdOperator && selectedCompanyUserIds.length > 0) {
+      if (createdOperator && selectedShipperUserIds.length > 0) {
         await Promise.all(
-          selectedCompanyUserIds.map((companyUserId) => {
-            const companyUser = companyUsers.find(
-              (currentCompanyUser) => currentCompanyUser.id === companyUserId,
+          selectedShipperUserIds.map((shipperUserId) => {
+            const shipperUser = shipperUsers.find(
+              (currentShipperUser) => currentShipperUser.id === shipperUserId,
             );
             const adminUserIds = new Set(
-              (companyUser?.admin_assignments ?? []).map(
+              (shipperUser?.admin_assignments ?? []).map(
                 (assignment) => assignment.admin_user_id,
               ),
             );
             adminUserIds.add(createdOperator.id);
 
-            return updateCompanyUserAdminAssignments({
+            return updateShipperUserAdminAssignments({
               superAdminEmail,
-              userId: companyUserId,
+              userId: shipperUserId,
               adminUserIds: [...adminUserIds],
             });
           }),
@@ -215,9 +215,9 @@ export default function AdminOperatorManagement({
       }
 
       setForm(defaultAdminOperatorForm);
-      setSelectedCompanyUserIds([]);
+      setSelectedShipperUserIds([]);
       setShowForm(false);
-      await loadCompanyUsers();
+      await loadShipperUsers();
       await loadOperators();
       showToast("success", t("superAdmin.operators.created"));
     } catch {
@@ -227,29 +227,29 @@ export default function AdminOperatorManagement({
     }
   };
 
-  const syncOperatorCompanyAssignments = async (
+  const syncOperatorShipperAssignments = async (
     operatorId: string,
-    selectedCompanyUserIdsForOperator: string[],
+    selectedShipperUserIdsForOperator: string[],
   ) => {
-    const selectedCompanyUserIdSet = new Set(selectedCompanyUserIdsForOperator);
+    const selectedShipperUserIdSet = new Set(selectedShipperUserIdsForOperator);
 
     await Promise.all(
-      companyUsers.map((companyUser) => {
+      shipperUsers.map((shipperUser) => {
         const adminUserIds = new Set(
-          (companyUser.admin_assignments ?? []).map(
+          (shipperUser.admin_assignments ?? []).map(
             (assignment) => assignment.admin_user_id,
           ),
         );
 
-        if (selectedCompanyUserIdSet.has(companyUser.id)) {
+        if (selectedShipperUserIdSet.has(shipperUser.id)) {
           adminUserIds.add(operatorId);
         } else {
           adminUserIds.delete(operatorId);
         }
 
-        return updateCompanyUserAdminAssignments({
+        return updateShipperUserAdminAssignments({
           superAdminEmail,
-          userId: companyUser.id,
+          userId: shipperUser.id,
           adminUserIds: [...adminUserIds],
         });
       }),
@@ -261,8 +261,8 @@ export default function AdminOperatorManagement({
     setEditForm({
       user_name: operator.user_name ?? "",
       staff_role: operator.staff_role,
-      company_user_ids: (operator.assigned_company_users ?? []).map(
-        (companyUser) => companyUser.id,
+      shipper_user_ids: (operator.assigned_shipper_users ?? []).map(
+        (shipperUser) => shipperUser.id,
       ),
     });
   };
@@ -279,12 +279,12 @@ export default function AdminOperatorManagement({
         operatorName: editForm.user_name,
         staffRole: editForm.staff_role,
       });
-      await syncOperatorCompanyAssignments(
+      await syncOperatorShipperAssignments(
         editTarget.id,
-        editForm.company_user_ids,
+        editForm.shipper_user_ids,
       );
       setEditTarget(null);
-      await loadCompanyUsers();
+      await loadShipperUsers();
       await loadOperators();
       showToast("success", t("superAdmin.operators.updated"));
     } catch {
@@ -362,14 +362,14 @@ export default function AdminOperatorManagement({
         ),
       },
       {
-        id: "assigned_company_users",
-        label: t("superAdmin.operators.assignedCompanies"),
+        id: "assigned_shipper_users",
+        label: t("superAdmin.operators.assignedShippers"),
         width: 300,
         render: (operator) => (
-          <AssignedCompanyUsers
-            companyUsers={operator.assigned_company_users ?? []}
-            onSelect={(companyUser) =>
-              setSelectedCompanyUser(toCompanyUser(companyUser))
+          <AssignedShipperUsers
+            shipperUsers={operator.assigned_shipper_users ?? []}
+            onSelect={(shipperUser) =>
+              setSelectedShipperUser(toShipperUser(shipperUser))
             }
           />
         ),
@@ -452,7 +452,7 @@ export default function AdminOperatorManagement({
         <EditOperatorModal
           operator={editTarget}
           form={editForm}
-          companyUsers={companyUsers}
+          shipperUsers={shipperUsers}
           saving={editSaving}
           onChange={setEditForm}
           onCancel={() => setEditTarget(null)}
@@ -460,9 +460,9 @@ export default function AdminOperatorManagement({
         />
       )}
 
-      {selectedCompanyUser && (
+      {selectedShipperUser && (
         <UserDetailModal
-          user={selectedCompanyUser}
+          user={selectedShipperUser}
           isSuperAdmin
           actionLoading={false}
           adminOperators={operators}
@@ -470,15 +470,15 @@ export default function AdminOperatorManagement({
           detailsReadOnly
           showActions={false}
           onSaved={(updatedUser) => {
-            setSelectedCompanyUser(updatedUser);
+            setSelectedShipperUser(updatedUser);
             void loadOperators();
           }}
           onAssignmentsSaved={(updatedUser) => {
-            setSelectedCompanyUser(updatedUser);
+            setSelectedShipperUser(updatedUser);
             void loadOperators();
           }}
           onRequestAction={() => undefined}
-          onClose={() => setSelectedCompanyUser(null)}
+          onClose={() => setSelectedShipperUser(null)}
         />
       )}
 
@@ -543,15 +543,15 @@ export default function AdminOperatorManagement({
           </div>
           <div className="mt-4">
             <FormMultiSelect
-              label={t("superAdmin.operators.assignedCompanies")}
-              value={selectedCompanyUserIds}
-              options={companyUsers.map((companyUser) => ({
-                value: companyUser.id,
-                label: companyUser.company_name,
-                description: companyUser.email,
+              label={t("superAdmin.operators.assignedShippers")}
+              value={selectedShipperUserIds}
+              options={shipperUsers.map((shipperUser) => ({
+                value: shipperUser.id,
+                label: shipperUser.shipper_name,
+                description: shipperUser.email,
               }))}
               emptyLabel={t("admin.userRegistration.noUsers")}
-              onChange={setSelectedCompanyUserIds}
+              onChange={setSelectedShipperUserIds}
             />
           </div>
           <div className="mt-5 flex justify-end">
@@ -730,62 +730,64 @@ function OperatorSortableHeader({
   );
 }
 
-function AssignedCompanyUsers({
-  companyUsers,
+function AssignedShipperUsers({
+  shipperUsers,
   onSelect,
 }: {
-  companyUsers: NonNullable<AdminOperator["assigned_company_users"]>;
-  onSelect: (companyUser: AssignedCompanyUser) => void;
+  shipperUsers: NonNullable<AdminOperator["assigned_shipper_users"]>;
+  onSelect: (shipperUser: AssignedShipperUser) => void;
 }) {
-  if (companyUsers.length === 0) {
+  if (shipperUsers.length === 0) {
     return <span className="text-sm text-gray-400">-</span>;
   }
 
   return (
     <div className="flex flex-col items-start gap-1.5">
-      {companyUsers.map((companyUser) => (
+      {shipperUsers.map((shipperUser) => (
         <button
           type="button"
-          key={companyUser.id}
-          onClick={() => onSelect(companyUser)}
+          key={shipperUser.id}
+          onClick={() => onSelect(shipperUser)}
           className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
-          title={companyUser.email}
+          title={shipperUser.email}
         >
-          <span className="min-w-0 truncate">{companyUser.company_name}</span>
+          <span className="min-w-0 truncate">
+            {shipperUser.shipper_name}
+          </span>
         </button>
       ))}
     </div>
   );
 }
 
-function toCompanyUser(companyUser: AssignedCompanyUser): CompanyUser {
+function toShipperUser(shipperUser: AssignedShipperUser): ShipperUser {
   return {
-    id: companyUser.id,
-    email: companyUser.email,
-    company_name: companyUser.company_name,
-    zipcode: companyUser.zipcode,
-    company_address: companyUser.company_address ?? "",
-    telephone: companyUser.telephone ?? "",
-    budget: Number(companyUser.budget ?? 0),
-    contact_person: companyUser.contact_person,
-    notes: companyUser.notes,
+    id: shipperUser.id,
+    email: shipperUser.email,
+    shipper_name: shipperUser.shipper_name,
+    zipcode: shipperUser.zipcode,
+    shipper_address: shipperUser.shipper_address ?? "",
+    telephone: shipperUser.telephone ?? "",
+    budget: Number(shipperUser.budget ?? 0),
+    contact_person: shipperUser.contact_person,
+    notes: shipperUser.notes,
     approval_status:
-      companyUser.approval_status === "approved" ||
-      companyUser.approval_status === "rejected" ||
-      companyUser.approval_status === "to_be_approved"
-        ? companyUser.approval_status
+      shipperUser.approval_status === "approved" ||
+      shipperUser.approval_status === "rejected" ||
+      shipperUser.approval_status === "to_be_approved"
+        ? shipperUser.approval_status
         : "to_be_approved",
     created_by: null,
-    created_at: companyUser.created_at,
-    updated_at: companyUser.updated_at,
-    admin_assignments: companyUser.admin_assignments ?? [],
+    created_at: shipperUser.created_at,
+    updated_at: shipperUser.updated_at,
+    admin_assignments: shipperUser.admin_assignments ?? [],
   };
 }
 
 function EditOperatorModal({
   operator,
   form,
-  companyUsers,
+  shipperUsers,
   saving,
   onChange,
   onCancel,
@@ -795,14 +797,14 @@ function EditOperatorModal({
   form: {
     user_name: string;
     staff_role: AdminOperatorStaffRole;
-    company_user_ids: string[];
+    shipper_user_ids: string[];
   };
-  companyUsers: CompanyUser[];
+  shipperUsers: ShipperUser[];
   saving: boolean;
   onChange: (form: {
     user_name: string;
     staff_role: AdminOperatorStaffRole;
-    company_user_ids: string[];
+    shipper_user_ids: string[];
   }) => void;
   onCancel: () => void;
   onSubmit: (event: React.FormEvent) => void;
@@ -857,16 +859,16 @@ function EditOperatorModal({
 
         <div className="mt-4">
           <FormMultiSelect
-            label={t("superAdmin.operators.assignedCompanies")}
-            value={form.company_user_ids}
-            options={companyUsers.map((companyUser) => ({
-              value: companyUser.id,
-              label: companyUser.company_name,
-              description: companyUser.email,
+            label={t("superAdmin.operators.assignedShippers")}
+            value={form.shipper_user_ids}
+            options={shipperUsers.map((shipperUser) => ({
+              value: shipperUser.id,
+              label: shipperUser.shipper_name,
+              description: shipperUser.email,
             }))}
             emptyLabel={t("admin.userRegistration.noUsers")}
-            onChange={(companyUserIds) =>
-              onChange({ ...form, company_user_ids: companyUserIds })
+            onChange={(shipperUserIds) =>
+              onChange({ ...form, shipper_user_ids: shipperUserIds })
             }
           />
         </div>

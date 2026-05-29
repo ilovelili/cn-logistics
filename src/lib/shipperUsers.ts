@@ -1,39 +1,39 @@
 import { supabase } from "./supabase";
 
-export interface CompanyUserForm {
+export interface ShipperUserForm {
   email: string;
-  company_name: string;
+  shipper_name: string;
   zipcode: string;
-  company_address: string;
+  shipper_address: string;
   telephone: string;
   budget: string;
   contact_person: string;
   notes: string;
 }
 
-export type CompanyUserApprovalStatus =
+export type ShipperUserApprovalStatus =
   | "to_be_approved"
   | "approved"
   | "rejected";
 
-export interface CompanyUser {
+export interface ShipperUser {
   id: string;
   email: string;
-  company_name: string;
+  shipper_name: string;
   zipcode: string | null;
-  company_address: string;
+  shipper_address: string;
   telephone: string;
   budget: number;
   contact_person: string | null;
   notes: string | null;
-  approval_status: CompanyUserApprovalStatus;
+  approval_status: ShipperUserApprovalStatus;
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  admin_assignments?: CompanyUserAdminAssignment[];
+  admin_assignments?: ShipperUserAdminAssignment[];
 }
 
-export interface CompanyUserAdminAssignment {
+export interface ShipperUserAdminAssignment {
   admin_user_id: string;
   email: string;
   user_name: string | null;
@@ -42,26 +42,26 @@ export interface CompanyUserAdminAssignment {
   updated_at: string;
 }
 
-export const defaultCompanyUserForm: CompanyUserForm = {
+export const defaultShipperUserForm: ShipperUserForm = {
   email: "",
-  company_name: "",
+  shipper_name: "",
   zipcode: "",
-  company_address: "",
+  shipper_address: "",
   telephone: "",
   budget: "",
   contact_person: "",
   notes: "",
 };
 
-export async function createCompanyUser(
-  form: CompanyUserForm,
+export async function createShipperUser(
+  form: ShipperUserForm,
   createdBy: string,
 ) {
   const { error } = await supabase.rpc("create_registered_normal_user", {
     user_email: form.email.trim(),
-    user_company_name: form.company_name.trim(),
+    user_shipper_name: form.shipper_name.trim(),
     user_zipcode: form.zipcode.trim(),
-    user_company_address: form.company_address.trim(),
+    user_shipper_address: form.shipper_address.trim(),
     user_telephone: form.telephone.trim(),
     user_budget: Number(form.budget || 0),
     user_contact_person: form.contact_person.trim(),
@@ -74,7 +74,7 @@ export async function createCompanyUser(
   }
 }
 
-export async function fetchCompanyUsersByAdmin(createdBy: string) {
+export async function fetchShipperUsersByAdmin(createdBy: string) {
   const { data, error } = await supabase.rpc("list_registered_normal_users", {
     admin_email: createdBy,
   });
@@ -83,21 +83,21 @@ export async function fetchCompanyUsersByAdmin(createdBy: string) {
     throw error;
   }
 
-  return (data ?? []) as CompanyUser[];
+  return (data ?? []) as ShipperUser[];
 }
 
-export async function updatePendingCompanyUser(
+export async function updatePendingShipperUser(
   id: string,
-  form: CompanyUserForm,
+  form: ShipperUserForm,
 ) {
   const { data, error } = await supabase.rpc(
     "update_pending_registered_normal_user",
     {
       user_id: id,
       user_email: form.email.trim(),
-      user_company_name: form.company_name.trim(),
+      user_shipper_name: form.shipper_name.trim(),
       user_zipcode: form.zipcode.trim(),
-      user_company_address: form.company_address.trim(),
+      user_shipper_address: form.shipper_address.trim(),
       user_telephone: form.telephone.trim(),
       user_budget: Number(form.budget || 0),
       user_contact_person: form.contact_person.trim(),
@@ -109,18 +109,18 @@ export async function updatePendingCompanyUser(
     throw error;
   }
 
-  const [updatedUser] = (data ?? []) as CompanyUser[];
+  const [updatedUser] = (data ?? []) as ShipperUser[];
   return updatedUser;
 }
 
-export async function updateCompanyUserApprovalStatus({
+export async function updateShipperUserApprovalStatus({
   superAdminEmail,
   userId,
   status,
 }: {
   superAdminEmail: string;
   userId: string;
-  status: Extract<CompanyUserApprovalStatus, "approved" | "rejected">;
+  status: Extract<ShipperUserApprovalStatus, "approved" | "rejected">;
 }) {
   const { data, error } = await supabase.rpc(
     "update_normal_user_approval_status",
@@ -135,7 +135,7 @@ export async function updateCompanyUserApprovalStatus({
     throw error;
   }
 
-  const [updatedUser] = (data ?? []) as CompanyUser[];
+  const [updatedUser] = (data ?? []) as ShipperUser[];
   if (!updatedUser) {
     throw new Error("User approval status was not updated.");
   }
@@ -143,7 +143,7 @@ export async function updateCompanyUserApprovalStatus({
   return updatedUser;
 }
 
-export async function deleteCompanyUser({
+export async function deleteShipperUser({
   superAdminEmail,
   userId,
 }: {
@@ -160,7 +160,7 @@ export async function deleteCompanyUser({
   }
 }
 
-export async function updateCompanyUserAdminAssignments({
+export async function updateShipperUserAdminAssignments({
   superAdminEmail,
   userId,
   adminUserIds,
@@ -182,7 +182,7 @@ export async function updateCompanyUserAdminAssignments({
     throw error;
   }
 
-  const [updatedUser] = (data ?? []) as CompanyUser[];
+  const [updatedUser] = (data ?? []) as ShipperUser[];
   if (!updatedUser) {
     throw new Error("User admin assignments were not updated.");
   }

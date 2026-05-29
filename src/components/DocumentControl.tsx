@@ -33,7 +33,7 @@ import { useTableColumnSettings } from "./useTableColumnSettings";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import {
   getResponsibleAdminNames,
-  type ShipmentJobsCompanyOption,
+  type ShipmentJobsShipperOption,
 } from "./shipmentJobsTableUtils";
 
 interface DocumentControlProps {
@@ -44,7 +44,7 @@ interface DocumentControlProps {
   isAdminAuthenticated: boolean;
   requesterEmail?: string;
   approvalFilter: DocumentApprovalFilter;
-  companyOptions?: ShipmentJobsCompanyOption[];
+  shipperOptions?: ShipmentJobsShipperOption[];
 }
 
 interface DocumentRow {
@@ -57,7 +57,7 @@ interface DocumentRow {
 type DocumentSortKey =
   | "id"
   | "scope"
-  | "company"
+  | "shipper"
   | "responsibleAdmins"
   | "document"
   | "approval"
@@ -87,7 +87,7 @@ export default function DocumentControl({
   isAdminAuthenticated,
   requesterEmail,
   approvalFilter,
-  companyOptions = [],
+  shipperOptions = [],
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
   const [scope, setScope] = React.useState("all");
@@ -176,12 +176,12 @@ export default function DocumentControl({
           id: document.id,
           job,
           document,
-          responsibleAdminNames: getResponsibleAdminNames(job, companyOptions),
+          responsibleAdminNames: getResponsibleAdminNames(job, shipperOptions),
         },
       ];
     });
   }, [
-    companyOptions,
+    shipperOptions,
     documents,
     isAdminAuthenticated,
     jobs,
@@ -377,13 +377,13 @@ export default function DocumentControl({
       ...(isAdminAuthenticated
         ? [
             {
-              id: "company" as const,
-              label: t("common.companyName"),
+              id: "shipper" as const,
+              label: t("common.shipperName"),
               width: 190,
-              sortKey: "company" as const,
+              sortKey: "shipper" as const,
               render: (row: DocumentRow) => (
                 <span className="font-semibold text-gray-700 dark:text-gray-200">
-                  {row.job.company_name || "-"}
+                  {row.job.shipper_name || "-"}
                 </span>
               ),
             },
@@ -1107,8 +1107,8 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
         : t("documents.customer");
     case "document":
       return row.document.name;
-    case "company":
-      return row.job.company_name ?? "";
+    case "shipper":
+      return row.job.shipper_name ?? "";
     case "responsibleAdmins":
       return row.responsibleAdminNames.join(" ");
     case "approval":

@@ -6,7 +6,7 @@ export interface AppUserProfile {
   email: string;
   role: AppUserRole;
   avatar_url: string | null;
-  company_name: string | null;
+  shipper_name: string | null;
 }
 
 export async function verifyAppLogin(

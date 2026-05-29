@@ -1,11 +1,11 @@
 import { t } from "../lib/i18n";
 
-export interface CompanyUserDetailData {
+export interface ShipperUserDetailData {
   id: string;
   email: string;
-  company_name: string;
+  shipper_name: string;
   zipcode: string | null;
-  company_address: string | null;
+  shipper_address: string | null;
   telephone: string | null;
   budget: number | null;
   contact_person: string | null;
@@ -13,61 +13,61 @@ export interface CompanyUserDetailData {
   created_at: string;
 }
 
-export default function CompanyUserReadOnlyDetails({
-  companyUser,
+export default function ShipperUserReadOnlyDetails({
+  shipperUser,
 }: {
-  companyUser: CompanyUserDetailData;
+  shipperUser: ShipperUserDetailData;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <CompanyDetailItem label="ID" value={companyUser.id} mono />
-      <CompanyDetailItem
+      <ShipperDetailItem label="ID" value={shipperUser.id} mono />
+      <ShipperDetailItem
         label={t("admin.userRegistration.email")}
-        value={companyUser.email}
+        value={shipperUser.email}
       />
-      <CompanyDetailItem
-        label={t("admin.userRegistration.companyName")}
-        value={companyUser.company_name}
+      <ShipperDetailItem
+        label={t("admin.userRegistration.shipperName")}
+        value={shipperUser.shipper_name}
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.budget")}
         value={
-          companyUser.budget === null || companyUser.budget === undefined
+          shipperUser.budget === null || shipperUser.budget === undefined
             ? t("common.unset")
-            : `${Number(companyUser.budget).toLocaleString()} ${t("admin.userRegistration.budgetUnit")}`
+            : `${Number(shipperUser.budget).toLocaleString()} ${t("admin.userRegistration.budgetUnit")}`
         }
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.zipcode")}
-        value={companyUser.zipcode || t("common.unset")}
+        value={shipperUser.zipcode || t("common.unset")}
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.telephone")}
-        value={companyUser.telephone || t("common.unset")}
+        value={shipperUser.telephone || t("common.unset")}
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.contactPerson")}
-        value={companyUser.contact_person || t("common.unset")}
+        value={shipperUser.contact_person || t("common.unset")}
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.createdAt")}
-        value={new Date(companyUser.created_at).toLocaleString("ja-JP")}
+        value={new Date(shipperUser.created_at).toLocaleString("ja-JP")}
       />
-      <CompanyDetailItem
-        label={t("admin.userRegistration.companyAddress")}
-        value={companyUser.company_address || t("common.unset")}
+      <ShipperDetailItem
+        label={t("admin.userRegistration.shipperAddress")}
+        value={shipperUser.shipper_address || t("common.unset")}
         wide
       />
-      <CompanyDetailItem
+      <ShipperDetailItem
         label={t("admin.userRegistration.notes")}
-        value={companyUser.notes || t("common.unset")}
+        value={shipperUser.notes || t("common.unset")}
         wide
       />
     </div>
   );
 }
 
-function CompanyDetailItem({
+function ShipperDetailItem({
   label,
   value,
   wide = false,

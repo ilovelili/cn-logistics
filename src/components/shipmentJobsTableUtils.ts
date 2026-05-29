@@ -7,13 +7,13 @@ import {
   tradeModeLabels,
   transportModeLabels,
 } from "../lib/shipmentJobs";
-import type { CompanyUserAdminAssignment } from "../lib/companyUsers";
+import type { ShipperUserAdminAssignment } from "../lib/shipperUsers";
 import type { SortDirection } from "./SortableTableHeader";
 import type { ShipmentJobsTableSortKey } from "./ShipmentJobsTable";
 
-export interface ShipmentJobsCompanyOption {
-  company_name: string;
-  admin_assignments?: CompanyUserAdminAssignment[];
+export interface ShipmentJobsShipperOption {
+  shipper_name: string;
+  admin_assignments?: ShipperUserAdminAssignment[];
 }
 
 export function buildShipmentJobSearchText(
@@ -23,10 +23,9 @@ export function buildShipmentJobSearchText(
   return [
     job.id,
     formatShipmentJobShortId(job.id),
-    job.company_name,
+    job.shipper_name,
     ...responsibleAdminTerms,
     job.invoice_number,
-    job.shipper_name,
     job.consignee_name,
     job.pol_aol,
     job.pod_aod,
@@ -54,8 +53,8 @@ export function getShipmentJobSortValue(
   switch (sortKey) {
     case "id":
       return job.id;
-    case "company_name":
-      return job.company_name ?? "";
+    case "shipper_name":
+      return job.shipper_name ?? "";
     case "responsible_admins":
       return responsibleAdminNames.join(" ");
     case "status":
@@ -67,7 +66,6 @@ export function getShipmentJobSortValue(
     case "transport_mode":
       return job.transport_mode ? transportModeLabels[job.transport_mode] : "";
     case "invoice_number":
-    case "shipper_name":
     case "consignee_name":
     case "pol_aol":
     case "pod_aod":
@@ -144,20 +142,20 @@ export function getShipmentJobWorkingDays(job: ShipmentJob) {
 
 export function getResponsibleAdminNames(
   job: ShipmentJob,
-  companyOptions: ShipmentJobsCompanyOption[],
+  shipperOptions: ShipmentJobsShipperOption[],
 ) {
-  return getResponsibleAdminAssignments(job, companyOptions)
+  return getResponsibleAdminAssignments(job, shipperOptions)
     .map((assignment) => assignment.user_name || assignment.email)
     .filter(Boolean);
 }
 
 export function getResponsibleAdminSearchTerms(
   job: ShipmentJob,
-  companyOptions: ShipmentJobsCompanyOption[],
+  shipperOptions: ShipmentJobsShipperOption[],
 ) {
   return [
     ...new Set(
-      getResponsibleAdminAssignments(job, companyOptions).flatMap(
+      getResponsibleAdminAssignments(job, shipperOptions).flatMap(
         (assignment) => [
           ...(assignment.user_name ? [assignment.user_name] : []),
           assignment.email,
@@ -170,11 +168,11 @@ export function getResponsibleAdminSearchTerms(
 
 function getResponsibleAdminAssignments(
   job: ShipmentJob,
-  companyOptions: ShipmentJobsCompanyOption[],
+  shipperOptions: ShipmentJobsShipperOption[],
 ) {
-  const assignments = getCompanyAdminAssignments(
-    job.company_name,
-    companyOptions,
+  const assignments = getShipperAdminAssignments(
+    job.shipper_name,
+    shipperOptions,
   );
 
   if ((job.assigned_admin_user_ids ?? []).length === 0) {
@@ -187,14 +185,14 @@ function getResponsibleAdminAssignments(
   );
 }
 
-function getCompanyAdminAssignments(
-  companyName: string | null,
-  companyOptions: ShipmentJobsCompanyOption[],
+function getShipperAdminAssignments(
+  shipperName: string | null,
+  shipperOptions: ShipmentJobsShipperOption[],
 ) {
-  const assignmentsByAdminId = new Map<string, CompanyUserAdminAssignment>();
+  const assignmentsByAdminId = new Map<string, ShipperUserAdminAssignment>();
 
-  companyOptions
-    .filter((option) => option.company_name === companyName)
+  shipperOptions
+    .filter((option) => option.shipper_name === shipperName)
     .flatMap((option) => option.admin_assignments ?? [])
     .forEach((assignment) => {
       assignmentsByAdminId.set(assignment.admin_user_id, assignment);

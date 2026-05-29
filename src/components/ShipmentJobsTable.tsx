@@ -21,19 +21,18 @@ import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
   getResponsibleAdminNames,
   getShipmentJobWorkingDays,
-  type ShipmentJobsCompanyOption,
+  type ShipmentJobsShipperOption,
 } from "./shipmentJobsTableUtils";
 
 export type ShipmentJobsTableSortKey =
   | "id"
-  | "company_name"
+  | "shipper_name"
   | "responsible_admins"
   | "status"
   | "working_days"
   | "trade"
   | "invoice_number"
   | "transport_mode"
-  | "shipper_name"
   | "consignee_name"
   | "pol_aol"
   | "pod_aod"
@@ -74,7 +73,7 @@ interface ShipmentJobsTableProps {
   visibleTo: number;
   adminTheme?: boolean;
   approvedDocumentsOnly?: boolean;
-  companyOptions?: ShipmentJobsCompanyOption[];
+  shipperOptions?: ShipmentJobsShipperOption[];
   onSort: (sortKey: ShipmentJobsTableSortKey) => void;
   onSelectJob: (job: ShipmentJob) => void;
   onPageChange: (page: number) => void;
@@ -98,7 +97,7 @@ export default function ShipmentJobsTable({
   visibleTo,
   adminTheme = false,
   approvedDocumentsOnly = false,
-  companyOptions = [],
+  shipperOptions = [],
   onSort,
   onSelectJob,
   onPageChange,
@@ -117,12 +116,12 @@ export default function ShipmentJobsTable({
         adminTheme,
         showInternalDocuments,
         approvedDocumentsOnly,
-        companyOptions,
+        shipperOptions,
         setPreviewDocument,
       ),
     [
       adminTheme,
-      companyOptions,
+      shipperOptions,
       documentsByJob,
       approvedDocumentsOnly,
       showInternalDocuments,
@@ -400,7 +399,7 @@ function buildColumns(
   adminTheme: boolean,
   showInternalDocuments: boolean,
   approvedDocumentsOnly: boolean,
-  companyOptions: ShipmentJobsCompanyOption[],
+  shipperOptions: ShipmentJobsShipperOption[],
   onPreviewDocument: (document: ShipmentDocument) => void,
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
@@ -421,20 +420,20 @@ function buildColumns(
       ),
     },
     {
-      id: "company_name",
-      label: t("common.companyName"),
+      id: "shipper_name",
+      label: t("common.shipperName"),
       width: 150,
-      sortKey: "company_name",
+      sortKey: "shipper_name",
       render: (job) => (
         <span
           className={`block truncate font-semibold ${strongText}`}
-          title={job.company_name ?? undefined}
+          title={job.shipper_name ?? undefined}
         >
-          {job.company_name || "-"}
+          {job.shipper_name || "-"}
         </span>
       ),
     },
-    ...(companyOptions.length > 0
+    ...(shipperOptions.length > 0
       ? [
           {
             id: "responsible_admins" as const,
@@ -443,7 +442,7 @@ function buildColumns(
             sortKey: "responsible_admins" as const,
             render: (job: ShipmentJob) => (
               <ResponsibleAdminNames
-                names={getResponsibleAdminNames(job, companyOptions)}
+                names={getResponsibleAdminNames(job, shipperOptions)}
               />
             ),
           },
@@ -493,17 +492,6 @@ function buildColumns(
       render: (job) => (
         <span className={`whitespace-nowrap ${mutedText}`}>
           {job.transport_mode ? transportModeLabels[job.transport_mode] : "-"}
-        </span>
-      ),
-    },
-    {
-      id: "shipper_name",
-      label: t("common.shipper"),
-      width: 145,
-      sortKey: "shipper_name",
-      render: (job) => (
-        <span className={`font-medium ${strongText}`}>
-          {job.shipper_name || "-"}
         </span>
       ),
     },

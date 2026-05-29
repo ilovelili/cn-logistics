@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { CompanyUserAdminAssignment } from "./companyUsers";
+import type { ShipperUserAdminAssignment } from "./shipperUsers";
 import type { TranslationKey } from "./i18n";
 
 export interface AdminOperator {
@@ -7,7 +7,7 @@ export interface AdminOperator {
   email: string;
   user_name: string | null;
   staff_role: AdminOperatorStaffRole;
-  assigned_company_users?: AssignedCompanyUser[];
+  assigned_shipper_users?: AssignedShipperUser[];
   created_at: string;
   updated_at: string;
 }
@@ -34,18 +34,18 @@ export const adminOperatorStaffRoleOptions: {
   { value: "other", labelKey: "superAdmin.operators.staffRole.other" },
 ];
 
-export interface AssignedCompanyUser {
+export interface AssignedShipperUser {
   id: string;
   email: string;
-  company_name: string;
+  shipper_name: string;
   zipcode: string | null;
-  company_address: string | null;
+  shipper_address: string | null;
   telephone: string | null;
   budget: number | null;
   contact_person: string | null;
   notes: string | null;
   approval_status: string;
-  admin_assignments?: CompanyUserAdminAssignment[];
+  admin_assignments?: ShipperUserAdminAssignment[];
   created_at: string;
   updated_at: string;
 }

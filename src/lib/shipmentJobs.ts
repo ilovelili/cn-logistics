@@ -13,7 +13,6 @@ export type DocumentApprovalStatus =
 
 export interface ShipmentJob {
   id: string;
-  company_name: string | null;
   status: ShipmentStatus;
   under_process_from_date: string | null;
   under_process_to_date: string | null;
@@ -86,7 +85,6 @@ export interface ShipmentDocument {
 }
 
 export interface ShipmentJobForm {
-  company_name: string;
   status: ShipmentStatus;
   under_process_from_date: string;
   under_process_to_date: string;
@@ -205,7 +203,6 @@ export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
 };
 
 export const defaultShipmentJobForm: ShipmentJobForm = {
-  company_name: "",
   status: "under_process",
   under_process_from_date: "",
   under_process_to_date: "",
@@ -247,7 +244,6 @@ export function formatDocumentList(documents: string[]): string {
 
 export function jobToForm(job: ShipmentJob): ShipmentJobForm {
   return {
-    company_name: job.company_name ?? "",
     status: job.status,
     under_process_from_date: job.under_process_from_date ?? "",
     under_process_to_date: job.under_process_to_date ?? "",
@@ -287,7 +283,6 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
 
 export function formToPayload(form: ShipmentJobForm) {
   return {
-    company_name: form.company_name || null,
     status: form.status,
     under_process_from_date: form.under_process_from_date || null,
     under_process_to_date: form.under_process_to_date || null,

@@ -15,11 +15,14 @@ import {
   transportModeOptions,
   jobToForm,
 } from "../lib/shipmentJobs";
-import type { CompanyUser } from "../lib/companyUsers";
+import type { ShipperUser } from "../lib/shipperUsers";
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
-  companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
+  shipperOptions?: Pick<
+    ShipperUser,
+    "shipper_name" | "admin_assignments"
+  >[];
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
   submitLabel: string;
@@ -30,7 +33,7 @@ interface ShipmentJobFormProps {
 
 export default function ShipmentJobForm({
   job,
-  companyOptions = [],
+  shipperOptions = [],
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
   submitLabel,
@@ -70,15 +73,15 @@ export default function ShipmentJobForm({
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  const updateCompany = (companyName: string) => {
+  const updateShipper = (shipperName: string) => {
     const selectedAdminIds = getDefaultAssignedAdminIds(
-      companyName,
-      companyOptions,
+      shipperName,
+      shipperOptions,
       job ? undefined : fixedAssignedAdminEmail,
     );
     setForm((current) => ({
       ...current,
-      company_name: companyName,
+      shipper_name: shipperName,
       assigned_admin_user_ids: selectedAdminIds,
     }));
   };
@@ -89,14 +92,13 @@ export default function ShipmentJobForm({
     setForm((current) => ({
       ...current,
       status,
-      [fromField]:
-        current[fromField] || new Date().toISOString().slice(0, 10),
+      [fromField]: current[fromField] || new Date().toISOString().slice(0, 10),
     }));
   };
 
-  const availableAdminAssignments = getCompanyAdminAssignments(
-    form.company_name,
-    companyOptions,
+  const availableAdminAssignments = getShipperAdminAssignments(
+    form.shipper_name,
+    shipperOptions,
   );
 
   const toggleAssignedAdmin = (adminUserId: string) => {
@@ -196,32 +198,34 @@ export default function ShipmentJobForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {companyOptions.length > 0 ? (
+        {shipperOptions.length > 0 ? (
           <SelectField
-            label={t("common.companyName")}
-            value={form.company_name}
+            label={t("common.shipperName")}
+            value={form.shipper_name}
             disabled={Boolean(job)}
-            onChange={updateCompany}
+            onChange={updateShipper}
             options={[
-              { value: "", label: t("form.selectCompany") },
-              ...companyOptions.map((company) => ({
-                value: company.company_name,
-                label: company.company_name,
+              { value: "", label: t("form.selectShipper") },
+              ...shipperOptions.map((shipperUser) => ({
+                value: shipperUser.shipper_name,
+                label: shipperUser.shipper_name,
               })),
             ]}
           />
         ) : (
           <TextField
-            label={t("common.companyName")}
-            value={form.company_name}
+            label={t("common.shipperName")}
+            value={form.shipper_name}
             disabled={Boolean(job)}
-            onChange={(value) => updateField("company_name", value)}
+            onChange={(value) => updateField("shipper_name", value)}
           />
         )}
         <SelectField
           label={t("form.status")}
           value={form.status}
-          onChange={(value) => updateStatus(value as ShipmentJobFormState["status"])}
+          onChange={(value) =>
+            updateStatus(value as ShipmentJobFormState["status"])
+          }
           options={statusOptions}
         />
         <SelectField
@@ -276,12 +280,6 @@ export default function ShipmentJobForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TextField
-          label={t("form.shipper")}
-          value={form.shipper_name}
-          onChange={(value) => updateField("shipper_name", value)}
-          placeholder="aaa Japan"
-        />
         <TextField
           label={t("form.consignee")}
           value={form.consignee_name}
@@ -452,7 +450,7 @@ function AssignedAdminFields({
   readOnly = false,
   onToggle,
 }: {
-  assignments: NonNullable<CompanyUser["admin_assignments"]>;
+  assignments: NonNullable<ShipperUser["admin_assignments"]>;
   selectedAdminIds: string[];
   readOnly?: boolean;
   onToggle: (adminUserId: string) => void;
@@ -519,18 +517,23 @@ function AssignedAdminFields({
   );
 }
 
-function getCompanyAdminAssignments(
-  companyName: string | null,
-  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[],
+function getShipperAdminAssignments(
+  shipperName: string | null,
+  shipperOptions: Pick<
+    ShipperUser,
+    "shipper_name" | "admin_assignments"
+  >[],
 ) {
   const assignmentsByAdminId = new Map<
     string,
-    NonNullable<CompanyUser["admin_assignments"]>[number]
+    NonNullable<ShipperUser["admin_assignments"]>[number]
   >();
 
-  companyOptions
-    .filter((company) => company.company_name === companyName)
-    .flatMap((company) => company.admin_assignments ?? [])
+  shipperOptions
+    .filter(
+      (shipperUser) => shipperUser.shipper_name === shipperName,
+    )
+    .flatMap((shipperUser) => shipperUser.admin_assignments ?? [])
     .forEach((assignment) => {
       assignmentsByAdminId.set(assignment.admin_user_id, assignment);
     });
@@ -539,11 +542,17 @@ function getCompanyAdminAssignments(
 }
 
 function getDefaultAssignedAdminIds(
-  companyName: string,
-  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[],
+  shipperName: string,
+  shipperOptions: Pick<
+    ShipperUser,
+    "shipper_name" | "admin_assignments"
+  >[],
   fixedAssignedAdminEmail?: string,
 ) {
-  const assignments = getCompanyAdminAssignments(companyName, companyOptions);
+  const assignments = getShipperAdminAssignments(
+    shipperName,
+    shipperOptions,
+  );
 
   if (!fixedAssignedAdminEmail) {
     return assignments.map((assignment) => assignment.admin_user_id);

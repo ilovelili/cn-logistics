@@ -6,17 +6,17 @@ import {
   fetchAdminOperators,
 } from "../lib/adminOperators";
 import {
-  createCompanyUser,
-  defaultCompanyUserForm,
-  CompanyUserForm,
-  CompanyUser,
-  CompanyUserApprovalStatus,
-  deleteCompanyUser,
-  fetchCompanyUsersByAdmin,
-  updateCompanyUserApprovalStatus,
-  updateCompanyUserAdminAssignments,
-  updatePendingCompanyUser,
-} from "../lib/companyUsers";
+  createShipperUser,
+  defaultShipperUserForm,
+  ShipperUserForm,
+  ShipperUser,
+  ShipperUserApprovalStatus,
+  deleteShipperUser,
+  fetchShipperUsersByAdmin,
+  updateShipperUserApprovalStatus,
+  updateShipperUserAdminAssignments,
+  updatePendingShipperUser,
+} from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
 import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
@@ -29,7 +29,7 @@ import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
-import CompanyUserReadOnlyDetails from "./CompanyUserReadOnlyDetails";
+import ShipperUserReadOnlyDetails from "./ShipperUserReadOnlyDetails";
 
 function getStaffRoleLabel(role: AdminOperatorStaffRole) {
   return t(`superAdmin.operators.staffRole.${role}`);
@@ -42,7 +42,7 @@ interface UserRegistrationFormProps {
 
 type SortKey =
   | "id"
-  | "company_name"
+  | "shipper_name"
   | "email"
   | "budget"
   | "approval_status"
@@ -56,23 +56,23 @@ interface UserTableColumn {
   label: string;
   width: number;
   sortKey?: SortKey;
-  render: (user: CompanyUser) => React.ReactNode;
+  render: (user: ShipperUser) => React.ReactNode;
 }
 
 export default function UserRegistrationForm({
   adminEmail,
   isSuperAdmin = false,
 }: UserRegistrationFormProps) {
-  const [form, setForm] = useState<CompanyUserForm>(defaultCompanyUserForm);
+  const [form, setForm] = useState<ShipperUserForm>(defaultShipperUserForm);
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(true);
   const [addressLoading, setAddressLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [users, setUsers] = useState<CompanyUser[]>([]);
+  const [users, setUsers] = useState<ShipperUser[]>([]);
   const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    CompanyUserApprovalStatus | "all"
+    ShipperUserApprovalStatus | "all"
   >("all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -80,10 +80,10 @@ export default function UserRegistrationForm({
     useStickyTableHeaderPreference();
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
   const scrollHint = useHorizontalScrollHint(tableScrollRef);
-  const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<ShipperUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{
-    user: CompanyUser;
+    user: ShipperUser;
     action: UserAction;
   } | null>(null);
   const [toast, setToast] = useState<{
@@ -91,7 +91,7 @@ export default function UserRegistrationForm({
     message: string;
   } | null>(null);
 
-  const updateField = (field: keyof CompanyUserForm, value: string) => {
+  const updateField = (field: keyof ShipperUserForm, value: string) => {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
   };
 
@@ -103,7 +103,7 @@ export default function UserRegistrationForm({
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const registeredUsers = await fetchCompanyUsersByAdmin(adminEmail);
+      const registeredUsers = await fetchShipperUsersByAdmin(adminEmail);
       setUsers(registeredUsers);
     } catch {
       showToast("error", t("admin.userRegistration.loadFailed"));
@@ -148,8 +148,8 @@ export default function UserRegistrationForm({
     setLoading(true);
 
     try {
-      await createCompanyUser(form, adminEmail);
-      setForm(defaultCompanyUserForm);
+      await createShipperUser(form, adminEmail);
+      setForm(defaultShipperUserForm);
       setShowCreateForm(false);
       await loadUsers();
       showToast("success", t("admin.userRegistration.created"));
@@ -166,7 +166,7 @@ export default function UserRegistrationForm({
     try {
       const address = await lookupJapaneseAddress(form.zipcode);
       if (address) {
-        updateField("company_address", address);
+        updateField("shipper_address", address);
       } else {
         showToast("error", t("admin.userRegistration.zipcodeLookupFailed"));
       }
@@ -189,10 +189,10 @@ export default function UserRegistrationForm({
 
       return [
         user.id,
-        user.company_name,
+        user.shipper_name,
         user.email,
         user.zipcode,
-        user.company_address,
+        user.shipper_address,
         user.telephone,
         user.contact_person,
         ...(user.admin_assignments ?? []).flatMap((assignment) => [
@@ -247,12 +247,12 @@ export default function UserRegistrationForm({
   };
 
   const handleApprovalChange = async (
-    user: CompanyUser,
+    user: ShipperUser,
     status: "approved" | "rejected",
   ) => {
     setActionLoadingId(user.id);
     try {
-      const updatedUser = await updateCompanyUserApprovalStatus({
+      const updatedUser = await updateShipperUserApprovalStatus({
         superAdminEmail: adminEmail,
         userId: user.id,
         status,
@@ -278,10 +278,10 @@ export default function UserRegistrationForm({
     }
   };
 
-  const handleDeleteUser = async (user: CompanyUser) => {
+  const handleDeleteUser = async (user: ShipperUser) => {
     setActionLoadingId(user.id);
     try {
-      await deleteCompanyUser({
+      await deleteShipperUser({
         superAdminEmail: adminEmail,
         userId: user.id,
       });
@@ -320,16 +320,16 @@ export default function UserRegistrationForm({
   const columns = useMemo<UserTableColumn[]>(() => {
     const userColumns: UserTableColumn[] = [
       {
-        id: "company_name",
-        label: t("admin.userRegistration.companyName"),
+        id: "shipper_name",
+        label: t("admin.userRegistration.shipperName"),
         width: isSuperAdmin ? 16 : 24,
-        sortKey: "company_name",
+        sortKey: "shipper_name",
         render: (user) => (
           <span
             className="block truncate font-semibold text-gray-900 dark:text-white"
-            title={user.company_name}
+            title={user.shipper_name}
           >
-            {user.company_name}
+            {user.shipper_name}
           </span>
         ),
       },
@@ -383,7 +383,7 @@ export default function UserRegistrationForm({
               id: "admins" as const,
               label: t("admin.userRegistration.assignedAdmins"),
               width: 14,
-              render: (user: CompanyUser) => (
+              render: (user: ShipperUser) => (
                 <AssignedAdminsSummary
                   assignments={user.admin_assignments ?? []}
                 />
@@ -395,7 +395,7 @@ export default function UserRegistrationForm({
         id: "action" as const,
         label: t("admin.userRegistration.action"),
         width: isSuperAdmin ? 23 : 8,
-        render: (user: CompanyUser) => (
+        render: (user: ShipperUser) => (
           <div className="flex flex-nowrap gap-1.5">
             <TableActionButton
               variant="primary"
@@ -532,7 +532,7 @@ export default function UserRegistrationForm({
               value={statusFilter}
               onChange={(event) =>
                 setStatusFilter(
-                  event.target.value as CompanyUserApprovalStatus | "all",
+                  event.target.value as ShipperUserApprovalStatus | "all",
                 )
               }
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -720,9 +720,9 @@ export default function UserRegistrationForm({
               required
             />
             <Field
-              label={t("admin.userRegistration.companyName")}
-              value={form.company_name}
-              onChange={(value) => updateField("company_name", value)}
+              label={t("admin.userRegistration.shipperName")}
+              value={form.shipper_name}
+              onChange={(value) => updateField("shipper_name", value)}
               required
             />
             <Field
@@ -775,9 +775,9 @@ export default function UserRegistrationForm({
 
           <div className="mt-5 grid gap-5">
             <TextArea
-              label={t("admin.userRegistration.companyAddress")}
-              value={form.company_address}
-              onChange={(value) => updateField("company_address", value)}
+              label={t("admin.userRegistration.shipperAddress")}
+              value={form.shipper_address}
+              onChange={(value) => updateField("shipper_address", value)}
               required
             />
             <TextArea
@@ -816,8 +816,8 @@ export function UserDetailModal({
   onAssignmentsSaved,
   onClose,
 }: {
-  user: CompanyUser;
-  onSaved: (user: CompanyUser) => void;
+  user: ShipperUser;
+  onSaved: (user: ShipperUser) => void;
   isSuperAdmin: boolean;
   actionLoading: boolean;
   adminOperators: AdminOperator[];
@@ -825,16 +825,16 @@ export function UserDetailModal({
   detailsReadOnly?: boolean;
   showActions?: boolean;
   onRequestAction: (action: UserAction) => void;
-  onAssignmentsSaved: (user: CompanyUser) => void;
+  onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
 }) {
   const isEditable =
     user.approval_status === "to_be_approved" && !detailsReadOnly;
-  const [form, setForm] = useState<CompanyUserForm>({
+  const [form, setForm] = useState<ShipperUserForm>({
     email: user.email,
-    company_name: user.company_name,
+    shipper_name: user.shipper_name,
     zipcode: user.zipcode ?? "",
-    company_address: user.company_address,
+    shipper_address: user.shipper_address,
     telephone: user.telephone,
     budget: String(user.budget),
     contact_person: user.contact_person ?? "",
@@ -859,7 +859,7 @@ export function UserDetailModal({
     );
   }, [user.admin_assignments, user.id]);
 
-  const updateField = (field: keyof CompanyUserForm, value: string) => {
+  const updateField = (field: keyof ShipperUserForm, value: string) => {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
   };
 
@@ -870,7 +870,7 @@ export function UserDetailModal({
     try {
       const address = await lookupJapaneseAddress(form.zipcode);
       if (address) {
-        updateField("company_address", address);
+        updateField("shipper_address", address);
       } else {
         setError(t("admin.userRegistration.zipcodeLookupFailed"));
       }
@@ -889,7 +889,7 @@ export function UserDetailModal({
     setError("");
 
     try {
-      const updatedUser = await updatePendingCompanyUser(user.id, form);
+      const updatedUser = await updatePendingShipperUser(user.id, form);
       onSaved(updatedUser);
     } catch {
       setError(t("admin.userRegistration.updateFailed"));
@@ -911,7 +911,7 @@ export function UserDetailModal({
     setAssignmentError("");
 
     try {
-      const updatedUser = await updateCompanyUserAdminAssignments({
+      const updatedUser = await updateShipperUserAdminAssignments({
         superAdminEmail,
         userId: user.id,
         adminUserIds: selectedAdminIds,
@@ -933,7 +933,7 @@ export function UserDetailModal({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              {user.company_name}
+              {user.shipper_name}
             </h3>
             <p className="mt-1 font-mono text-xs text-gray-500 dark:text-gray-400">
               {user.id}
@@ -1032,9 +1032,9 @@ export function UserDetailModal({
               required
             />
             <Field
-              label={t("admin.userRegistration.companyName")}
-              value={form.company_name}
-              onChange={(value) => updateField("company_name", value)}
+              label={t("admin.userRegistration.shipperName")}
+              value={form.shipper_name}
+              onChange={(value) => updateField("shipper_name", value)}
               required
             />
             <Field
@@ -1080,9 +1080,9 @@ export function UserDetailModal({
             />
             <div className="md:col-span-2">
               <TextArea
-                label={t("admin.userRegistration.companyAddress")}
-                value={form.company_address}
-                onChange={(value) => updateField("company_address", value)}
+                label={t("admin.userRegistration.shipperAddress")}
+                value={form.shipper_address}
+                onChange={(value) => updateField("shipper_address", value)}
                 required
               />
             </div>
@@ -1095,7 +1095,7 @@ export function UserDetailModal({
             </div>
           </div>
         ) : (
-          <CompanyUserReadOnlyDetails companyUser={user} />
+          <ShipperUserReadOnlyDetails shipperUser={user} />
         )}
 
         {error && (
@@ -1182,7 +1182,7 @@ function ApprovalButtons({
 function AssignedAdminsSummary({
   assignments,
 }: {
-  assignments: NonNullable<CompanyUser["admin_assignments"]>;
+  assignments: NonNullable<ShipperUser["admin_assignments"]>;
 }) {
   if (assignments.length === 0) {
     return <span className="text-sm text-gray-400">-</span>;
@@ -1211,7 +1211,7 @@ function ConfirmActionModal({
   onCancel,
   onConfirm,
 }: {
-  user: CompanyUser;
+  user: ShipperUser;
   action: UserAction;
   onCancel: () => void;
   onConfirm: () => void;
@@ -1246,7 +1246,7 @@ function ConfirmActionModal({
         </p>
         <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
           <div className="font-bold text-gray-900 dark:text-white">
-            {user.company_name}
+            {user.shipper_name}
           </div>
           <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {user.email}
@@ -1300,7 +1300,7 @@ function DetailItem({
   );
 }
 
-function StatusBadge({ status }: { status: CompanyUser["approval_status"] }) {
+function StatusBadge({ status }: { status: ShipperUser["approval_status"] }) {
   const label =
     status === "approved"
       ? t("admin.userRegistration.status.approved")

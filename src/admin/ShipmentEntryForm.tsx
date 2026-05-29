@@ -22,7 +22,7 @@ import {
 } from "../components/shipmentJobsTableUtils";
 import { SortDirection } from "../components/SortableTableHeader";
 import { t } from "../lib/i18n";
-import type { CompanyUser } from "../lib/companyUsers";
+import type { ShipperUser } from "../lib/shipperUsers";
 import {
   createShipmentJob,
   DocumentApprovalStatus,
@@ -43,7 +43,10 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  companyOptions?: Pick<CompanyUser, "company_name" | "admin_assignments">[];
+  shipperOptions?: Pick<
+    ShipperUser,
+    "shipper_name" | "admin_assignments"
+  >[];
   adminEmail: string;
   canEditAssignedAdmins?: boolean;
   criteria?: ShipmentEntryCriteria;
@@ -53,7 +56,7 @@ interface ShipmentEntryFormProps {
 export default function ShipmentEntryForm({
   jobs,
   documents,
-  companyOptions = [],
+  shipperOptions = [],
   adminEmail,
   canEditAssignedAdmins = false,
   criteria = { kind: "all" },
@@ -65,7 +68,7 @@ export default function ShipmentEntryForm({
   );
   const [tradeFilter, setTradeFilter] = useState("all");
   const [transportFilter, setTransportFilter] = useState("all");
-  const [companyFilter, setCompanyFilter] = useState("all");
+  const [shipperFilter, setShipperFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
@@ -77,15 +80,15 @@ export default function ShipmentEntryForm({
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const companyNames = useMemo(
+  const shipperNames = useMemo(
     () => [
       ...new Set(
-        companyOptions
-          .map((company) => company.company_name.trim())
+        shipperOptions
+          .map((shipperUser) => shipperUser.shipper_name.trim())
           .filter(Boolean),
       ),
     ],
-    [companyOptions],
+    [shipperOptions],
   );
 
   const filteredJobs = useMemo(() => {
@@ -124,19 +127,19 @@ export default function ShipmentEntryForm({
         return job.transport_mode === transportFilter;
       })
       .filter((job) => {
-        if (companyFilter === "all") return true;
-        return job.company_name === companyFilter;
+        if (shipperFilter === "all") return true;
+        return job.shipper_name === shipperFilter;
       })
       .filter((job) => {
         if (!normalizedQuery) return true;
         return buildShipmentJobSearchText(
           job,
-          getResponsibleAdminSearchTerms(job, companyOptions),
+          getResponsibleAdminSearchTerms(job, shipperOptions),
         ).includes(normalizedQuery);
       });
   }, [
-    companyFilter,
-    companyOptions,
+    shipperFilter,
+    shipperOptions,
     criteria,
     documents,
     jobs,
@@ -154,18 +157,18 @@ export default function ShipmentEntryForm({
         getShipmentJobSortValue(
           first,
           sortKey,
-          getResponsibleAdminNames(first, companyOptions),
+          getResponsibleAdminNames(first, shipperOptions),
         ),
         getShipmentJobSortValue(
           second,
           sortKey,
-          getResponsibleAdminNames(second, companyOptions),
+          getResponsibleAdminNames(second, shipperOptions),
         ),
         sortDirection,
         sortKey,
       ),
     );
-  }, [companyOptions, filteredJobs, sortDirection, sortKey]);
+  }, [shipperOptions, filteredJobs, sortDirection, sortKey]);
 
   const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
   const safeCurrentPage = Math.min(currentPage, pageCount);
@@ -191,7 +194,7 @@ export default function ShipmentEntryForm({
     setSelectedJob(null);
     setQuery("");
     setStatusFilter(criteria.kind === "status" ? criteria.status : "all");
-    setCompanyFilter("all");
+    setShipperFilter("all");
     setTradeFilter("all");
     setTransportFilter("all");
     setCurrentPage(1);
@@ -207,7 +210,7 @@ export default function ShipmentEntryForm({
     setCurrentPage(1);
   }, [
     pageSize,
-    companyFilter,
+    shipperFilter,
     query,
     sortDirection,
     sortKey,
@@ -330,13 +333,13 @@ export default function ShipmentEntryForm({
                 />
               </div>
               <FilterSelect
-                value={companyFilter}
-                onChange={setCompanyFilter}
+                value={shipperFilter}
+                onChange={setShipperFilter}
                 options={[
-                  { value: "all", label: t("jobs.filter.allCompanies") },
-                  ...companyNames.map((companyName) => ({
-                    value: companyName,
-                    label: companyName,
+                  { value: "all", label: t("jobs.filter.allShippers") },
+                  ...shipperNames.map((shipperName) => ({
+                    value: shipperName,
+                    label: shipperName,
                   })),
                 ]}
               />
@@ -386,7 +389,7 @@ export default function ShipmentEntryForm({
             visibleTo={visibleTo}
             adminTheme
             showInternalDocuments
-            companyOptions={companyOptions}
+            shipperOptions={shipperOptions}
             onSort={handleSort}
             onSelectJob={setSelectedJob}
             onPageChange={setCurrentPage}
@@ -397,7 +400,7 @@ export default function ShipmentEntryForm({
             loading={loading}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
-            companyOptions={companyOptions}
+            shipperOptions={shipperOptions}
             assignedAdminsReadOnly={!canEditAssignedAdmins}
           />
         </div>
@@ -406,7 +409,7 @@ export default function ShipmentEntryForm({
       {mode === "create" && (
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
-            companyOptions={companyOptions}
+            shipperOptions={shipperOptions}
             fixedAssignedAdminEmail={
               canEditAssignedAdmins ? undefined : adminEmail
             }
@@ -424,14 +427,17 @@ export default function ShipmentEntryForm({
 function AdminShipmentJobModal({
   job,
   loading,
-  companyOptions,
+  shipperOptions,
   onClose,
   onSubmit,
   assignedAdminsReadOnly,
 }: {
   job: ShipmentJob | null;
   loading: boolean;
-  companyOptions: Pick<CompanyUser, "company_name" | "admin_assignments">[];
+  shipperOptions: Pick<
+    ShipperUser,
+    "shipper_name" | "admin_assignments"
+  >[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   assignedAdminsReadOnly: boolean;
@@ -474,7 +480,7 @@ function AdminShipmentJobModal({
           <ShipmentJobForm
             key={job.id}
             job={job}
-            companyOptions={companyOptions}
+            shipperOptions={shipperOptions}
             assignedAdminsReadOnly={assignedAdminsReadOnly}
             submitLabel={t("common.update")}
             loading={loading}

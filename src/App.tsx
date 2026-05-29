@@ -63,7 +63,7 @@ function MainApp({
   onToggleDark,
   profileEmail,
   profileRole,
-  profileCompanyName,
+  profileShipperName,
   switchedAccountName,
   initialAdminMode = false,
   onSwitchToUser,
@@ -74,13 +74,13 @@ function MainApp({
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
-  profileCompanyName: string | null;
+  profileShipperName: string | null;
   switchedAccountName: string;
   initialAdminMode?: boolean;
   onSwitchToUser?: (
     email: string,
     role?: AppUserRole,
-    companyName?: string | null,
+    shipperName?: string | null,
   ) => void;
   onBackToAdmin?: () => void;
   onLogout: () => void;
@@ -109,15 +109,19 @@ function MainApp({
       return jobs;
     }
 
-    const normalizedCompanyName = profileCompanyName?.trim().toLowerCase();
-    if (!normalizedCompanyName) {
+    const normalizedShipperName = profileShipperName
+      ?.trim()
+      .toLowerCase();
+    if (!normalizedShipperName) {
       return [];
     }
 
     return jobs.filter(
-      (job) => job.company_name?.trim().toLowerCase() === normalizedCompanyName,
+      (job) =>
+        job.shipper_name?.trim().toLowerCase() ===
+        normalizedShipperName,
     );
-  }, [jobs, profileCompanyName, profileRole]);
+  }, [jobs, profileShipperName, profileRole]);
   const visibleDocuments = useMemo(() => {
     if (profileRole !== "normal") {
       return documents;
@@ -367,7 +371,7 @@ function MainApp({
                       {t("admin.switch.currentlySwitchedAs", {
                         name:
                           switchedAccountName.trim() ||
-                          profileCompanyName?.trim() ||
+                          profileShipperName?.trim() ||
                           profileEmail,
                       })}
                     </div>
@@ -466,9 +470,11 @@ function AppContent({
       ? savedRole
       : "normal";
   });
-  const [profileCompanyName, setProfileCompanyName] = useState(() => {
-    return sessionStorage.getItem("app_profile_company_name") ?? "";
-  });
+  const [profileShipperName, setProfileShipperName] = useState(
+    () => {
+      return sessionStorage.getItem("app_profile_shipper_name") ?? "";
+    },
+  );
   const [switchedAccountName, setSwitchedAccountName] = useState(() => {
     return sessionStorage.getItem("app_switched_account_name") ?? "";
   });
@@ -506,15 +512,15 @@ function AppContent({
         if (!active || !profile) return;
 
         setProfileRole(profile.role);
-        setProfileCompanyName(profile.company_name ?? "");
+        setProfileShipperName(profile.shipper_name ?? "");
         sessionStorage.setItem("app_profile_role", profile.role);
-        if (profile.company_name) {
+        if (profile.shipper_name) {
           sessionStorage.setItem(
-            "app_profile_company_name",
-            profile.company_name,
+            "app_profile_shipper_name",
+            profile.shipper_name,
           );
         } else {
-          sessionStorage.removeItem("app_profile_company_name");
+          sessionStorage.removeItem("app_profile_shipper_name");
         }
 
         if (authRole === "admin" && authEmail === adminEmail) {
@@ -539,18 +545,18 @@ function AppContent({
       setAuthRole("user");
       setAuthEmail(profile.email);
       setProfileRole(profile.role);
-      setProfileCompanyName(profile.company_name ?? "");
+      setProfileShipperName(profile.shipper_name ?? "");
       setSwitchedAccountName("");
       sessionStorage.setItem("app_auth_role", "user");
       sessionStorage.setItem("app_auth_email", profile.email);
       sessionStorage.setItem("app_profile_role", profile.role);
-      if (profile.company_name) {
+      if (profile.shipper_name) {
         sessionStorage.setItem(
-          "app_profile_company_name",
-          profile.company_name,
+          "app_profile_shipper_name",
+          profile.shipper_name,
         );
       } else {
-        sessionStorage.removeItem("app_profile_company_name");
+        sessionStorage.removeItem("app_profile_shipper_name");
       }
       sessionStorage.removeItem("app_switched_account_name");
       sessionStorage.removeItem("app_return_admin_email");
@@ -564,7 +570,7 @@ function AppContent({
       setAuthRole("admin");
       setAuthEmail(profile.email);
       setProfileRole(profile.role);
-      setProfileCompanyName(profile.company_name ?? "");
+      setProfileShipperName(profile.shipper_name ?? "");
       setSwitchedAccountName("");
       setAdminEmail(profile.email);
       setAdminProfileRole(profile.role);
@@ -574,13 +580,13 @@ function AppContent({
       sessionStorage.setItem("app_auth_role", "admin");
       sessionStorage.setItem("app_auth_email", profile.email);
       sessionStorage.setItem("app_profile_role", profile.role);
-      if (profile.company_name) {
+      if (profile.shipper_name) {
         sessionStorage.setItem(
-          "app_profile_company_name",
-          profile.company_name,
+          "app_profile_shipper_name",
+          profile.shipper_name,
         );
       } else {
-        sessionStorage.removeItem("app_profile_company_name");
+        sessionStorage.removeItem("app_profile_shipper_name");
       }
       sessionStorage.removeItem("app_switched_account_name");
       sessionStorage.removeItem("app_return_admin_email");
@@ -618,7 +624,7 @@ function AppContent({
     setAuthRole(role === "normal" ? "user" : "admin");
     setAuthEmail(email);
     setProfileRole(role);
-    setProfileCompanyName(role === "normal" ? (accountName ?? "") : "");
+    setProfileShipperName(role === "normal" ? (accountName ?? "") : "");
     setSwitchedAccountName(accountName ?? email);
     sessionStorage.setItem(
       "app_auth_role",
@@ -627,9 +633,9 @@ function AppContent({
     sessionStorage.setItem("app_auth_email", email);
     sessionStorage.setItem("app_profile_role", role);
     if (role === "normal" && accountName) {
-      sessionStorage.setItem("app_profile_company_name", accountName);
+      sessionStorage.setItem("app_profile_shipper_name", accountName);
     } else {
-      sessionStorage.removeItem("app_profile_company_name");
+      sessionStorage.removeItem("app_profile_shipper_name");
     }
     sessionStorage.setItem("app_switched_account_name", accountName ?? email);
   };
@@ -639,7 +645,7 @@ function AppContent({
       setAuthRole("admin");
       setAuthEmail(returnAdminEmail);
       setProfileRole(returnAdminProfileRole);
-      setProfileCompanyName("");
+      setProfileShipperName("");
       setSwitchedAccountName(returnAdminAccountName);
       setReturnAdminEmail("");
       setReturnAdminProfileRole("admin");
@@ -647,7 +653,7 @@ function AppContent({
       sessionStorage.setItem("app_auth_role", "admin");
       sessionStorage.setItem("app_auth_email", returnAdminEmail);
       sessionStorage.setItem("app_profile_role", returnAdminProfileRole);
-      sessionStorage.removeItem("app_profile_company_name");
+      sessionStorage.removeItem("app_profile_shipper_name");
       if (returnAdminAccountName) {
         sessionStorage.setItem(
           "app_switched_account_name",
@@ -666,7 +672,7 @@ function AppContent({
     setAuthRole("admin");
     setAuthEmail(adminEmail);
     setProfileRole(adminProfileRole);
-    setProfileCompanyName("");
+    setProfileShipperName("");
     setSwitchedAccountName("");
     setReturnAdminEmail("");
     setReturnAdminProfileRole("admin");
@@ -674,7 +680,7 @@ function AppContent({
     sessionStorage.setItem("app_auth_role", "admin");
     sessionStorage.setItem("app_auth_email", adminEmail);
     sessionStorage.setItem("app_profile_role", adminProfileRole);
-    sessionStorage.removeItem("app_profile_company_name");
+    sessionStorage.removeItem("app_profile_shipper_name");
     sessionStorage.removeItem("app_switched_account_name");
     sessionStorage.removeItem("app_return_admin_email");
     sessionStorage.removeItem("app_return_admin_profile_role");
@@ -686,7 +692,7 @@ function AppContent({
     setAuthRole(null);
     setAuthEmail("");
     setProfileRole("normal");
-    setProfileCompanyName("");
+    setProfileShipperName("");
     setSwitchedAccountName("");
     setAdminEmail("");
     setAdminProfileRole("admin");
@@ -696,7 +702,7 @@ function AppContent({
     sessionStorage.removeItem("app_auth_role");
     sessionStorage.removeItem("app_auth_email");
     sessionStorage.removeItem("app_profile_role");
-    sessionStorage.removeItem("app_profile_company_name");
+    sessionStorage.removeItem("app_profile_shipper_name");
     sessionStorage.removeItem("app_switched_account_name");
     sessionStorage.removeItem("app_admin_email");
     sessionStorage.removeItem("app_admin_profile_role");
@@ -722,7 +728,7 @@ function AppContent({
       onToggleDark={onToggleDark}
       profileEmail={authEmail}
       profileRole={profileRole}
-      profileCompanyName={profileCompanyName}
+      profileShipperName={profileShipperName}
       switchedAccountName={switchedAccountName}
       initialAdminMode={authRole === "admin"}
       onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}

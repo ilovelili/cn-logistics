@@ -23,7 +23,7 @@ import DocumentControl, {
 import ProfileButton from "../components/ProfileButton";
 import LanguageSelect from "../components/LanguageSelect";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
-import { CompanyUser, fetchCompanyUsersByAdmin } from "../lib/companyUsers";
+import { ShipperUser, fetchShipperUsersByAdmin } from "../lib/shipperUsers";
 import { AppUserRole } from "../lib/auth";
 import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
@@ -48,7 +48,7 @@ interface AdminPanelProps {
   onSwitchToUser?: (
     email: string,
     role?: AppUserRole,
-    companyName?: string | null,
+    shipperName?: string | null,
   ) => void;
   onBackToAdmin?: () => void;
   onLogout?: () => void;
@@ -73,7 +73,7 @@ export default function AdminPanel({
   const [view, setView] = useState<AdminView>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [switchableUsers, setSwitchableUsers] = useState<CompanyUser[]>([]);
+  const [switchableUsers, setSwitchableUsers] = useState<ShipperUser[]>([]);
   const [switchableOperators, setSwitchableOperators] = useState<
     AdminOperator[]
   >([]);
@@ -82,14 +82,17 @@ export default function AdminPanel({
   const [documentApprovalFilter, setDocumentApprovalFilter] =
     useState<DocumentApprovalFilter>("all");
   const isSuperAdmin = profileRole === "super_admin";
-  const shipmentCompanyOptions = useMemo(
+  const shipmentShipperOptions = useMemo(
     () =>
       [...switchableUsers]
         .sort((first, second) =>
-          first.company_name.localeCompare(second.company_name, "ja-JP"),
+          first.shipper_name.localeCompare(
+            second.shipper_name,
+            "ja-JP",
+          ),
         )
         .map((user) => ({
-          company_name: user.company_name,
+          shipper_name: user.shipper_name,
           admin_assignments: user.admin_assignments,
         })),
     [switchableUsers],
@@ -104,7 +107,7 @@ export default function AdminPanel({
     let active = true;
     async function loadSwitchableUsers() {
       try {
-        const users = await fetchCompanyUsersByAdmin(profileEmail);
+        const users = await fetchShipperUsersByAdmin(profileEmail);
         if (active) {
           setSwitchableUsers(users);
         }
@@ -222,12 +225,14 @@ export default function AdminPanel({
                 value=""
                 onChange={(event) => {
                   if (event.target.value) {
-                    const [role, email, companyName] =
+                    const [role, email, shipperName] =
                       event.target.value.split(":");
                     onSwitchToUser(
                       decodeURIComponent(email),
                       role as AppUserRole,
-                      companyName ? decodeURIComponent(companyName) : null,
+                      shipperName
+                        ? decodeURIComponent(shipperName)
+                        : null,
                     );
                   }
                 }}
@@ -263,9 +268,9 @@ export default function AdminPanel({
                         key={user.id}
                         value={`normal:${encodeURIComponent(
                           user.email,
-                        )}:${encodeURIComponent(user.company_name)}`}
+                        )}:${encodeURIComponent(user.shipper_name)}`}
                       >
-                        {user.company_name}
+                        {user.shipper_name}
                       </option>
                     ))}
                   </optgroup>
@@ -381,7 +386,7 @@ export default function AdminPanel({
               documents={documents}
               adminEmail={profileEmail}
               canEditAssignedAdmins={isSuperAdmin}
-              companyOptions={shipmentCompanyOptions}
+              shipperOptions={shipmentShipperOptions}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />
@@ -395,7 +400,7 @@ export default function AdminPanel({
               isAdminAuthenticated={isAdminAuthenticated}
               requesterEmail={profileEmail}
               approvalFilter={documentApprovalFilter}
-              companyOptions={shipmentCompanyOptions}
+              shipperOptions={shipmentShipperOptions}
             />
           )}
           {view === "userRegistration" && (
