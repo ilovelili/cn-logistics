@@ -574,7 +574,7 @@ export async function updateShipmentJob(
   }
 
   await replaceShipmentDocuments(id, form, requesterEmail);
-  await replaceShipmentTrackingEvents(id, form);
+  await replaceShipmentTrackingEvents(id, form, requesterEmail);
 }
 
 export async function updateShipmentDocumentApproval(
@@ -1162,6 +1162,7 @@ function documentKey(scope: DocumentScope, name: string) {
 async function replaceShipmentTrackingEvents(
   jobId: string,
   form: ShipmentJobForm,
+  requesterEmail?: string,
 ) {
   const nextEvents = form.tracking_events
     .map((event, index) => ({
@@ -1172,6 +1173,23 @@ async function replaceShipmentTrackingEvents(
       sort_order: index,
     }))
     .filter((event) => event.event_date && event.description);
+
+  if (requesterEmail) {
+    const { error } = await supabase.rpc(
+      "replace_accessible_shipment_tracking_events",
+      {
+        requester_email: requesterEmail,
+        target_job_id: jobId,
+        events_payload: nextEvents,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
 
   const { error: deleteError } = await supabase
     .from("shipment_tracking_events")
