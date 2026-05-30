@@ -570,7 +570,7 @@ export default function UserRegistrationForm({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-50 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
+          className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
@@ -809,6 +809,7 @@ export default function UserRegistrationForm({
           isSuperAdmin={isSuperAdmin}
           adminOperators={adminOperators}
           superAdminEmail={adminEmail}
+          onNotify={showToast}
           onAssignmentsSaved={(updatedUser) => {
             setUsers((currentUsers) =>
               currentUsers.map((user) =>
@@ -929,6 +930,7 @@ export function UserDetailModal({
   superAdminEmail,
   detailsReadOnly = false,
   assignmentsReadOnly = false,
+  onNotify,
   onAssignmentsSaved,
   onClose,
 }: {
@@ -940,6 +942,7 @@ export function UserDetailModal({
   superAdminEmail: string;
   detailsReadOnly?: boolean;
   assignmentsReadOnly?: boolean;
+  onNotify?: (type: "success" | "error", message: string) => void;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
 }) {
@@ -1035,8 +1038,10 @@ export function UserDetailModal({
     try {
       const updatedUsers = await updateShipperContacts(user.id, form);
       onSaved(updatedUsers);
+      onNotify?.("success", t("admin.userRegistration.updated"));
     } catch {
       setError(t("admin.userRegistration.updateFailed"));
+      onNotify?.("error", t("admin.userRegistration.updateFailed"));
     } finally {
       setSaving(false);
     }
@@ -1061,8 +1066,10 @@ export function UserDetailModal({
         adminUserIds: selectedAdminIds,
       });
       onAssignmentsSaved(updatedUser);
+      onNotify?.("success", t("admin.userRegistration.assignmentUpdated"));
     } catch {
       setAssignmentError(t("admin.userRegistration.assignmentUpdateFailed"));
+      onNotify?.("error", t("admin.userRegistration.assignmentUpdateFailed"));
     } finally {
       setAssignmentsSaving(false);
     }

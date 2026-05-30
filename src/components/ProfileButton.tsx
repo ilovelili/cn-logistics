@@ -430,7 +430,7 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       {toast &&
         createPortal(
           <div
-            className={`fixed right-6 top-6 z-[140] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+            className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
               toast.type === "success"
                 ? "bg-emerald-500 text-white"
                 : "bg-rose-500 text-white"

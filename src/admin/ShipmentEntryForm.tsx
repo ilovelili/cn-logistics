@@ -205,10 +205,18 @@ export default function ShipmentEntryForm({
   }, [criteria]);
 
   useEffect(() => {
-    if (selectedJob && !sortedJobs.some((job) => job.id === selectedJob.id)) {
+    if (!selectedJob) return;
+
+    const refreshedJob = jobs.find((job) => job.id === selectedJob.id);
+    if (!refreshedJob || !sortedJobs.some((job) => job.id === selectedJob.id)) {
       setSelectedJob(null);
+      return;
     }
-  }, [selectedJob, sortedJobs]);
+
+    if (refreshedJob !== selectedJob) {
+      setSelectedJob(refreshedJob);
+    }
+  }, [jobs, selectedJob, sortedJobs]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -274,7 +282,7 @@ export default function ShipmentEntryForm({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
+          className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"

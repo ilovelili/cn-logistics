@@ -1,7 +1,21 @@
 import { supabase } from "./supabase";
 import { t } from "./i18n";
 
-export type ShipmentStatus = "under_process" | "customs_hold" | "completed";
+export type LegacyShipmentStatus =
+  | "under_process"
+  | "customs_hold"
+  | "completed";
+export type StandardFlowShipmentStatus =
+  | "pickup"
+  | "warehouse_in"
+  | "customs_origin"
+  | "terminal_in"
+  | "departure"
+  | "arrival"
+  | "customs_destination"
+  | "destination_warehouse_in"
+  | "delivery";
+export type ShipmentStatus = LegacyShipmentStatus | StandardFlowShipmentStatus;
 export type TradeMode = "export" | "import" | "triangle";
 export type TransportMode = "air" | "lcl" | "fcl";
 export type DocumentScope = "customer" | "internal";
@@ -119,20 +133,48 @@ interface UploadedShipmentDocument {
   fileUrl: string;
 }
 
-export const statusOptions: { value: ShipmentStatus; label: string }[] = [
+export const standardFlowStatusOptions: {
+  value: StandardFlowShipmentStatus;
+  label: string;
+}[] = [
+  { value: "pickup", label: t("status.pickup") },
+  { value: "warehouse_in", label: t("status.warehouseIn") },
+  { value: "customs_origin", label: t("status.customsOrigin") },
+  { value: "terminal_in", label: t("status.terminalIn") },
+  { value: "departure", label: t("status.departure") },
+  { value: "arrival", label: t("status.arrival") },
+  { value: "customs_destination", label: t("status.customsDestination") },
+  {
+    value: "destination_warehouse_in",
+    label: t("status.destinationWarehouseIn"),
+  },
+  { value: "delivery", label: t("status.delivery") },
+];
+
+export const legacyStatusOptions: {
+  value: LegacyShipmentStatus;
+  label: string;
+}[] = [
   { value: "under_process", label: t("status.underProcess") },
   { value: "customs_hold", label: t("status.customsHold") },
   { value: "completed", label: t("status.completed") },
 ];
 
-export const shipmentStatusOrder: ShipmentStatus[] = [
+export const statusOptions: { value: ShipmentStatus; label: string }[] = [
+  ...standardFlowStatusOptions,
+];
+
+export const shipmentStatusOrder: ShipmentStatus[] =
+  standardFlowStatusOptions.map((option) => option.value);
+
+export const legacyShipmentStatusPeriodOrder: LegacyShipmentStatus[] = [
   "under_process",
   "customs_hold",
   "completed",
 ];
 
 export const shipmentStatusDateFields: Record<
-  ShipmentStatus,
+  LegacyShipmentStatus,
   { from: keyof ShipmentJob; to: keyof ShipmentJob }
 > = {
   under_process: {
@@ -162,7 +204,10 @@ export const transportModeOptions: { value: TransportMode; label: string }[] = [
 ];
 
 export const statusLabels = Object.fromEntries(
-  statusOptions.map((option) => [option.value, option.label]),
+  [...standardFlowStatusOptions, ...legacyStatusOptions].map((option) => [
+    option.value,
+    option.label,
+  ]),
 ) as Record<ShipmentStatus, string>;
 
 export const tradeModeLabels = Object.fromEntries(
@@ -174,6 +219,24 @@ export const transportModeLabels = Object.fromEntries(
 ) as Record<TransportMode, string>;
 
 export const statusBadgeClasses: Record<ShipmentStatus, string> = {
+  pickup:
+    "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900",
+  warehouse_in:
+    "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-900",
+  customs_origin:
+    "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900",
+  terminal_in:
+    "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-900",
+  departure:
+    "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:border-violet-900",
+  arrival:
+    "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:border-cyan-900",
+  customs_destination:
+    "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900",
+  destination_warehouse_in:
+    "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-900",
+  delivery:
+    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900",
   under_process:
     "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-900",
   customs_hold:
@@ -183,6 +246,15 @@ export const statusBadgeClasses: Record<ShipmentStatus, string> = {
 };
 
 export const statusAccentClasses: Record<ShipmentStatus, string> = {
+  pickup: "bg-sky-500",
+  warehouse_in: "bg-blue-500",
+  customs_origin: "bg-amber-500",
+  terminal_in: "bg-indigo-500",
+  departure: "bg-violet-500",
+  arrival: "bg-cyan-500",
+  customs_destination: "bg-amber-500",
+  destination_warehouse_in: "bg-teal-500",
+  delivery: "bg-emerald-500",
   under_process: "bg-orange-500",
   customs_hold: "bg-amber-500",
   completed: "bg-emerald-500",
@@ -203,7 +275,7 @@ export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
 };
 
 export const defaultShipmentJobForm: ShipmentJobForm = {
-  status: "under_process",
+  status: "pickup",
   under_process_from_date: "",
   under_process_to_date: "",
   customs_hold_from_date: "",
@@ -408,10 +480,11 @@ export async function updateShipmentJob(
   form: ShipmentJobForm,
   requesterEmail: string,
 ) {
-  const { error } = await supabase
-    .from("shipment_jobs")
-    .update(formToPayload(form))
-    .eq("id", id);
+  const { error } = await supabase.rpc("update_accessible_shipment_job", {
+    requester_email: requesterEmail,
+    target_job_id: id,
+    job_payload: formToPayload(form),
+  });
 
   if (error) {
     throw error;
@@ -551,7 +624,7 @@ export interface ShipmentLatestStatusUpdate {
 
 export function getShipmentStatusPeriods(job: ShipmentJob) {
   const statusDates = Object.fromEntries(
-    shipmentStatusOrder.map((status) => {
+    legacyShipmentStatusPeriodOrder.map((status) => {
       const fields = shipmentStatusDateFields[status];
       return [
         status,
@@ -562,14 +635,14 @@ export function getShipmentStatusPeriods(job: ShipmentJob) {
       ];
     }),
   ) as Record<
-    ShipmentStatus,
+    LegacyShipmentStatus,
     { fromDate: string | null; toDate: string | null }
   >;
 
-  return shipmentStatusOrder
+  return legacyShipmentStatusPeriodOrder
     .map((status, index) => {
       const { fromDate, toDate: explicitToDate } = statusDates[status];
-      const nextFromDate = shipmentStatusOrder
+      const nextFromDate = legacyShipmentStatusPeriodOrder
         .slice(index + 1)
         .map((nextStatus) => statusDates[nextStatus].fromDate)
         .find(Boolean);
@@ -590,7 +663,7 @@ export function getShipmentStatusPeriods(job: ShipmentJob) {
       const parsedToDate = parseDate(effectiveToDate);
 
       return {
-        status,
+        status: status as ShipmentStatus,
         fromDate: effectiveFromDate,
         toDate:
           explicitToDate ??
@@ -611,11 +684,11 @@ export function getLatestShipmentStatusUpdate(
   const currentPeriod =
     periods.find((period) => period.status === job.status) ??
     buildFallbackCurrentStatusPeriod(job);
-  const currentIndex = shipmentStatusOrder.indexOf(currentPeriod.status);
+  const currentIndex = getShipmentStatusOrderIndex(currentPeriod.status);
   const previousPeriod =
     [...periods]
       .filter(
-        (period) => shipmentStatusOrder.indexOf(period.status) < currentIndex,
+        (period) => getShipmentStatusOrderIndex(period.status) < currentIndex,
       )
       .sort(compareStatusPeriodsNewestFirst)[0] ?? null;
   const updatedAt =
@@ -726,9 +799,19 @@ function compareStatusPeriodsNewestFirst(
 ) {
   return (
     getStatusPeriodTime(second) - getStatusPeriodTime(first) ||
-    shipmentStatusOrder.indexOf(second.status) -
-      shipmentStatusOrder.indexOf(first.status)
+    getShipmentStatusOrderIndex(second.status) -
+      getShipmentStatusOrderIndex(first.status)
   );
+}
+
+function getShipmentStatusOrderIndex(status: ShipmentStatus) {
+  const standardIndex = shipmentStatusOrder.indexOf(status);
+  if (standardIndex >= 0) return standardIndex;
+
+  const legacyIndex = legacyShipmentStatusPeriodOrder.indexOf(
+    status as LegacyShipmentStatus,
+  );
+  return legacyIndex >= 0 ? legacyIndex : shipmentStatusOrder.length;
 }
 
 function getStatusPeriodTime(period: ShipmentStatusPeriod) {

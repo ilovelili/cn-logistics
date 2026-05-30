@@ -595,7 +595,7 @@ export default function DocumentControl({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[120] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+          className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
             toast.type === "success"
               ? "bg-emerald-500 text-white"
               : "bg-rose-500 text-white"

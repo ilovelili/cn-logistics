@@ -428,7 +428,7 @@ export default function AdminOperatorManagement({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[100] flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold shadow-xl ${
+          className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold shadow-xl ${
             toast.type === "success"
               ? "bg-emerald-50 text-emerald-800"
               : "bg-rose-50 text-rose-800"
@@ -467,6 +467,7 @@ export default function AdminOperatorManagement({
           adminOperators={operators}
           superAdminEmail={superAdminEmail}
           detailsReadOnly
+          onNotify={showToast}
           onSaved={(updatedUsers) => {
             setSelectedShipperUser(updatedUsers[0] ?? selectedShipperUser);
             void loadOperators();

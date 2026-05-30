@@ -5,6 +5,8 @@ import {
   isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
+  shipmentStatusOrder,
+  statusBadgeClasses,
   statusLabels,
   tradeModeLabels,
   transportModeLabels,
@@ -725,17 +727,15 @@ function DocumentPills({
 
 function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
   const completedAt = getShipmentCompletedAt(job);
+  const isCompletedStatus =
+    job.status === "completed" || job.status === "delivery";
   const recentlyCompleted =
-    job.status === "completed" && isWithinRecentBusinessDays(completedAt, 3);
-  const staleCompleted = job.status === "completed" && !recentlyCompleted;
+    isCompletedStatus && isWithinRecentBusinessDays(completedAt, 3);
+  const staleCompleted = isCompletedStatus && !recentlyCompleted;
   const activeStepCount = getShipmentProgressStepCount(job);
   const statusClass = staleCompleted
     ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-    : job.status === "completed"
-      ? "border-emerald-200 bg-emerald-100 text-emerald-800"
-      : job.status === "customs_hold"
-        ? "border-amber-200 bg-amber-100 text-amber-800"
-        : "border-orange-200 bg-orange-100 text-orange-800";
+    : statusBadgeClasses[job.status];
 
   return (
     <div className="min-w-[150px] space-y-2">
@@ -766,7 +766,7 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
 }
 
 function getShipmentProgressStepCount(job: ShipmentJob) {
-  if (job.status === "completed") {
+  if (job.status === "completed" || job.status === "delivery") {
     return 9;
   }
 
@@ -783,11 +783,12 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
     return 7;
   }
 
-  return 1;
+  const statusIndex = shipmentStatusOrder.indexOf(job.status);
+  return statusIndex >= 0 ? statusIndex + 1 : 1;
 }
 
 function getShipmentCompletedAt(job: ShipmentJob) {
-  if (job.status !== "completed") {
+  if (job.status !== "completed" && job.status !== "delivery") {
     return null;
   }
 

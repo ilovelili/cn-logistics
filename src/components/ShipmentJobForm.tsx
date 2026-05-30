@@ -4,11 +4,11 @@ import { t } from "../lib/i18n";
 import {
   defaultShipmentJobForm,
   fetchShipmentTrackingEventTemplates,
+  legacyShipmentStatusPeriodOrder,
   ShipmentJob,
   ShipmentJobForm as ShipmentJobFormState,
   ShipmentTrackingEventTemplate,
   shipmentStatusDateFields,
-  shipmentStatusOrder,
   statusLabels,
   statusOptions,
   tradeModeOptions,
@@ -84,12 +84,23 @@ export default function ShipmentJobForm({
   };
 
   const updateStatus = (status: ShipmentJobFormState["status"]) => {
-    const fromField = shipmentStatusDateFields[status]
-      .from as keyof ShipmentJobFormState;
     setForm((current) => ({
       ...current,
       status,
-      [fromField]: current[fromField] || new Date().toISOString().slice(0, 10),
+      ...(status in shipmentStatusDateFields
+        ? (() => {
+            const fields =
+              shipmentStatusDateFields[
+                status as keyof typeof shipmentStatusDateFields
+              ];
+            const fromField = fields.from as keyof ShipmentJobFormState;
+
+            return {
+              [fromField]:
+                current[fromField] || new Date().toISOString().slice(0, 10),
+            };
+          })()
+        : {}),
     }));
   };
 
@@ -406,7 +417,7 @@ function StatusPeriodFields({
         </span>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        {shipmentStatusOrder.map((status) => {
+        {legacyShipmentStatusPeriodOrder.map((status) => {
           const fields = shipmentStatusDateFields[status];
           const fromField = fields.from as keyof ShipmentJobFormState;
           const toField = fields.to as keyof ShipmentJobFormState;
@@ -783,8 +794,8 @@ function SelectField({
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
+        {options.map((option, index) => (
+          <option key={`${option.value}-${index}`} value={option.value}>
             {option.label}
           </option>
         ))}
