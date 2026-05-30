@@ -429,7 +429,10 @@ export default function TrackingEntryForm() {
                         )?.label || event.event_type}
                       </div>
                       {event.description && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                        <div
+                          className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400"
+                          title={event.description}
+                        >
                           {event.description}
                         </div>
                       )}

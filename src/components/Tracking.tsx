@@ -188,7 +188,10 @@ export default function Tracking() {
                     <div className="flex items-start gap-3 min-w-0">
                       <Package className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
                       <div className="min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
+                        <div
+                          className="truncate font-medium text-gray-900"
+                          title={parcel.tracking_number}
+                        >
                           {parcel.tracking_number}
                         </div>
                         <div className="text-sm text-gray-600 mt-1">

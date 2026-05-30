@@ -41,6 +41,7 @@ export default function DocumentPreviewModal({
               className={`truncate text-xl font-black ${
                 adminTheme ? "text-gray-900 dark:text-white" : "text-slate-950"
               }`}
+              title={document.name}
             >
               {document.name}
             </h3>

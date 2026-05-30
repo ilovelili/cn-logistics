@@ -305,7 +305,9 @@ function HeaderField({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-      <div className="text-sm font-semibold text-white truncate">{value}</div>
+      <div className="truncate text-sm font-semibold text-white" title={value}>
+        {value}
+      </div>
     </div>
   );
 }

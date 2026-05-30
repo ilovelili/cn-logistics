@@ -19,10 +19,7 @@ import type { ShipperUser } from "../lib/shipperUsers";
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
-  shipperOptions?: Pick<
-    ShipperUser,
-    "shipper_name" | "admin_assignments"
-  >[];
+  shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
   submitLabel: string;
@@ -525,10 +522,7 @@ function AssignedAdminFields({
 
 function getShipperAdminAssignments(
   shipperName: string | null,
-  shipperOptions: Pick<
-    ShipperUser,
-    "shipper_name" | "admin_assignments"
-  >[],
+  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[],
 ) {
   const assignmentsByAdminId = new Map<
     string,
@@ -536,9 +530,7 @@ function getShipperAdminAssignments(
   >();
 
   shipperOptions
-    .filter(
-      (shipperUser) => shipperUser.shipper_name === shipperName,
-    )
+    .filter((shipperUser) => shipperUser.shipper_name === shipperName)
     .flatMap((shipperUser) => shipperUser.admin_assignments ?? [])
     .forEach((assignment) => {
       assignmentsByAdminId.set(assignment.admin_user_id, assignment);
@@ -549,16 +541,10 @@ function getShipperAdminAssignments(
 
 function getDefaultAssignedAdminIds(
   shipperName: string,
-  shipperOptions: Pick<
-    ShipperUser,
-    "shipper_name" | "admin_assignments"
-  >[],
+  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[],
   fixedAssignedAdminEmail?: string,
 ) {
-  const assignments = getShipperAdminAssignments(
-    shipperName,
-    shipperOptions,
-  );
+  const assignments = getShipperAdminAssignments(shipperName, shipperOptions);
 
   if (!fixedAssignedAdminEmail) {
     return assignments.map((assignment) => assignment.admin_user_id);

@@ -123,7 +123,10 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
                     }
                     className="h-4 w-4 rounded border-slate-300 text-slate-950"
                   />
-                  <span className="min-w-0 truncate font-semibold text-slate-700 dark:text-gray-200">
+                  <span
+                    className="min-w-0 truncate font-semibold text-slate-700 dark:text-gray-200"
+                    title={column.label}
+                  >
                     {column.label}
                   </span>
                 </label>

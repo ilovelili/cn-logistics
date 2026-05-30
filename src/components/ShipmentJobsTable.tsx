@@ -683,7 +683,9 @@ function DocumentPills({
         const content = (
           <>
             <FileText className="h-3 w-3 shrink-0" />
-            <span className="min-w-0 truncate">{document.name}</span>
+            <span className="min-w-0 truncate" title={document.name}>
+              {document.name}
+            </span>
           </>
         );
 
