@@ -461,45 +461,43 @@ function AdminShipmentJobModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-label={t("admin.entry.title")}
     >
       <div
-        className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-gray-900"
+        className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               {job.invoice_number || job.mbl_mawb || t("admin.entry.title")}
             </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
               {job.shipper_name || "-"} → {job.consignee_name || "-"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             aria-label={t("jobs.detail.close")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="max-h-[calc(90vh-92px)] overflow-y-auto p-6">
-          <ShipmentJobForm
-            key={job.id}
-            job={job}
-            shipperOptions={shipperOptions}
-            assignedAdminsReadOnly={assignedAdminsReadOnly}
-            submitLabel={t("common.update")}
-            loading={loading}
-            onSubmit={onSubmit}
-          />
-        </div>
+        <ShipmentJobForm
+          key={job.id}
+          job={job}
+          shipperOptions={shipperOptions}
+          assignedAdminsReadOnly={assignedAdminsReadOnly}
+          submitLabel={t("common.update")}
+          loading={loading}
+          onSubmit={onSubmit}
+        />
       </div>
     </div>
   );

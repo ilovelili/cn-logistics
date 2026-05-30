@@ -728,7 +728,7 @@ function DocumentPills({
 function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
   const completedAt = getShipmentCompletedAt(job);
   const isCompletedStatus =
-    job.status === "completed" || job.status === "delivery";
+    job.status === "completed" || job.status === "delivered";
   const recentlyCompleted =
     isCompletedStatus && isWithinRecentBusinessDays(completedAt, 3);
   const staleCompleted = isCompletedStatus && !recentlyCompleted;
@@ -745,11 +745,11 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
         {statusLabels[job.status]}
       </span>
       <div
-        className="grid grid-cols-9 gap-0.5"
+        className="grid grid-cols-10 gap-0.5"
         aria-label={t("common.status")}
-        title={`${activeStepCount}/9`}
+        title={`${activeStepCount}/10`}
       >
-        {Array.from({ length: 9 }, (_, stepIndex) => (
+        {Array.from({ length: 10 }, (_, stepIndex) => (
           <span
             key={stepIndex}
             className={`h-1.5 rounded-full ${getProgressSegmentClass(
@@ -766,8 +766,8 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
 }
 
 function getShipmentProgressStepCount(job: ShipmentJob) {
-  if (job.status === "completed" || job.status === "delivery") {
-    return 9;
+  if (job.status === "completed" || job.status === "delivered") {
+    return 10;
   }
 
   const latestSortOrder = Math.max(
@@ -776,7 +776,7 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
   );
 
   if (latestSortOrder > 0) {
-    return Math.max(1, Math.min(9, Math.ceil(latestSortOrder / 10)));
+    return Math.max(1, Math.min(10, Math.ceil(latestSortOrder / 10)));
   }
 
   if (job.status === "customs_hold") {
@@ -788,14 +788,14 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
 }
 
 function getShipmentCompletedAt(job: ShipmentJob) {
-  if (job.status !== "completed" && job.status !== "delivery") {
+  if (job.status !== "completed" && job.status !== "delivered") {
     return null;
   }
 
   const completionEvent = [...(job.tracking_events ?? [])]
     .filter(
       (event) =>
-        (event.sort_order ?? 0) >= 90 || event.description.includes("完了"),
+        (event.sort_order ?? 0) >= 100 || event.description.includes("完了"),
     )
     .sort(compareTrackingEventsNewestFirst)[0];
 
@@ -839,7 +839,7 @@ function getProgressSegmentClass(
     return "bg-gray-200 dark:bg-gray-700";
   }
 
-  if (status === "completed") {
+  if (status === "completed" || status === "delivered") {
     return "bg-emerald-500";
   }
 

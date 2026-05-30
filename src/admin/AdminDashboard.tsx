@@ -27,7 +27,7 @@ export default function AdminDashboard({
   const customsHold = jobs.filter(
     (job) => job.status === "customs_hold",
   ).length;
-  const completed = jobs.filter((job) => job.status === "completed").length;
+  const completed = jobs.filter((job) => job.status === "delivered").length;
   const pendingApproval = documents.filter(
     (document) =>
       document.scope === "customer" && document.approval_status === "pending",
@@ -55,7 +55,7 @@ export default function AdminDashboard({
         } satisfies ShipmentEntryCriteria),
     },
     {
-      label: t("status.completed"),
+      label: t("status.delivered"),
       value: completed,
       icon: CheckCircle2,
       color: "text-emerald-600 dark:text-emerald-400",
@@ -63,7 +63,7 @@ export default function AdminDashboard({
       onClick: () =>
         onOpenShipmentEntry({
           kind: "status",
-          status: "completed",
+          status: "delivered",
         } satisfies ShipmentEntryCriteria),
     },
     {

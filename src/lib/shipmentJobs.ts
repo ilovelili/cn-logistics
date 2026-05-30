@@ -14,7 +14,8 @@ export type StandardFlowShipmentStatus =
   | "arrival"
   | "customs_destination"
   | "destination_warehouse_in"
-  | "delivery";
+  | "delivery"
+  | "delivered";
 export type ShipmentStatus = LegacyShipmentStatus | StandardFlowShipmentStatus;
 export type TradeMode = "export" | "import" | "triangle";
 export type TransportMode = "air" | "lcl" | "fcl";
@@ -149,6 +150,7 @@ export const standardFlowStatusOptions: {
     label: t("status.destinationWarehouseIn"),
   },
   { value: "delivery", label: t("status.delivery") },
+  { value: "delivered", label: t("status.delivered") },
 ];
 
 export const legacyStatusOptions: {
@@ -237,6 +239,8 @@ export const statusBadgeClasses: Record<ShipmentStatus, string> = {
     "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-900",
   delivery:
     "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900",
+  delivered:
+    "bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-200 dark:border-green-900",
   under_process:
     "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-900",
   customs_hold:
@@ -255,6 +259,7 @@ export const statusAccentClasses: Record<ShipmentStatus, string> = {
   customs_destination: "bg-amber-500",
   destination_warehouse_in: "bg-teal-500",
   delivery: "bg-emerald-500",
+  delivered: "bg-green-500",
   under_process: "bg-orange-500",
   customs_hold: "bg-amber-500",
   completed: "bg-emerald-500",
@@ -708,7 +713,9 @@ export function getShipmentTotalWorkingDays(job: ShipmentJob) {
     periods.find((period) => period.fromDate)?.fromDate ?? job.created_at;
   const finalToDate =
     job.completed_to_date ??
-    (job.status === "completed" ? job.updated_at : new Date().toISOString());
+    (job.status === "completed" || job.status === "delivered"
+      ? job.updated_at
+      : new Date().toISOString());
   const startDate = parseDate(firstFromDate);
   const endDate = parseDate(finalToDate);
 
@@ -763,7 +770,7 @@ function buildFallbackCurrentStatusPeriod(
 ): ShipmentStatusPeriod {
   const fromDate = job.created_at;
   const toDate =
-    job.status === "completed"
+    job.status === "completed" || job.status === "delivered"
       ? (job.completed_to_date ?? job.updated_at)
       : null;
   const effectiveToDate = toDate ?? new Date().toISOString();
@@ -786,7 +793,11 @@ function getFallbackStatusToDate(
   status: ShipmentStatus,
   fromDate: string | null,
 ) {
-  if (!fromDate || status !== "completed" || job.status !== "completed") {
+  if (
+    !fromDate ||
+    status !== "completed" ||
+    (job.status !== "completed" && job.status !== "delivered")
+  ) {
     return null;
   }
 
@@ -903,25 +914,31 @@ async function replaceShipmentDocuments(
     ),
   ];
 
-  const { error: deleteError } = await supabase
-    .from("shipment_documents")
-    .delete()
-    .eq("shipment_job_id", jobId);
+  if (requesterEmail) {
+    const { error } = await supabase.rpc(
+      "replace_accessible_shipment_documents",
+      {
+        requester_email: requesterEmail,
+        target_job_id: jobId,
+        documents_payload: nextDocuments,
+      },
+    );
 
-  if (deleteError) {
-    throw deleteError;
-  }
+    if (error) {
+      throw error;
+    }
 
-  if (!nextDocuments.length) {
     return;
   }
 
-  const { error: insertError } = await supabase
+  const { error: upsertError } = await supabase
     .from("shipment_documents")
-    .insert(nextDocuments);
+    .upsert(nextDocuments, {
+      onConflict: "shipment_job_id,scope,name",
+    });
 
-  if (insertError) {
-    throw insertError;
+  if (upsertError) {
+    throw upsertError;
   }
 }
 
@@ -966,6 +983,8 @@ function buildDocumentPayload(
     rejection_reason: existing?.rejection_reason ?? null,
     approved_at: existing?.approved_at ?? null,
     approved_by: existing?.approved_by ?? null,
+    deleted_at: null,
+    deleted_by: null,
   };
 }
 

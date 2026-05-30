@@ -63,7 +63,7 @@ export default function ShipmentDashboard({
   const customsHold = jobs.filter(
     (job) => job.status === "customs_hold",
   ).length;
-  const completed = jobs.filter((job) => job.status === "completed").length;
+  const completed = jobs.filter((job) => job.status === "delivered").length;
   const approvedDownloads = documents.filter(
     (document) =>
       document.scope === "customer" && document.approval_status === "approved",
@@ -139,11 +139,11 @@ export default function ShipmentDashboard({
           onClick={() => onOpenJobs("customs_hold")}
         />
         <MetricCard
-          label={t("status.completed")}
+          label={t("status.delivered")}
           value={completed}
           icon={<CheckCircle2 />}
           tone="emerald"
-          onClick={() => onOpenJobs("completed")}
+          onClick={() => onOpenJobs("delivered")}
         />
         <MetricCard
           label={t("documents.approvedDownloads")}
