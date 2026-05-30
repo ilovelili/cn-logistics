@@ -75,6 +75,7 @@ type DocumentSortKey =
   | "status"
   | "downloadRequestDate"
   | "invoice"
+  | "jobNumber"
   | "parties"
   | "blAwb"
   | "route";
@@ -216,6 +217,7 @@ export default function DocumentControl({
         row.document.name,
         row.responsibleAdminNames.join(" "),
         row.job.invoice_number,
+        row.job.job_number,
         row.job.shipper_name,
         row.job.consignee_name,
         row.job.mbl_mawb,
@@ -459,6 +461,15 @@ export default function DocumentControl({
           <span className="font-mono">{row.job.invoice_number || "-"}</span>
         ),
       },
+      {
+        id: "jobNumber",
+        label: t("common.jobNumber"),
+        width: 130,
+        sortKey: "jobNumber",
+        render: (row) => (
+          <span className="font-mono">{row.job.job_number || "-"}</span>
+        ),
+      },
       ...(!isAdminAuthenticated
         ? [
             {
@@ -573,8 +584,8 @@ export default function DocumentControl({
     resetColumns,
   } = useTableColumnSettings(
     isAdminAuthenticated
-      ? "document_control_table_columns_admin_v2"
-      : "document_control_table_columns_customer_v2",
+      ? "document_control_table_columns_admin_v3"
+      : "document_control_table_columns_customer_v3",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -1131,6 +1142,8 @@ function getDocumentSortValue(row: DocumentRow, sortKey: DocumentSortKey) {
         : "";
     case "invoice":
       return row.job.invoice_number ?? "";
+    case "jobNumber":
+      return row.job.job_number ?? "";
     case "parties":
       return `${row.job.shipper_name ?? ""} ${row.job.consignee_name ?? ""}`;
     case "blAwb":

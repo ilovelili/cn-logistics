@@ -38,6 +38,7 @@ export interface ShipmentJob {
   trade_mode: TradeMode;
   trade_term: string | null;
   invoice_number: string | null;
+  job_number: string | null;
   transport_mode: TransportMode | null;
   shipper_name: string | null;
   consignee_name: string | null;
@@ -121,6 +122,7 @@ export interface ShipmentJobForm {
   trade_mode: TradeMode;
   trade_term: string;
   invoice_number: string;
+  job_number: string;
   transport_mode: TransportMode;
   shipper_name: string;
   consignee_name: string;
@@ -301,6 +303,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   trade_mode: "export",
   trade_term: "CIF",
   invoice_number: "",
+  job_number: "",
   transport_mode: "air",
   shipper_name: "",
   consignee_name: "",
@@ -342,6 +345,7 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     trade_mode: job.trade_mode,
     trade_term: job.trade_term ?? "",
     invoice_number: job.invoice_number ?? "",
+    job_number: job.job_number ?? "",
     transport_mode: job.transport_mode ?? "air",
     shipper_name: job.shipper_name ?? "",
     consignee_name: job.consignee_name ?? "",
@@ -381,6 +385,7 @@ export function formToPayload(form: ShipmentJobForm) {
     trade_mode: form.trade_mode,
     trade_term: form.trade_term || null,
     invoice_number: form.invoice_number || null,
+    job_number: form.job_number || null,
     transport_mode: form.transport_mode || null,
     shipper_name: form.shipper_name || null,
     consignee_name: form.consignee_name || null,

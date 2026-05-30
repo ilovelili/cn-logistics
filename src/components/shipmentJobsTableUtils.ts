@@ -26,6 +26,7 @@ export function buildShipmentJobSearchText(
     job.shipper_name,
     ...responsibleAdminTerms,
     job.invoice_number,
+    job.job_number,
     job.consignee_name,
     job.pol_aol,
     job.pod_aod,
@@ -66,6 +67,7 @@ export function getShipmentJobSortValue(
     case "transport_mode":
       return job.transport_mode ? transportModeLabels[job.transport_mode] : "";
     case "invoice_number":
+    case "job_number":
     case "consignee_name":
     case "pol_aol":
     case "pod_aod":
@@ -100,6 +102,7 @@ export function compareShipmentJobSortValues(
 
   if (
     sortKey === "invoice_number" ||
+    sortKey === "job_number" ||
     sortKey === "vessel_flight_numbers" ||
     sortKey === "mbl_mawb" ||
     sortKey === "hbl_hawb" ||

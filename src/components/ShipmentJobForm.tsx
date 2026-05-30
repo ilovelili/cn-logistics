@@ -319,12 +319,18 @@ export default function ShipmentJobForm({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <TextField
           label={t("form.invoice")}
           value={form.invoice_number}
           onChange={(value) => updateField("invoice_number", value)}
           placeholder="ABC-123"
+        />
+        <TextField
+          label={t("common.jobNumber")}
+          value={form.job_number}
+          onChange={(value) => updateField("job_number", value)}
+          placeholder="JOB-0001"
         />
         <TextField
           label="MBL/MAWB"

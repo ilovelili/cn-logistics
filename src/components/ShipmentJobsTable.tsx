@@ -40,6 +40,7 @@ export type ShipmentJobsTableSortKey =
   | "working_days"
   | "trade"
   | "invoice_number"
+  | "job_number"
   | "transport_mode"
   | "consignee_name"
   | "pol_aol"
@@ -63,7 +64,7 @@ interface ShipmentJobsTableColumn {
   render: (job: ShipmentJob) => ReactNode;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v5";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v6";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -444,6 +445,17 @@ function buildColumns(
       render: (job) => (
         <span className={`whitespace-nowrap font-mono ${strongText}`}>
           {job.invoice_number || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "job_number",
+      label: t("common.jobNumber"),
+      width: 120,
+      sortKey: "job_number",
+      render: (job) => (
+        <span className={`whitespace-nowrap font-mono ${strongText}`}>
+          {job.job_number || "-"}
         </span>
       ),
     },

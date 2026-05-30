@@ -82,6 +82,7 @@ export default function BatchDocumentDownload({
       [
         document.name,
         job.invoice_number,
+        job.job_number,
         job.shipper_name,
         job.consignee_name,
         job.mbl_mawb,
@@ -284,6 +285,7 @@ export default function BatchDocumentDownload({
             <colgroup>
               <col className="w-[56px]" />
               <col className="w-[140px]" />
+              <col className="w-[140px]" />
               <col className="w-[220px]" />
               <col className="w-[190px]" />
               <col className="w-[190px]" />
@@ -297,6 +299,7 @@ export default function BatchDocumentDownload({
               <tr>
                 <th className="px-4 py-3"></th>
                 <th className="px-4 py-3">{t("common.invoice")}</th>
+                <th className="px-4 py-3">{t("common.jobNumber")}</th>
                 <th className="px-4 py-3">{t("common.documents")}</th>
                 <th className="px-4 py-3">{t("common.shipper")}</th>
                 <th className="px-4 py-3">{t("common.consignee")}</th>
@@ -355,6 +358,9 @@ export default function BatchDocumentDownload({
                       </td>
                       <td className="px-4 py-4 font-mono font-bold text-gray-900 dark:text-white">
                         {job.invoice_number || "-"}
+                      </td>
+                      <td className="px-4 py-4 font-mono font-bold text-gray-900 dark:text-white">
+                        {job.job_number || "-"}
                       </td>
                       <td className="px-4 py-4">
                         <DocumentNameCell

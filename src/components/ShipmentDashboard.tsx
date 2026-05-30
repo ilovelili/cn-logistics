@@ -260,7 +260,7 @@ export default function ShipmentDashboard({
               : "overflow-x-auto"
           }
         >
-          <table className="w-full min-w-[1100px] text-left text-sm">
+          <table className="w-full min-w-[1220px] text-left text-sm">
             <thead
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
             >
@@ -268,6 +268,7 @@ export default function ShipmentDashboard({
                 <th className="py-3 pr-4">{t("dashboard.previousStatus")}</th>
                 <th className="py-3 pr-4">{t("dashboard.currentStatus")}</th>
                 <th className="py-3 pr-4">{t("common.invoice")}</th>
+                <th className="py-3 pr-4">{t("common.jobNumber")}</th>
                 <th className="py-3 pr-4">{t("common.route")}</th>
                 <th className="py-3 pr-4">{t("common.parties")}</th>
                 <th className="py-3 pr-4">{t("dashboard.statusDays")}</th>
@@ -297,6 +298,9 @@ export default function ShipmentDashboard({
                   </td>
                   <td className="py-4 pr-4 font-semibold text-gray-900 dark:text-white">
                     {job.invoice_number || "-"}
+                  </td>
+                  <td className="py-4 pr-4 font-mono font-semibold text-gray-900 dark:text-white">
+                    {job.job_number || "-"}
                   </td>
                   <td className="py-4 pr-4">
                     {job.pol_aol || "-"} → {job.pod_aod || "-"}

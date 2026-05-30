@@ -27,6 +27,7 @@ interface FeedbackReviewPanelProps {
 
 type FeedbackColumnId =
   | "invoice"
+  | "jobNumber"
   | "operator"
   | "submitter"
   | "total_rating"
@@ -62,6 +63,10 @@ export default function FeedbackReviewPanel({
   const [selectedShipmentJobId, setSelectedShipmentJobId] = useState<
     string | null
   >(null);
+  const jobsById = useMemo(
+    () => new Map(jobs.map((job) => [job.id, job])),
+    [jobs],
+  );
 
   const loadFeedback = useCallback(async () => {
     setLoading(true);
@@ -84,6 +89,7 @@ export default function FeedbackReviewPanel({
       [
         item.shipment_job_id,
         item.shipment_invoice_number,
+        jobsById.get(item.shipment_job_id)?.job_number,
         item.submitter_email,
         item.admin_operator_email,
         item.reason,
@@ -93,17 +99,17 @@ export default function FeedbackReviewPanel({
         .toLowerCase()
         .includes(normalizedQuery),
     );
-  }, [feedback, query]);
+  }, [feedback, jobsById, query]);
 
   const sortedFeedback = useMemo(() => {
     return [...filteredFeedback].sort((first, second) =>
       compareFeedbackValues(
-        getFeedbackSortValue(first, sortKey),
-        getFeedbackSortValue(second, sortKey),
+        getFeedbackSortValue(first, sortKey, jobsById),
+        getFeedbackSortValue(second, sortKey, jobsById),
         sortDirection,
       ),
     );
-  }, [filteredFeedback, sortDirection, sortKey]);
+  }, [filteredFeedback, jobsById, sortDirection, sortKey]);
   const {
     currentPage,
     pageCount,
@@ -125,6 +131,16 @@ export default function FeedbackReviewPanel({
           <span className="font-bold text-gray-900 dark:text-white">
             {item.shipment_invoice_number ||
               item.shipment_job_id.slice(0, 8).toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        id: "jobNumber",
+        label: t("common.jobNumber"),
+        width: 140,
+        render: (item) => (
+          <span className="font-mono font-bold text-gray-900 dark:text-white">
+            {jobsById.get(item.shipment_job_id)?.job_number || "-"}
           </span>
         ),
       },
@@ -213,7 +229,7 @@ export default function FeedbackReviewPanel({
         ),
       },
     ],
-    [],
+    [jobsById],
   );
   const {
     orderedColumns,
@@ -223,7 +239,7 @@ export default function FeedbackReviewPanel({
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "super_admin_feedback_table_columns",
+    "super_admin_feedback_table_columns_v2",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
@@ -416,10 +432,13 @@ export default function FeedbackReviewPanel({
 function getFeedbackSortValue(
   item: ShipmentFeedbackReview,
   sortKey: FeedbackColumnId,
+  jobsById?: Map<string, ShipmentJob>,
 ) {
   switch (sortKey) {
     case "invoice":
       return item.shipment_invoice_number ?? item.shipment_job_id;
+    case "jobNumber":
+      return jobsById?.get(item.shipment_job_id)?.job_number ?? "";
     case "operator":
       return item.admin_operator_email ?? "";
     case "submitter":
