@@ -627,6 +627,46 @@ export interface ShipmentLatestStatusUpdate {
   totalDays: number | null;
 }
 
+export function getStandardFlowStatusPeriods(job: ShipmentJob) {
+  const currentStatus = getStandardFlowStatusForJob(job);
+  const currentIndex = standardFlowStatusOptions.findIndex(
+    (option) => option.value === currentStatus,
+  );
+
+  if (currentIndex < 0) {
+    return [];
+  }
+
+  const eventsByStatus = getTrackingEventsByStandardStatus(job);
+
+  return standardFlowStatusOptions
+    .slice(0, currentIndex + 1)
+    .map((option, index): ShipmentStatusPeriod => {
+      const currentEvent = eventsByStatus[option.value];
+      const nextStatus = standardFlowStatusOptions[index + 1]?.value;
+      const nextEvent = nextStatus ? eventsByStatus[nextStatus] : null;
+      const fromDate =
+        normalizeDateValue(currentEvent?.event_date) ??
+        (index === 0 ? normalizeDateValue(job.created_at) : null);
+      const toDate = nextEvent ? normalizeDateValue(nextEvent.event_date) : null;
+      const effectiveToDate =
+        toDate ??
+        (option.value === currentStatus ? new Date().toISOString() : null);
+      const parsedFromDate = parseDate(fromDate);
+      const parsedToDate = parseDate(effectiveToDate);
+
+      return {
+        status: option.value,
+        fromDate,
+        toDate,
+        durationDays:
+          parsedFromDate && parsedToDate
+            ? countWorkingDays(parsedFromDate, parsedToDate)
+            : null,
+      };
+    });
+}
+
 export function getShipmentStatusPeriods(job: ShipmentJob) {
   const statusDates = Object.fromEntries(
     legacyShipmentStatusPeriodOrder.map((status) => {
@@ -763,6 +803,55 @@ export async function downloadShipmentDocument(
 function getDownloadFileName(document: ShipmentDocument) {
   const hasExtension = /\.[a-z0-9]+$/i.test(document.name);
   return hasExtension ? document.name : `${document.name}.pdf`;
+}
+
+function getStandardFlowStatusForJob(
+  job: ShipmentJob,
+): StandardFlowShipmentStatus {
+  if (standardFlowStatusOptions.some((option) => option.value === job.status)) {
+    return job.status as StandardFlowShipmentStatus;
+  }
+
+  if (job.status === "completed") {
+    return "delivered";
+  }
+
+  if (job.status === "customs_hold") {
+    return "customs_destination";
+  }
+
+  return "pickup";
+}
+
+function getTrackingEventsByStandardStatus(job: ShipmentJob) {
+  const sortedEvents = [...(job.tracking_events ?? [])].sort(
+    compareTrackingEventsByFlowOrder,
+  );
+
+  return Object.fromEntries(
+    standardFlowStatusOptions.map((option, index) => {
+      const event = sortedEvents[index];
+      return [option.value, event ?? null];
+    }),
+  ) as Record<StandardFlowShipmentStatus, ShipmentTrackingEvent | null>;
+}
+
+function compareTrackingEventsByFlowOrder(
+  first: ShipmentTrackingEvent,
+  second: ShipmentTrackingEvent,
+) {
+  return (
+    (first.sort_order ?? 0) - (second.sort_order ?? 0) ||
+    getTrackingEventTime(first) - getTrackingEventTime(second)
+  );
+}
+
+function getTrackingEventTime(event: ShipmentTrackingEvent) {
+  return Math.max(
+    parseDate(event.event_date)?.getTime() ?? 0,
+    parseDate(event.updated_at)?.getTime() ?? 0,
+    parseDate(event.created_at)?.getTime() ?? 0,
+  );
 }
 
 function buildFallbackCurrentStatusPeriod(

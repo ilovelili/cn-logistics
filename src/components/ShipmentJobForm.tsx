@@ -4,11 +4,11 @@ import { t } from "../lib/i18n";
 import {
   defaultShipmentJobForm,
   fetchShipmentTrackingEventTemplates,
-  legacyShipmentStatusPeriodOrder,
   ShipmentJob,
   ShipmentJobForm as ShipmentJobFormState,
   ShipmentTrackingEventTemplate,
   shipmentStatusDateFields,
+  standardFlowStatusOptions,
   statusLabels,
   statusOptions,
   tradeModeOptions,
@@ -84,29 +84,54 @@ export default function ShipmentJobForm({
   };
 
   const updateStatus = (status: ShipmentJobFormState["status"]) => {
-    setForm((current) => ({
-      ...current,
-      status,
-      ...(status in shipmentStatusDateFields
-        ? (() => {
-            const fields =
-              shipmentStatusDateFields[
-                status as keyof typeof shipmentStatusDateFields
-              ];
-            const fromField = fields.from as keyof ShipmentJobFormState;
+    setForm((current) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const previousStandardStatus = getCurrentStandardStatus(current.status);
+      const nextStandardStatus = getCurrentStandardStatus(status);
+      const statusChanged = previousStandardStatus !== nextStandardStatus;
+      const nextStatusIndex = standardFlowStatusOptions.findIndex(
+        (option) => option.value === nextStandardStatus,
+      );
+      const trackingEvents =
+        statusChanged && nextStatusIndex >= 0
+          ? ensureTrackingEventAtIndex(current.tracking_events, nextStatusIndex)
+          : current.tracking_events;
 
-            return {
-              [fromField]:
-                current[fromField] || new Date().toISOString().slice(0, 10),
-            };
-          })()
-        : {}),
-    }));
+      return {
+        ...current,
+        status,
+        tracking_events:
+          statusChanged && nextStatusIndex >= 0
+            ? trackingEvents.map((event, index) =>
+                index === nextStatusIndex
+                  ? { ...event, event_date: today }
+                  : event,
+              )
+            : trackingEvents,
+        ...(status in shipmentStatusDateFields
+          ? (() => {
+              const fields =
+                shipmentStatusDateFields[
+                  status as keyof typeof shipmentStatusDateFields
+                ];
+              const fromField = fields.from as keyof ShipmentJobFormState;
+
+              return {
+                [fromField]: current[fromField] || today,
+              };
+            })()
+          : {}),
+      };
+    });
   };
 
   const availableAdminAssignments = getShipperAdminAssignments(
     form.shipper_name,
     shipperOptions,
+  );
+  const shipperSelectOptions = buildShipperSelectOptions(
+    shipperOptions,
+    form.shipper_name,
   );
 
   const toggleAssignedAdmin = (adminUserId: string) => {
@@ -162,6 +187,40 @@ export default function ShipmentJobForm({
     }));
   };
 
+  const updateStatusPeriodDate = (
+    statusIndex: number,
+    boundary: "from" | "to",
+    value: string,
+  ) => {
+    setForm((current) => {
+      const currentStandardStatus = getCurrentStandardStatus(current.status);
+      const currentStatusIndex = standardFlowStatusOptions.findIndex(
+        (option) => option.value === currentStandardStatus,
+      );
+
+      if (
+        boundary === "to" &&
+        statusIndex === currentStatusIndex &&
+        currentStandardStatus === "delivered"
+      ) {
+        return { ...current, completed_to_date: value };
+      }
+
+      const eventIndex = boundary === "from" ? statusIndex : statusIndex + 1;
+      const trackingEvents = ensureTrackingEventAtIndex(
+        current.tracking_events,
+        eventIndex,
+      );
+
+      return {
+        ...current,
+        tracking_events: trackingEvents.map((event, index) =>
+          index === eventIndex ? { ...event, event_date: value } : event,
+        ),
+      };
+    });
+  };
+
   const addTrackingEvent = () => {
     setForm((current) => ({
       ...current,
@@ -212,13 +271,7 @@ export default function ShipmentJobForm({
             value={form.shipper_name}
             disabled={Boolean(job)}
             onChange={updateShipper}
-            options={[
-              { value: "", label: t("form.selectShipper") },
-              ...shipperOptions.map((shipperUser) => ({
-                value: shipperUser.shipper_name,
-                label: shipperUser.shipper_name,
-              })),
-            ]}
+            options={shipperSelectOptions}
           />
         ) : (
           <TextField
@@ -324,7 +377,7 @@ export default function ShipmentJobForm({
         onChange={updateVesselFlightNumber}
       />
 
-      <StatusPeriodFields form={form} onChange={updateField} />
+      <StatusPeriodFields form={form} onDateChange={updateStatusPeriodDate} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUploadField
@@ -401,14 +454,24 @@ function useShipmentForm(job?: ShipmentJob | null) {
 
 function StatusPeriodFields({
   form,
-  onChange,
+  onDateChange,
 }: {
   form: ShipmentJobFormState;
-  onChange: <Key extends keyof ShipmentJobFormState>(
-    key: Key,
-    value: ShipmentJobFormState[Key],
+  onDateChange: (
+    statusIndex: number,
+    boundary: "from" | "to",
+    value: string,
   ) => void;
 }) {
+  const currentStandardStatus = getCurrentStandardStatus(form.status);
+  const currentIndex = standardFlowStatusOptions.findIndex(
+    (option) => option.value === currentStandardStatus,
+  );
+  const visibleStatuses =
+    currentIndex >= 0
+      ? standardFlowStatusOptions.slice(0, currentIndex + 1)
+      : standardFlowStatusOptions.slice(0, 1);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <div className="mb-3">
@@ -416,32 +479,43 @@ function StatusPeriodFields({
           {t("form.statusPeriods")}
         </span>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {legacyShipmentStatusPeriodOrder.map((status) => {
-          const fields = shipmentStatusDateFields[status];
-          const fromField = fields.from as keyof ShipmentJobFormState;
-          const toField = fields.to as keyof ShipmentJobFormState;
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {visibleStatuses.map((option, index) => {
+          const currentEvent = form.tracking_events[index];
+          const nextEvent = form.tracking_events[index + 1];
+          const isCurrent = index === visibleStatuses.length - 1;
+          const toDate =
+            isCurrent && option.value === "delivered"
+              ? form.completed_to_date
+              : nextEvent?.event_date;
 
           return (
             <div
-              key={status}
+              key={option.value}
               className="rounded-xl border border-slate-200 bg-white p-3"
             >
-              <div className="mb-3 text-sm font-bold text-slate-900">
-                {statusLabels[status]}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="text-sm font-bold text-slate-900">
+                  {statusLabels[option.value]}
+                </div>
+                {isCurrent && (
+                  <span className="rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-bold text-cyan-700">
+                    {t("dashboard.currentStatusShort")}
+                  </span>
+                )}
               </div>
               <div className="grid gap-3">
                 <TextField
                   label={t("common.fromDate")}
                   type="date"
-                  value={String(form[fromField] ?? "")}
-                  onChange={(value) => onChange(fromField, value)}
+                  value={currentEvent?.event_date ?? ""}
+                  onChange={(value) => onDateChange(index, "from", value)}
                 />
                 <TextField
                   label={t("common.toDate")}
                   type="date"
-                  value={String(form[toField] ?? "")}
-                  onChange={(value) => onChange(toField, value)}
+                  value={toDate ?? ""}
+                  onChange={(value) => onDateChange(index, "to", value)}
                 />
               </div>
             </div>
@@ -450,6 +524,40 @@ function StatusPeriodFields({
       </div>
     </div>
   );
+}
+
+function getCurrentStandardStatus(status: ShipmentJobFormState["status"]) {
+  if (standardFlowStatusOptions.some((option) => option.value === status)) {
+    return status;
+  }
+
+  if (status === "completed") {
+    return "delivered";
+  }
+
+  if (status === "customs_hold") {
+    return "customs_destination";
+  }
+
+  return "pickup";
+}
+
+function ensureTrackingEventAtIndex(
+  events: ShipmentJobFormState["tracking_events"],
+  targetIndex: number,
+) {
+  const nextEvents = [...events];
+
+  while (nextEvents.length <= targetIndex) {
+    const status = standardFlowStatusOptions[nextEvents.length]?.value;
+    nextEvents.push({
+      event_date: "",
+      location: "",
+      description: status ? statusLabels[status] : t("tracking.description"),
+    });
+  }
+
+  return nextEvents;
 }
 
 function AssignedAdminFields({
@@ -548,6 +656,27 @@ function getShipperAdminAssignments(
     });
 
   return [...assignmentsByAdminId.values()];
+}
+
+function buildShipperSelectOptions(
+  shipperOptions: Pick<ShipperUser, "shipper_name">[],
+  currentShipperName: string,
+) {
+  const optionNames = [
+    currentShipperName,
+    ...shipperOptions.map((shipperUser) => shipperUser.shipper_name),
+  ]
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const uniqueOptionNames = Array.from(new Set(optionNames));
+
+  return [
+    { value: "", label: t("form.selectShipper") },
+    ...uniqueOptionNames.map((name) => ({
+      value: name,
+      label: name,
+    })),
+  ];
 }
 
 function getDefaultAssignedAdminIds(

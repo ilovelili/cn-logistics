@@ -776,7 +776,9 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
   );
 
   if (latestSortOrder > 0) {
-    return Math.max(1, Math.min(10, Math.ceil(latestSortOrder / 10)));
+    const stepCount =
+      latestSortOrder >= 10 ? Math.ceil(latestSortOrder / 10) : latestSortOrder + 1;
+    return Math.max(1, Math.min(10, stepCount));
   }
 
   if (job.status === "customs_hold") {
