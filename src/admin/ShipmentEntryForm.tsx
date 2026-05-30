@@ -27,9 +27,11 @@ import type { ShipperUser } from "../lib/shipperUsers";
 import {
   createShipmentJob,
   DocumentApprovalStatus,
+  fetchShipmentTrackingEventTemplates,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
+  ShipmentStatusColorMap,
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
@@ -84,6 +86,9 @@ export default function ShipmentEntryForm({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [statusColorMap, setStatusColorMap] = useState<ShipmentStatusColorMap>(
+    {},
+  );
   const shipperNames = useMemo(
     () => [
       ...new Set(
@@ -94,6 +99,32 @@ export default function ShipmentEntryForm({
     ],
     [shipperOptions],
   );
+
+  useEffect(() => {
+    let active = true;
+
+    fetchShipmentTrackingEventTemplates()
+      .then((templates) => {
+        if (!active) return;
+
+        setStatusColorMap(
+          Object.fromEntries(
+            templates
+              .filter((template) => template.color_hex)
+              .map((template) => [template.name, template.color_hex]),
+          ) as ShipmentStatusColorMap,
+        );
+      })
+      .catch(() => {
+        if (active) {
+          setStatusColorMap({});
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredJobs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -390,6 +421,7 @@ export default function ShipmentEntryForm({
             sortedJobs={sortedJobs}
             paginatedJobs={paginatedJobs}
             documentsByJob={documentsByJob}
+            statusColorMap={statusColorMap}
             loading={false}
             selectedJobId={selectedJob?.id}
             sortKey={sortKey}

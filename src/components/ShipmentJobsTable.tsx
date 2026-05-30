@@ -5,6 +5,7 @@ import {
   isCustomerDocumentDownloadable,
   ShipmentDocument,
   ShipmentJob,
+  ShipmentStatusColorMap,
   shipmentStatusOrder,
   statusBadgeClasses,
   statusLabels,
@@ -69,6 +70,7 @@ interface ShipmentJobsTableProps {
   sortedJobs: ShipmentJob[];
   paginatedJobs: ShipmentJob[];
   documentsByJob: Record<string, ShipmentDocument[]>;
+  statusColorMap?: ShipmentStatusColorMap;
   loading: boolean;
   showInternalDocuments?: boolean;
   selectedJobId?: string | null;
@@ -97,6 +99,7 @@ export default function ShipmentJobsTable({
   sortedJobs,
   paginatedJobs,
   documentsByJob,
+  statusColorMap = {},
   loading,
   showInternalDocuments = false,
   selectedJobId,
@@ -137,6 +140,7 @@ export default function ShipmentJobsTable({
         requesterEmail,
         isSuperAdmin,
         adminOperators,
+        statusColorMap,
         onSelectJob,
         setPreviewDocument,
       ),
@@ -150,6 +154,7 @@ export default function ShipmentJobsTable({
       requesterEmail,
       isSuperAdmin,
       adminOperators,
+      statusColorMap,
       onSelectJob,
       setPreviewDocument,
     ],
@@ -421,6 +426,7 @@ function buildColumns(
   requesterEmail: string | undefined,
   isSuperAdmin: boolean,
   adminOperators: AdminOperator[],
+  statusColorMap: ShipmentStatusColorMap,
   onSelectJob: (job: ShipmentJob) => void,
   onPreviewDocument: (document: ShipmentDocument) => void,
 ): ShipmentJobsTableColumn[] {
@@ -482,7 +488,9 @@ function buildColumns(
       label: t("common.status"),
       width: 180,
       sortKey: "status",
-      render: (job) => <ShipmentProgressStatus job={job} />,
+      render: (job) => (
+        <ShipmentProgressStatus job={job} statusColorMap={statusColorMap} />
+      ),
     },
     {
       id: "working_days",
@@ -725,7 +733,13 @@ function DocumentPills({
   );
 }
 
-function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
+function ShipmentProgressStatus({
+  job,
+  statusColorMap,
+}: {
+  job: ShipmentJob;
+  statusColorMap: ShipmentStatusColorMap;
+}) {
   const completedAt = getShipmentCompletedAt(job);
   const isCompletedStatus =
     job.status === "completed" || job.status === "delivered";
@@ -736,11 +750,16 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
   const statusClass = staleCompleted
     ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
     : statusBadgeClasses[job.status];
+  const customColor = !staleCompleted ? statusColorMap[job.status] : undefined;
+  const customBadgeStyle = customColor
+    ? getStatusColorBadgeStyle(customColor)
+    : undefined;
 
   return (
     <div className="min-w-[150px] space-y-2">
       <span
         className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}
+        style={customBadgeStyle}
       >
         {statusLabels[job.status]}
       </span>
@@ -758,6 +777,12 @@ function ShipmentProgressStatus({ job }: { job: ShipmentJob }) {
               job.status,
               staleCompleted,
             )}`}
+            style={getProgressSegmentStyle(
+              stepIndex,
+              activeStepCount,
+              customColor,
+              staleCompleted,
+            )}
           />
         ))}
       </div>
@@ -850,6 +875,27 @@ function getProgressSegmentClass(
   }
 
   return "bg-blue-500";
+}
+
+function getStatusColorBadgeStyle(color: string) {
+  return {
+    backgroundColor: `${color}1a`,
+    borderColor: `${color}66`,
+    color,
+  };
+}
+
+function getProgressSegmentStyle(
+  stepIndex: number,
+  activeStepCount: number,
+  color: string | undefined,
+  staleCompleted: boolean,
+) {
+  if (!color || staleCompleted || stepIndex >= activeStepCount) {
+    return undefined;
+  }
+
+  return { backgroundColor: color };
 }
 
 function isWithinRecentBusinessDays(

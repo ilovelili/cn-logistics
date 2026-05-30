@@ -80,9 +80,20 @@ export interface ShipmentTrackingEventTemplate {
   description: string;
   sort_order: number;
   is_active: boolean;
+  color_hex: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export interface ShipmentTrackingEventTemplateForm {
+  name: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+  color_hex: string;
+}
+
+export type ShipmentStatusColorMap = Partial<Record<ShipmentStatus, string>>;
 
 export interface ShipmentDocument {
   id: string;
@@ -234,13 +245,13 @@ export const statusBadgeClasses: Record<ShipmentStatus, string> = {
   arrival:
     "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:border-cyan-900",
   customs_destination:
-    "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900",
+    "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900",
   destination_warehouse_in:
     "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-900",
   delivery:
-    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900",
+    "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-950/40 dark:text-lime-200 dark:border-lime-900",
   delivered:
-    "bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-200 dark:border-green-900",
+    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900",
   under_process:
     "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-900",
   customs_hold:
@@ -256,10 +267,10 @@ export const statusAccentClasses: Record<ShipmentStatus, string> = {
   terminal_in: "bg-indigo-500",
   departure: "bg-violet-500",
   arrival: "bg-cyan-500",
-  customs_destination: "bg-amber-500",
+  customs_destination: "bg-rose-500",
   destination_warehouse_in: "bg-teal-500",
-  delivery: "bg-emerald-500",
-  delivered: "bg-green-500",
+  delivery: "bg-lime-500",
+  delivered: "bg-emerald-500",
   under_process: "bg-orange-500",
   customs_hold: "bg-amber-500",
   completed: "bg-emerald-500",
@@ -447,6 +458,73 @@ export async function fetchShipmentTrackingEventTemplates(): Promise<
   }
 
   return (data ?? []) as ShipmentTrackingEventTemplate[];
+}
+
+export async function fetchAllShipmentTrackingEventTemplates(): Promise<
+  ShipmentTrackingEventTemplate[]
+> {
+  const { data, error } = await supabase
+    .from("shipment_tracking_event_templates")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ShipmentTrackingEventTemplate[];
+}
+
+export async function createShipmentTrackingEventTemplate(
+  form: ShipmentTrackingEventTemplateForm,
+) {
+  const { data, error } = await supabase
+    .from("shipment_tracking_event_templates")
+    .insert({
+      name: form.name.trim(),
+      description: form.description.trim(),
+      sort_order: form.sort_order,
+      is_active: form.is_active,
+      color_hex: normalizeStatusColor(form.color_hex),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as ShipmentTrackingEventTemplate;
+}
+
+export async function updateShipmentTrackingEventTemplate(
+  id: string,
+  form: ShipmentTrackingEventTemplateForm,
+) {
+  const { data, error } = await supabase
+    .from("shipment_tracking_event_templates")
+    .update({
+      name: form.name.trim(),
+      description: form.description.trim(),
+      sort_order: form.sort_order,
+      is_active: form.is_active,
+      color_hex: normalizeStatusColor(form.color_hex),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as ShipmentTrackingEventTemplate;
+}
+
+function normalizeStatusColor(value: string) {
+  const color = value.trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : null;
 }
 
 export async function fetchShipmentDocuments(

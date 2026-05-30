@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   FileStack,
   FilePlus2,
+  ListChecks,
   LogOut,
   Menu,
   Moon,
@@ -17,6 +18,7 @@ import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
+import StandardFlowManagement from "./StandardFlowManagement";
 import DocumentControl, {
   DocumentApprovalFilter,
 } from "../components/DocumentControl";
@@ -34,6 +36,7 @@ type AdminView =
   | "documents"
   | "userRegistration"
   | "adminOperators"
+  | "standardFlow"
   | "feedbackReview";
 
 interface AdminPanelProps {
@@ -160,6 +163,15 @@ export default function AdminPanel({
       label: t("admin.nav.shipmentEntry"),
       icon: FilePlus2,
     },
+    ...(isSuperAdmin
+      ? [
+          {
+            id: "standardFlow" as AdminView,
+            label: t("superAdmin.nav.standardFlow"),
+            icon: ListChecks,
+          },
+        ]
+      : []),
     {
       id: "documents" as AdminView,
       label: t("app.nav.documents"),
@@ -420,6 +432,9 @@ export default function AdminPanel({
           )}
           {view === "adminOperators" && isSuperAdmin && (
             <AdminOperatorManagement superAdminEmail={profileEmail} />
+          )}
+          {view === "standardFlow" && isSuperAdmin && (
+            <StandardFlowManagement />
           )}
           {view === "feedbackReview" && isSuperAdmin && (
             <FeedbackReviewPanel

@@ -49,6 +49,7 @@ const ja = {
   "common.save": "保存",
   "common.saving": "保存中...",
   "common.create": "作成",
+  "common.loading": "読み込み中...",
   "common.update": "更新",
   "common.download": "ダウンロード",
   "common.approve": "承認",
@@ -309,6 +310,7 @@ const ja = {
     "この荷主を削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
+  "superAdmin.nav.standardFlow": "出荷標準フロー管理",
   "superAdmin.nav.feedback": "評価一覧",
   "superAdmin.switch.selectAccount": "アカウントに切替",
   "superAdmin.switch.adminOperators": "管理者",
@@ -339,6 +341,26 @@ const ja = {
   "superAdmin.operators.confirmDeleteTitle": "管理者を削除しますか？",
   "superAdmin.operators.confirmDelete":
     "この管理者を削除します。削除後はログインや切替先として利用できません。",
+  "superAdmin.standardFlow.title": "出荷標準フロー管理",
+  "superAdmin.standardFlow.description":
+    "出荷案件で使う標準フローの追跡テンプレートを編集できます。",
+  "superAdmin.standardFlow.add": "テンプレートを追加",
+  "superAdmin.standardFlow.list": "標準フロー一覧",
+  "superAdmin.standardFlow.key": "ステータスキー",
+  "superAdmin.standardFlow.templateText": "ステータス",
+  "superAdmin.standardFlow.order": "表示順",
+  "superAdmin.standardFlow.color": "色",
+  "superAdmin.standardFlow.active": "有効",
+  "superAdmin.standardFlow.noTemplates":
+    "標準フローテンプレートはまだありません。",
+  "superAdmin.standardFlow.loadFailed":
+    "標準フローの読み込みに失敗しました",
+  "superAdmin.standardFlow.created": "標準フローを追加しました",
+  "superAdmin.standardFlow.createFailed": "標準フローの追加に失敗しました",
+  "superAdmin.standardFlow.updated": "標準フローを更新しました",
+  "superAdmin.standardFlow.updateFailed": "標準フローの更新に失敗しました",
+  "superAdmin.standardFlow.validationFailed":
+    "ステータスキー、テンプレート文言、色を正しく入力してください",
   "superAdmin.feedback.title": "評価一覧",
   "superAdmin.feedback.list": "評価履歴",
   "superAdmin.feedback.average": "平均評価",
@@ -413,6 +435,7 @@ const en: Messages = {
   "common.save": "Save",
   "common.saving": "Saving...",
   "common.create": "Create",
+  "common.loading": "Loading...",
   "common.update": "Update",
   "common.download": "Download",
   "common.approve": "Approve",
@@ -677,6 +700,7 @@ const en: Messages = {
     "This shipper will be deleted and will no longer be able to log in.",
 
   "superAdmin.nav.adminOperators": "Admin registration",
+  "superAdmin.nav.standardFlow": "Shipment standard flow management",
   "superAdmin.nav.feedback": "Feedback",
   "superAdmin.switch.selectAccount": "Switch account",
   "superAdmin.switch.adminOperators": "Admins",
@@ -707,6 +731,25 @@ const en: Messages = {
   "superAdmin.operators.confirmDeleteTitle": "Delete admin?",
   "superAdmin.operators.confirmDelete":
     "This admin will be deleted and can no longer log in or be switched to.",
+  "superAdmin.standardFlow.title": "Shipment standard flow management",
+  "superAdmin.standardFlow.description":
+    "Edit the tracking templates used by shipment standard flow.",
+  "superAdmin.standardFlow.add": "Add template",
+  "superAdmin.standardFlow.list": "Standard flow list",
+  "superAdmin.standardFlow.key": "Status key",
+  "superAdmin.standardFlow.templateText": "Status",
+  "superAdmin.standardFlow.order": "Order",
+  "superAdmin.standardFlow.color": "Color",
+  "superAdmin.standardFlow.active": "Active",
+  "superAdmin.standardFlow.noTemplates":
+    "No standard flow templates have been registered yet.",
+  "superAdmin.standardFlow.loadFailed": "Failed to load standard flow",
+  "superAdmin.standardFlow.created": "Standard flow added",
+  "superAdmin.standardFlow.createFailed": "Failed to add standard flow",
+  "superAdmin.standardFlow.updated": "Standard flow updated",
+  "superAdmin.standardFlow.updateFailed": "Failed to update standard flow",
+  "superAdmin.standardFlow.validationFailed":
+    "Enter a valid status key, template text, and color",
   "superAdmin.feedback.title": "Feedback",
   "superAdmin.feedback.list": "Feedback history",
   "superAdmin.feedback.average": "Average rating",
