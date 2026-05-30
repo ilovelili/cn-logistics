@@ -458,6 +458,7 @@ function DocumentNameCell({
             ? "text-gray-900 dark:text-white"
             : "text-slate-400 dark:text-gray-600"
         }`}
+        title={document.name}
       >
         {document.name}
       </span>
@@ -476,6 +477,7 @@ function DocumentNameCell({
           onClick={() => onPreview(document)}
           className="flex min-w-0 max-w-full items-center gap-2 rounded-lg text-left transition hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100 dark:hover:text-cyan-200 dark:focus:ring-cyan-950"
           aria-describedby={tooltipId}
+          title={document.name}
         >
           {content}
         </button>

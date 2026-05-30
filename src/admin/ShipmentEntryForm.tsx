@@ -22,6 +22,7 @@ import {
 } from "../components/shipmentJobsTableUtils";
 import { SortDirection } from "../components/SortableTableHeader";
 import { t } from "../lib/i18n";
+import type { AdminOperator } from "../lib/adminOperators";
 import type { ShipperUser } from "../lib/shipperUsers";
 import {
   createShipmentJob,
@@ -43,10 +44,10 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  shipperOptions?: Pick<
-    ShipperUser,
-    "shipper_name" | "admin_assignments"
-  >[];
+  shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  shipperUsers?: ShipperUser[];
+  isSuperAdmin?: boolean;
+  adminOperators?: AdminOperator[];
   adminEmail: string;
   canEditAssignedAdmins?: boolean;
   criteria?: ShipmentEntryCriteria;
@@ -57,6 +58,9 @@ export default function ShipmentEntryForm({
   jobs,
   documents,
   shipperOptions = [],
+  shipperUsers = [],
+  isSuperAdmin = false,
+  adminOperators = [],
   adminEmail,
   canEditAssignedAdmins = false,
   criteria = { kind: "all" },
@@ -390,6 +394,10 @@ export default function ShipmentEntryForm({
             adminTheme
             showInternalDocuments
             shipperOptions={shipperOptions}
+            shipperUsers={shipperUsers}
+            requesterEmail={adminEmail}
+            isSuperAdmin={isSuperAdmin}
+            adminOperators={adminOperators}
             onSort={handleSort}
             onSelectJob={setSelectedJob}
             onPageChange={setCurrentPage}
@@ -434,10 +442,7 @@ function AdminShipmentJobModal({
 }: {
   job: ShipmentJob | null;
   loading: boolean;
-  shipperOptions: Pick<
-    ShipperUser,
-    "shipper_name" | "admin_assignments"
-  >[];
+  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   assignedAdminsReadOnly: boolean;

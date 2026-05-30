@@ -86,10 +86,7 @@ export default function AdminPanel({
     () =>
       [...switchableUsers]
         .sort((first, second) =>
-          first.shipper_name.localeCompare(
-            second.shipper_name,
-            "ja-JP",
-          ),
+          first.shipper_name.localeCompare(second.shipper_name, "ja-JP"),
         )
         .map((user) => ({
           shipper_name: user.shipper_name,
@@ -126,7 +123,7 @@ export default function AdminPanel({
   }, [profileEmail]);
 
   useEffect(() => {
-    if (!onSwitchToUser || !isSuperAdmin) {
+    if (!isSuperAdmin) {
       setSwitchableOperators([]);
       return;
     }
@@ -150,7 +147,7 @@ export default function AdminPanel({
     return () => {
       active = false;
     };
-  }, [isSuperAdmin, onSwitchToUser, profileEmail]);
+  }, [isSuperAdmin, profileEmail]);
 
   const navItems = [
     {
@@ -211,7 +208,10 @@ export default function AdminPanel({
               <Menu className="w-5 h-5" />
             </button>
             <div className="min-w-0">
-              <span className="block truncate font-bold text-gray-900 dark:text-white sm:inline">
+              <span
+                className="block truncate font-bold text-gray-900 dark:text-white sm:inline"
+                title="CN Logistics"
+              >
                 CN Logistics
               </span>
               <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:ml-2 sm:mt-0">
@@ -230,9 +230,7 @@ export default function AdminPanel({
                     onSwitchToUser(
                       decodeURIComponent(email),
                       role as AppUserRole,
-                      shipperName
-                        ? decodeURIComponent(shipperName)
-                        : null,
+                      shipperName ? decodeURIComponent(shipperName) : null,
                     );
                   }
                 }}
@@ -279,7 +277,12 @@ export default function AdminPanel({
             )}
             {onBackToAdmin && (
               <div className="hidden items-center gap-2 sm:flex">
-                <div className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900">
+                <div
+                  className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900"
+                  title={t("admin.switch.currentlySwitchedAs", {
+                    name: switchedAccountName?.trim() || profileEmail,
+                  })}
+                >
                   {t("admin.switch.currentlySwitchedAs", {
                     name: switchedAccountName?.trim() || profileEmail,
                   })}
@@ -387,6 +390,9 @@ export default function AdminPanel({
               adminEmail={profileEmail}
               canEditAssignedAdmins={isSuperAdmin}
               shipperOptions={shipmentShipperOptions}
+              shipperUsers={switchableUsers}
+              isSuperAdmin={isSuperAdmin}
+              adminOperators={switchableOperators}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
             />
@@ -401,6 +407,9 @@ export default function AdminPanel({
               requesterEmail={profileEmail}
               approvalFilter={documentApprovalFilter}
               shipperOptions={shipmentShipperOptions}
+              shipperUsers={switchableUsers}
+              isSuperAdmin={isSuperAdmin}
+              adminOperators={switchableOperators}
             />
           )}
           {view === "userRegistration" && (

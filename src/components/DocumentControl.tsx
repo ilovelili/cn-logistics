@@ -31,10 +31,15 @@ import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
+import ShipperNameDetailButton from "./ShipperNameDetailButton";
+import ResponsibleAdminBadges from "./ResponsibleAdminBadges";
 import {
+  getResponsibleAdminAssignments,
   getResponsibleAdminNames,
   type ShipmentJobsShipperOption,
 } from "./shipmentJobsTableUtils";
+import type { AdminOperator } from "../lib/adminOperators";
+import type { ShipperUser } from "../lib/shipperUsers";
 
 interface DocumentControlProps {
   jobs: ShipmentJob[];
@@ -45,6 +50,9 @@ interface DocumentControlProps {
   requesterEmail?: string;
   approvalFilter: DocumentApprovalFilter;
   shipperOptions?: ShipmentJobsShipperOption[];
+  shipperUsers?: ShipperUser[];
+  isSuperAdmin?: boolean;
+  adminOperators?: AdminOperator[];
 }
 
 interface DocumentRow {
@@ -52,6 +60,9 @@ interface DocumentRow {
   job: ShipmentJob;
   document: ShipmentDocument;
   responsibleAdminNames: string[];
+  responsibleAdminAssignments: ReturnType<
+    typeof getResponsibleAdminAssignments
+  >;
 }
 
 type DocumentSortKey =
@@ -88,6 +99,9 @@ export default function DocumentControl({
   requesterEmail,
   approvalFilter,
   shipperOptions = [],
+  shipperUsers = [],
+  isSuperAdmin = false,
+  adminOperators = [],
 }: DocumentControlProps) {
   const [query, setQuery] = React.useState("");
   const [scope, setScope] = React.useState("all");
@@ -177,6 +191,10 @@ export default function DocumentControl({
           job,
           document,
           responsibleAdminNames: getResponsibleAdminNames(job, shipperOptions),
+          responsibleAdminAssignments: getResponsibleAdminAssignments(
+            job,
+            shipperOptions,
+          ),
         },
       ];
     });
@@ -382,18 +400,26 @@ export default function DocumentControl({
               width: 190,
               sortKey: "shipper" as const,
               render: (row: DocumentRow) => (
-                <span className="font-semibold text-gray-700 dark:text-gray-200">
-                  {row.job.shipper_name || "-"}
-                </span>
+                <ShipperNameDetailButton
+                  shipperName={row.job.shipper_name}
+                  shipperUsers={shipperUsers}
+                  requesterEmail={requesterEmail}
+                  isSuperAdmin={isSuperAdmin}
+                  adminOperators={adminOperators}
+                  className="max-w-full truncate font-semibold text-cyan-700 underline-offset-4 transition hover:text-cyan-500 hover:underline dark:text-cyan-300 dark:hover:text-cyan-200"
+                  fallbackClassName="font-semibold text-gray-700 dark:text-gray-200"
+                />
               ),
             },
             {
               id: "responsibleAdmins" as const,
-              label: t("admin.userRegistration.contactPerson"),
+              label: t("admin.userRegistration.assignedAdmins"),
               width: 170,
               sortKey: "responsibleAdmins" as const,
               render: (row: DocumentRow) => (
-                <ResponsibleAdminNames names={row.responsibleAdminNames} />
+                <ResponsibleAdminBadges
+                  assignments={row.responsibleAdminAssignments}
+                />
               ),
             },
           ]
@@ -531,7 +557,11 @@ export default function DocumentControl({
     deletingDocumentId,
     downloadingDocumentId,
     isAdminAuthenticated,
+    isSuperAdmin,
     requestingDocumentId,
+    requesterEmail,
+    adminOperators,
+    shipperUsers,
   ]);
 
   const {
@@ -877,26 +907,6 @@ export default function DocumentControl({
           onConfirm={handleAdminDelete}
         />
       )}
-    </div>
-  );
-}
-
-function ResponsibleAdminNames({ names }: { names: string[] }) {
-  if (names.length === 0) {
-    return <span className="text-gray-400 dark:text-gray-500">-</span>;
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      {names.map((name) => (
-        <span
-          key={name}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
-          title={name}
-        >
-          <span className="min-w-0 truncate">{name}</span>
-        </span>
-      ))}
     </div>
   );
 }

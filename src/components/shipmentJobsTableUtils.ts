@@ -166,7 +166,7 @@ export function getResponsibleAdminSearchTerms(
   ];
 }
 
-function getResponsibleAdminAssignments(
+export function getResponsibleAdminAssignments(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
 ) {

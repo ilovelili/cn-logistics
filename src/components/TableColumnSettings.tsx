@@ -1,5 +1,5 @@
 import { GripVertical, RotateCcw, Settings } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import InstantTooltip from "./InstantTooltip";
 import type { TableColumnConfig } from "./useTableColumnSettings";
 
@@ -26,9 +26,36 @@ export default function TableColumnSettingsButton<TColumnId extends string>({
   const [draggingColumnId, setDraggingColumnId] = useState<TColumnId | null>(
     null,
   );
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
 
   return (
-    <div className="relative inline-flex">
+    <div ref={containerRef} className="relative inline-flex">
       <InstantTooltip label="列設定">
         {(tooltipId) => (
           <button

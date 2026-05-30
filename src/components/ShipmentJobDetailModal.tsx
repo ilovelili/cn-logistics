@@ -348,7 +348,10 @@ function DocumentSection({
                     <FileText
                       className={`h-4 w-4 shrink-0 ${muted ? "text-slate-400" : "text-cyan-700"}`}
                     />
-                    <span className="truncate text-sm font-bold text-slate-900">
+                    <span
+                      className="truncate text-sm font-bold text-slate-900"
+                      title={document.name}
+                    >
                       {document.name}
                     </span>
                   </div>

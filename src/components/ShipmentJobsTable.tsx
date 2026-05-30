@@ -16,13 +16,18 @@ import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
+import TableActionButton from "./TableActionButton";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
-  getResponsibleAdminNames,
+  getResponsibleAdminAssignments,
   getShipmentJobWorkingDays,
   type ShipmentJobsShipperOption,
 } from "./shipmentJobsTableUtils";
+import ShipperNameDetailButton from "./ShipperNameDetailButton";
+import ResponsibleAdminBadges from "./ResponsibleAdminBadges";
+import type { AdminOperator } from "../lib/adminOperators";
+import type { ShipperUser } from "../lib/shipperUsers";
 
 export type ShipmentJobsTableSortKey =
   | "id"
@@ -44,7 +49,8 @@ export type ShipmentJobsTableSortKey =
 type ShipmentJobsTableColumnId =
   | ShipmentJobsTableSortKey
   | "documents"
-  | "internal_documents";
+  | "internal_documents"
+  | "action";
 
 interface ShipmentJobsTableColumn {
   id: ShipmentJobsTableColumnId;
@@ -74,6 +80,10 @@ interface ShipmentJobsTableProps {
   adminTheme?: boolean;
   approvedDocumentsOnly?: boolean;
   shipperOptions?: ShipmentJobsShipperOption[];
+  shipperUsers?: ShipperUser[];
+  requesterEmail?: string;
+  isSuperAdmin?: boolean;
+  adminOperators?: AdminOperator[];
   onSort: (sortKey: ShipmentJobsTableSortKey) => void;
   onSelectJob: (job: ShipmentJob) => void;
   onPageChange: (page: number) => void;
@@ -98,6 +108,10 @@ export default function ShipmentJobsTable({
   adminTheme = false,
   approvedDocumentsOnly = false,
   shipperOptions = [],
+  shipperUsers = [],
+  requesterEmail,
+  isSuperAdmin = false,
+  adminOperators = [],
   onSort,
   onSelectJob,
   onPageChange,
@@ -117,6 +131,11 @@ export default function ShipmentJobsTable({
         showInternalDocuments,
         approvedDocumentsOnly,
         shipperOptions,
+        shipperUsers,
+        requesterEmail,
+        isSuperAdmin,
+        adminOperators,
+        onSelectJob,
         setPreviewDocument,
       ),
     [
@@ -125,6 +144,11 @@ export default function ShipmentJobsTable({
       documentsByJob,
       approvedDocumentsOnly,
       showInternalDocuments,
+      shipperUsers,
+      requesterEmail,
+      isSuperAdmin,
+      adminOperators,
+      onSelectJob,
       setPreviewDocument,
     ],
   );
@@ -325,21 +349,12 @@ export default function ShipmentJobsTable({
               {paginatedJobs.map((job) => (
                 <tr
                   key={job.id}
-                  tabIndex={0}
-                  role="button"
-                  onClick={() => onSelectJob(job)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onSelectJob(job);
-                    }
-                  }}
-                  className={`cursor-pointer align-top transition focus:outline-none ${
+                  className={`align-top transition ${
                     selectedJobId === job.id
                       ? "bg-cyan-50/80 dark:bg-cyan-950/20"
                       : adminTheme
-                        ? "hover:bg-slate-50/80 focus:bg-slate-50 dark:hover:bg-gray-800/70 dark:focus:bg-gray-800"
-                        : "hover:bg-slate-50/80 focus:bg-slate-50"
+                        ? "hover:bg-slate-50/80 dark:hover:bg-gray-800/70"
+                        : "hover:bg-slate-50/80"
                   }`}
                 >
                   {visibleTableColumns.map((column) => (
@@ -400,6 +415,11 @@ function buildColumns(
   showInternalDocuments: boolean,
   approvedDocumentsOnly: boolean,
   shipperOptions: ShipmentJobsShipperOption[],
+  shipperUsers: ShipperUser[],
+  requesterEmail: string | undefined,
+  isSuperAdmin: boolean,
+  adminOperators: AdminOperator[],
+  onSelectJob: (job: ShipmentJob) => void,
   onPreviewDocument: (document: ShipmentDocument) => void,
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
@@ -425,24 +445,31 @@ function buildColumns(
       width: 150,
       sortKey: "shipper_name",
       render: (job) => (
-        <span
-          className={`block truncate font-semibold ${strongText}`}
-          title={job.shipper_name ?? undefined}
-        >
-          {job.shipper_name || "-"}
-        </span>
+        <ShipperNameDetailButton
+          shipperName={job.shipper_name}
+          shipperUsers={shipperUsers}
+          requesterEmail={requesterEmail}
+          isSuperAdmin={isSuperAdmin}
+          adminOperators={adminOperators}
+          className={`block max-w-full truncate text-left font-semibold text-cyan-700 underline-offset-4 transition hover:text-cyan-500 hover:underline dark:text-cyan-300 dark:hover:text-cyan-200`}
+          fallbackClassName={`block truncate font-semibold ${strongText}`}
+        />
       ),
     },
     ...(shipperOptions.length > 0
       ? [
           {
             id: "responsible_admins" as const,
-            label: t("admin.userRegistration.contactPerson"),
+            label: t("admin.userRegistration.assignedAdmins"),
             width: 120,
             sortKey: "responsible_admins" as const,
             render: (job: ShipmentJob) => (
-              <ResponsibleAdminNames
-                names={getResponsibleAdminNames(job, shipperOptions)}
+              <ResponsibleAdminBadges
+                assignments={getResponsibleAdminAssignments(
+                  job,
+                  shipperOptions,
+                )}
+                emptyClassName="text-slate-400"
               />
             ),
           },
@@ -613,6 +640,17 @@ function buildColumns(
       ),
     });
   }
+
+  columns.push({
+    id: "action",
+    label: t("admin.userRegistration.action"),
+    width: 110,
+    render: (job) => (
+      <TableActionButton variant="primary" onClick={() => onSelectJob(job)}>
+        {t("common.edit")}
+      </TableActionButton>
+    ),
+  });
 
   return columns;
 }
@@ -867,26 +905,6 @@ function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
     <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
       {workingDays}営業日
     </span>
-  );
-}
-
-function ResponsibleAdminNames({ names }: { names: string[] }) {
-  if (names.length === 0) {
-    return <span className="text-slate-400">-</span>;
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      {names.map((name) => (
-        <span
-          key={name}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
-          title={name}
-        >
-          <span className="min-w-0 truncate">{name}</span>
-        </span>
-      ))}
-    </div>
   );
 }
 

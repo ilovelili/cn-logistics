@@ -119,7 +119,10 @@ export default function Carriers() {
                     <Globe className="w-4 h-4" />
                     <span className="font-medium">APIエンドポイント</span>
                   </div>
-                  <div className="text-xs text-gray-500 truncate bg-gray-50 px-2 py-1 rounded">
+                  <div
+                    className="truncate rounded bg-gray-50 px-2 py-1 text-xs text-gray-500"
+                    title={carrier.api_endpoint || "未設定"}
+                  >
                     {carrier.api_endpoint || "未設定"}
                   </div>
                 </div>

@@ -746,9 +746,11 @@ function AssignedShipperUsers({
           key={shipperUser.id}
           onClick={() => onSelect(shipperUser)}
           className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
-          title={shipperUser.email}
+          title={`${shipperUser.shipper_name} / ${shipperUser.email}`}
         >
-          <span className="min-w-0 truncate">{shipperUser.shipper_name}</span>
+          <span className="min-w-0 truncate" title={shipperUser.shipper_name}>
+            {shipperUser.shipper_name}
+          </span>
         </button>
       ))}
     </div>
@@ -1076,11 +1078,17 @@ function FormMultiSelect({
                     className="mt-1 h-4 w-4 rounded border-gray-300"
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-gray-900 dark:text-white">
+                    <span
+                      className="block truncate text-sm font-bold text-gray-900 dark:text-white"
+                      title={option.label}
+                    >
                       {option.label}
                     </span>
                     {option.description && (
-                      <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                      <span
+                        className="block truncate text-xs text-gray-500 dark:text-gray-400"
+                        title={option.description}
+                      >
                         {option.description}
                       </span>
                     )}

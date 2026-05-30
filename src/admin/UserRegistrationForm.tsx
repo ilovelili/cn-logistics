@@ -30,6 +30,7 @@ import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 import ShipperUserReadOnlyDetails from "./ShipperUserReadOnlyDetails";
+import ResponsibleAdminBadges from "../components/ResponsibleAdminBadges";
 
 function getStaffRoleLabel(role: AdminOperatorStaffRole) {
   return t(`superAdmin.operators.staffRole.${role}`);
@@ -927,6 +928,7 @@ export function UserDetailModal({
   adminOperators,
   superAdminEmail,
   detailsReadOnly = false,
+  assignmentsReadOnly = false,
   onAssignmentsSaved,
   onClose,
 }: {
@@ -937,6 +939,7 @@ export function UserDetailModal({
   adminOperators: AdminOperator[];
   superAdminEmail: string;
   detailsReadOnly?: boolean;
+  assignmentsReadOnly?: boolean;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
 }) {
@@ -1104,15 +1107,17 @@ export function UserDetailModal({
                   {t("admin.userRegistration.assignedAdminsDescription")}
                 </p>
               </div>
-              <button
-                type="button"
-                disabled={assignmentsSaving}
-                onClick={() => void handleSaveAssignments()}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
-              >
-                <Save className="h-4 w-4" />
-                {assignmentsSaving ? t("common.saving") : t("common.save")}
-              </button>
+              {!assignmentsReadOnly && (
+                <button
+                  type="button"
+                  disabled={assignmentsSaving}
+                  onClick={() => void handleSaveAssignments()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+                >
+                  <Save className="h-4 w-4" />
+                  {assignmentsSaving ? t("common.saving") : t("common.save")}
+                </button>
+              )}
             </div>
 
             {adminOperators.length === 0 ? (
@@ -1129,19 +1134,26 @@ export function UserDetailModal({
                     <input
                       type="checkbox"
                       checked={selectedAdminIds.includes(operator.id)}
+                      disabled={assignmentsReadOnly}
                       onChange={() => toggleAdminAssignment(operator.id)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300"
+                      className="mt-1 h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     <span className="min-w-0">
                       <span className="flex min-w-0 flex-wrap items-center gap-2">
-                        <span className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white">
+                        <span
+                          className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white"
+                          title={operator.user_name || operator.email}
+                        >
                           {operator.user_name || operator.email}
                         </span>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                           {getStaffRoleLabel(operator.staff_role)}
                         </span>
                       </span>
-                      <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                      <span
+                        className="block truncate text-xs text-gray-500 dark:text-gray-400"
+                        title={operator.email}
+                      >
                         {operator.email}
                       </span>
                     </span>
@@ -1337,25 +1349,7 @@ function AssignedAdminsSummary({
 }: {
   assignments: NonNullable<ShipperUser["admin_assignments"]>;
 }) {
-  if (assignments.length === 0) {
-    return <span className="text-sm text-gray-400">-</span>;
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-1.5">
-      {assignments.map((assignment) => (
-        <span
-          key={assignment.admin_user_id}
-          className="inline-flex max-w-full items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-1 dark:ring-cyan-900"
-          title={assignment.email}
-        >
-          <span className="min-w-0 truncate">
-            {assignment.user_name || assignment.email}
-          </span>
-        </span>
-      ))}
-    </div>
-  );
+  return <ResponsibleAdminBadges assignments={assignments} />;
 }
 
 function ConfirmActionModal({

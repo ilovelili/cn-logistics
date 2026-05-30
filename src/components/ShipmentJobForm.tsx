@@ -496,7 +496,10 @@ function AssignedAdminFields({
               />
               <span className="min-w-0">
                 <span className="flex min-w-0 flex-wrap items-center gap-2">
-                  <span className="min-w-0 truncate text-sm font-bold text-slate-900">
+                  <span
+                    className="min-w-0 truncate text-sm font-bold text-slate-900"
+                    title={assignment.user_name || assignment.email}
+                  >
                     {assignment.user_name || assignment.email}
                   </span>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
@@ -505,7 +508,10 @@ function AssignedAdminFields({
                     )}
                   </span>
                 </span>
-                <span className="block truncate text-xs text-slate-500">
+                <span
+                  className="block truncate text-xs text-slate-500"
+                  title={assignment.email}
+                >
                   {assignment.email}
                 </span>
               </span>
