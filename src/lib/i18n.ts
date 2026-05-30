@@ -347,12 +347,14 @@ const ja = {
   "superAdmin.standardFlow.add": "テンプレートを追加",
   "superAdmin.standardFlow.list": "標準フロー一覧",
   "superAdmin.standardFlow.key": "ステータスキー",
-  "superAdmin.standardFlow.templateText": "ステータス",
+  "superAdmin.standardFlow.templateText": "ステータステキスト",
   "superAdmin.standardFlow.order": "表示順",
   "superAdmin.standardFlow.color": "色",
   "superAdmin.standardFlow.active": "有効",
   "superAdmin.standardFlow.noTemplates":
     "標準フローテンプレートはまだありません。",
+  "superAdmin.standardFlow.searchPlaceholder":
+    "ステータスキー、ステータス、色で検索...",
   "superAdmin.standardFlow.loadFailed":
     "標準フローの読み込みに失敗しました",
   "superAdmin.standardFlow.created": "標準フローを追加しました",
@@ -743,6 +745,8 @@ const en: Messages = {
   "superAdmin.standardFlow.active": "Active",
   "superAdmin.standardFlow.noTemplates":
     "No standard flow templates have been registered yet.",
+  "superAdmin.standardFlow.searchPlaceholder":
+    "Search status key, status, color...",
   "superAdmin.standardFlow.loadFailed": "Failed to load standard flow",
   "superAdmin.standardFlow.created": "Standard flow added",
   "superAdmin.standardFlow.createFailed": "Failed to add standard flow",
