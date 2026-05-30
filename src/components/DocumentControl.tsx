@@ -1078,7 +1078,10 @@ function DocumentDeleteConfirmModal({
             {row.document.name}
           </div>
           <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {row.job.invoice_number || "-"}
+            {t("common.invoice")}: {row.job.invoice_number || "-"}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("common.jobNumber")}: {row.job.job_number || "-"}
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-3">

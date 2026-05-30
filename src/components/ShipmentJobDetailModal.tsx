@@ -174,6 +174,10 @@ export default function ShipmentJobDetailModal({
                 label={t("common.invoice")}
                 value={job.invoice_number}
               />
+              <DetailField
+                label={t("common.jobNumber")}
+                value={job.job_number}
+              />
               <DetailField label={t("common.notes")} value={job.notes} />
             </DetailCard>
           </div>

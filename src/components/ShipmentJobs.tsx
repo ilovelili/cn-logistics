@@ -544,6 +544,9 @@ function FeedbackModal({
               {t("feedback.title")}
             </h2>
             <p className="mt-1 text-sm font-semibold text-slate-500">{title}</p>
+            <p className="mt-1 text-xs font-bold text-slate-500">
+              {t("common.jobNumber")}: {job.job_number || "-"}
+            </p>
           </div>
           <button
             type="button"

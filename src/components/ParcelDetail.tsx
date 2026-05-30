@@ -17,6 +17,7 @@ interface ParcelDetail {
   master_number: string;
   house_number: string;
   invoice_number: string;
+  job_number?: string | null;
   status: string;
   weight: number;
   gross_weight: number;
@@ -258,6 +259,10 @@ export default function ParcelDetail({ parcelId, onClose }: Props) {
                     value={parcel.invoice_number || "—"}
                   />
                   <HeaderField
+                    label="Job No."
+                    value={parcel.job_number || "—"}
+                  />
+                  <HeaderField
                     label="キャリア"
                     value={parcel.carrier?.name || "—"}
                   />
@@ -422,6 +427,7 @@ function CargoTab({ parcel }: { parcel: ParcelDetail }) {
         <Field label="品名" value={parcel.commodity} />
         <Field label="貨物説明" value={parcel.cargo_description} />
         <Field label="インボイス番号" value={parcel.invoice_number} />
+        <Field label="Job No." value={parcel.job_number} />
       </Section>
 
       <Section title="寸法・重量">

@@ -311,7 +311,7 @@ const ja = {
     "この荷主を削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
-  "superAdmin.nav.standardFlow": "出荷標準フロー管理",
+  "superAdmin.nav.standardFlow": "標準フロー管理",
   "superAdmin.nav.feedback": "評価一覧",
   "superAdmin.switch.selectAccount": "アカウントに切替",
   "superAdmin.switch.adminOperators": "管理者",
@@ -704,7 +704,7 @@ const en: Messages = {
     "This shipper will be deleted and will no longer be able to log in.",
 
   "superAdmin.nav.adminOperators": "Admin registration",
-  "superAdmin.nav.standardFlow": "Shipment standard flow management",
+  "superAdmin.nav.standardFlow": "Standard flow mgmt",
   "superAdmin.nav.feedback": "Feedback",
   "superAdmin.switch.selectAccount": "Switch account",
   "superAdmin.switch.adminOperators": "Admins",
