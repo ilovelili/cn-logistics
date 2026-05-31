@@ -7,6 +7,8 @@ import {
   ShipmentJob,
   ShipmentStatusColorMap,
   shipmentStatusOrder,
+  standardFlowStatusOptions,
+  statusAccentClasses,
   statusBadgeClasses,
   statusLabels,
   tradeModeLabels,
@@ -786,13 +788,12 @@ function ShipmentProgressStatus({
             className={`h-1.5 rounded-full ${getProgressSegmentClass(
               stepIndex,
               activeStepCount,
-              job.status,
               staleCompleted,
             )}`}
             style={getProgressSegmentStyle(
               stepIndex,
               activeStepCount,
-              customColor,
+              statusColorMap,
               staleCompleted,
             )}
           />
@@ -871,22 +872,14 @@ function getTrackingEventTime(event: ShipmentJob["tracking_events"][number]) {
 function getProgressSegmentClass(
   stepIndex: number,
   activeStepCount: number,
-  status: ShipmentJob["status"],
   staleCompleted: boolean,
 ) {
   if (staleCompleted || stepIndex >= activeStepCount) {
     return "bg-gray-200 dark:bg-gray-700";
   }
 
-  if (status === "completed" || status === "delivered") {
-    return "bg-emerald-500";
-  }
-
-  if (stepIndex === activeStepCount - 1) {
-    return status === "customs_hold" ? "bg-amber-500" : "bg-orange-500";
-  }
-
-  return "bg-blue-500";
+  const segmentStatus = standardFlowStatusOptions[stepIndex]?.value;
+  return segmentStatus ? statusAccentClasses[segmentStatus] : "bg-blue-500";
 }
 
 function getStatusColorBadgeStyle(color: string) {
@@ -900,10 +893,16 @@ function getStatusColorBadgeStyle(color: string) {
 function getProgressSegmentStyle(
   stepIndex: number,
   activeStepCount: number,
-  color: string | undefined,
+  statusColorMap: ShipmentStatusColorMap,
   staleCompleted: boolean,
 ) {
-  if (!color || staleCompleted || stepIndex >= activeStepCount) {
+  if (staleCompleted || stepIndex >= activeStepCount) {
+    return undefined;
+  }
+
+  const segmentStatus = standardFlowStatusOptions[stepIndex]?.value;
+  const color = segmentStatus ? statusColorMap[segmentStatus] : undefined;
+  if (!color) {
     return undefined;
   }
 

@@ -82,6 +82,7 @@ export interface ShipmentTrackingEventTemplate {
   sort_order: number;
   is_active: boolean;
   color_hex: string | null;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -455,6 +456,7 @@ export async function fetchShipmentTrackingEventTemplates(): Promise<
     .from("shipment_tracking_event_templates")
     .select("*")
     .eq("is_active", true)
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -471,6 +473,7 @@ export async function fetchAllShipmentTrackingEventTemplates(): Promise<
   const { data, error } = await supabase
     .from("shipment_tracking_event_templates")
     .select("*")
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -525,6 +528,24 @@ export async function updateShipmentTrackingEventTemplate(
   }
 
   return data as ShipmentTrackingEventTemplate;
+}
+
+export async function softDeleteShipmentTrackingEventTemplate(id: string) {
+  const { data, error } = await supabase
+    .from("shipment_tracking_event_templates")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("Shipment tracking event template was not deleted.");
+  }
 }
 
 function normalizeStatusColor(value: string) {

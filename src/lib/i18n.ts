@@ -347,6 +347,7 @@ const ja = {
     "出荷案件で使う標準フローの追跡テンプレートを編集できます。",
   "superAdmin.standardFlow.add": "テンプレートを追加",
   "superAdmin.standardFlow.list": "標準フロー一覧",
+  "superAdmin.standardFlow.status": "ステータス",
   "superAdmin.standardFlow.key": "ステータスキー",
   "superAdmin.standardFlow.templateText": "ステータステキスト",
   "superAdmin.standardFlow.order": "表示順",
@@ -355,13 +356,18 @@ const ja = {
   "superAdmin.standardFlow.noTemplates":
     "標準フローテンプレートはまだありません。",
   "superAdmin.standardFlow.searchPlaceholder":
-    "ステータスキー、ステータス、色で検索...",
+    "ステータスキー、ステータスで検索...",
   "superAdmin.standardFlow.loadFailed":
     "標準フローの読み込みに失敗しました",
   "superAdmin.standardFlow.created": "標準フローを追加しました",
   "superAdmin.standardFlow.createFailed": "標準フローの追加に失敗しました",
   "superAdmin.standardFlow.updated": "標準フローを更新しました",
   "superAdmin.standardFlow.updateFailed": "標準フローの更新に失敗しました",
+  "superAdmin.standardFlow.deleted": "標準フローを削除しました",
+  "superAdmin.standardFlow.deleteFailed": "標準フローの削除に失敗しました",
+  "superAdmin.standardFlow.confirmDeleteTitle": "標準フローを削除しますか？",
+  "superAdmin.standardFlow.confirmDelete":
+    "この標準フローを削除します。削除後は出荷案件の標準フローテンプレートとして利用できません。",
   "superAdmin.standardFlow.validationFailed":
     "ステータスキー、テンプレート文言、色を正しく入力してください",
   "superAdmin.feedback.title": "評価一覧",
@@ -740,6 +746,7 @@ const en: Messages = {
     "Edit the tracking templates used by shipment standard flow.",
   "superAdmin.standardFlow.add": "Add template",
   "superAdmin.standardFlow.list": "Standard flow list",
+  "superAdmin.standardFlow.status": "Status",
   "superAdmin.standardFlow.key": "Status key",
   "superAdmin.standardFlow.templateText": "Status",
   "superAdmin.standardFlow.order": "Order",
@@ -748,12 +755,17 @@ const en: Messages = {
   "superAdmin.standardFlow.noTemplates":
     "No standard flow templates have been registered yet.",
   "superAdmin.standardFlow.searchPlaceholder":
-    "Search status key, status, color...",
+    "Search status key or status...",
   "superAdmin.standardFlow.loadFailed": "Failed to load standard flow",
   "superAdmin.standardFlow.created": "Standard flow added",
   "superAdmin.standardFlow.createFailed": "Failed to add standard flow",
   "superAdmin.standardFlow.updated": "Standard flow updated",
   "superAdmin.standardFlow.updateFailed": "Failed to update standard flow",
+  "superAdmin.standardFlow.deleted": "Standard flow deleted",
+  "superAdmin.standardFlow.deleteFailed": "Failed to delete standard flow",
+  "superAdmin.standardFlow.confirmDeleteTitle": "Delete standard flow?",
+  "superAdmin.standardFlow.confirmDelete":
+    "This standard flow will be deleted and can no longer be used as a shipment standard flow template.",
   "superAdmin.standardFlow.validationFailed":
     "Enter a valid status key, template text, and color",
   "superAdmin.feedback.title": "Feedback",

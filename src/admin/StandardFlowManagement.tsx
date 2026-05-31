@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { CheckCircle, Plus, Save, Search, XCircle } from "lucide-react";
+import { CheckCircle, Plus, Save, Search, Trash2, XCircle } from "lucide-react";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
@@ -12,6 +12,7 @@ import {
   fetchAllShipmentTrackingEventTemplates,
   ShipmentTrackingEventTemplate,
   ShipmentTrackingEventTemplateForm,
+  softDeleteShipmentTrackingEventTemplate,
   statusBadgeClasses,
   statusLabels,
   updateShipmentTrackingEventTemplate,
@@ -27,6 +28,7 @@ const emptyTemplateForm: ShipmentTrackingEventTemplateForm = {
 };
 
 type StandardFlowColumnId =
+  | "statusBadge"
   | "key"
   | "status"
   | "order"
@@ -39,12 +41,13 @@ const standardFlowColumns: {
   label: string;
   width: number;
 }[] = [
-  { id: "key", label: t("superAdmin.standardFlow.key"), width: 300 },
+  { id: "statusBadge", label: t("superAdmin.standardFlow.status"), width: 140 },
+  { id: "key", label: t("superAdmin.standardFlow.key"), width: 220 },
   { id: "status", label: t("superAdmin.standardFlow.templateText"), width: 320 },
   { id: "order", label: t("superAdmin.standardFlow.order"), width: 110 },
   { id: "color", label: t("superAdmin.standardFlow.color"), width: 76 },
   { id: "active", label: t("superAdmin.standardFlow.active"), width: 92 },
-  { id: "action", label: t("admin.userRegistration.action"), width: 92 },
+  { id: "action", label: t("admin.userRegistration.action"), width: 170 },
 ];
 
 export default function StandardFlowManagement() {
@@ -58,6 +61,9 @@ export default function StandardFlowManagement() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<ShipmentTrackingEventTemplate | null>(null);
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<{
     type: "success" | "error";
@@ -73,7 +79,7 @@ export default function StandardFlowManagement() {
     moveColumn,
     resetColumns,
   } = useTableColumnSettings(
-    "super_admin_standard_flow_table_columns_v1",
+    "super_admin_standard_flow_table_columns_v2",
     standardFlowColumns.map((column) => ({
       id: column.id,
       label: column.label,
@@ -137,7 +143,6 @@ export default function StandardFlowManagement() {
         draft.name,
         draft.description,
         String(draft.sort_order),
-        draft.color_hex,
         statusLabels[draft.name as ShipmentStatus] ?? "",
       ]
         .join(" ")
@@ -217,6 +222,29 @@ export default function StandardFlowManagement() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+
+    setDeletingId(deleteTarget.id);
+    try {
+      await softDeleteShipmentTrackingEventTemplate(deleteTarget.id);
+      setTemplates((current) =>
+        current.filter((template) => template.id !== deleteTarget.id),
+      );
+      setDrafts((current) => {
+        const nextDrafts = { ...current };
+        delete nextDrafts[deleteTarget.id];
+        return nextDrafts;
+      });
+      showToast("success", t("superAdmin.standardFlow.deleted"));
+      setDeleteTarget(null);
+    } catch {
+      showToast("error", t("superAdmin.standardFlow.deleteFailed"));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {toast && (
@@ -234,6 +262,19 @@ export default function StandardFlowManagement() {
           )}
           {toast.message}
         </div>
+      )}
+
+      {deleteTarget && (
+        <StandardFlowDeleteConfirmModal
+          template={deleteTarget}
+          deleting={deletingId === deleteTarget.id}
+          onCancel={() => {
+            if (!deletingId) {
+              setDeleteTarget(null);
+            }
+          }}
+          onConfirm={() => void handleDeleteConfirm()}
+        />
       )}
 
       <div>
@@ -416,8 +457,10 @@ export default function StandardFlowManagement() {
                             draft,
                             template,
                             savingId,
+                            deletingId,
                             updateDraft,
                             handleSave,
+                            onDelete: setDeleteTarget,
                           })}
                         </td>
                       ))}
@@ -487,30 +530,33 @@ function renderTemplateCell({
   draft,
   template,
   savingId,
+  deletingId,
   updateDraft,
   handleSave,
+  onDelete,
 }: {
   columnId: StandardFlowColumnId;
   draft: ShipmentTrackingEventTemplateForm;
   template: ShipmentTrackingEventTemplate;
   savingId: string | null;
+  deletingId: string | null;
   updateDraft: <Key extends keyof ShipmentTrackingEventTemplateForm>(
     id: string,
     key: Key,
     value: ShipmentTrackingEventTemplateForm[Key],
   ) => void;
   handleSave: (template: ShipmentTrackingEventTemplate) => Promise<void>;
+  onDelete: (template: ShipmentTrackingEventTemplate) => void;
 }) {
   switch (columnId) {
+    case "statusBadge":
+      return <StatusPreview name={draft.name} color={draft.color_hex} />;
     case "key":
       return (
         <TemplateTextField
           label={t("superAdmin.standardFlow.key")}
           value={draft.name}
           onChange={(value) => updateDraft(template.id, "name", value)}
-          helper={<StatusPreview name={draft.name} color={draft.color_hex} />}
-          inlineHelper
-          helperPosition="before"
           hideLabel
         />
       );
@@ -552,19 +598,86 @@ function renderTemplateCell({
       );
     case "action":
       return (
-        <TableActionButton
-          variant="primary"
-          icon={<Save className="h-3.5 w-3.5" />}
-          className="h-[42px] w-full"
-          disabled={savingId === template.id}
-          onClick={() => void handleSave(template)}
-        >
-          {savingId === template.id ? t("common.saving") : t("common.save")}
-        </TableActionButton>
+        <div className="flex items-center gap-2">
+          <TableActionButton
+            variant="primary"
+            icon={<Save className="h-3.5 w-3.5" />}
+            className="h-[42px] flex-1"
+            disabled={savingId === template.id || deletingId === template.id}
+            onClick={() => void handleSave(template)}
+          >
+            {savingId === template.id ? t("common.saving") : t("common.save")}
+          </TableActionButton>
+          <TableActionButton
+            variant="danger"
+            icon={<Trash2 className="h-3.5 w-3.5" />}
+            className="h-[42px] flex-1"
+            disabled={savingId === template.id || deletingId === template.id}
+            onClick={() => onDelete(template)}
+          >
+            {deletingId === template.id
+              ? t("common.saving")
+              : t("common.delete")}
+          </TableActionButton>
+        </div>
       );
     default:
       return null;
   }
+}
+
+function StandardFlowDeleteConfirmModal({
+  template,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  template: ShipmentTrackingEventTemplate;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("superAdmin.standardFlow.confirmDeleteTitle")}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("superAdmin.standardFlow.confirmDelete")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">
+            {statusLabels[template.name as ShipmentStatus] ?? template.name}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {template.name}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {template.description}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? t("common.saving") : t("common.delete")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function TemplateNumberField({
