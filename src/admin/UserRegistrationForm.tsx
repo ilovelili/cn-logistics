@@ -89,6 +89,9 @@ export default function UserRegistrationForm({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [users, setUsers] = useState<ShipperUser[]>([]);
   const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
+  const [selectedCreateAdminIds, setSelectedCreateAdminIds] = useState<
+    string[]
+  >([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     ShipperUserApprovalStatus | "all"
@@ -199,16 +202,54 @@ export default function UserRegistrationForm({
     setLoading(true);
 
     try {
+      const createdContactEmails = form.contacts
+        .map((contact) => contact.email.trim().toLowerCase())
+        .filter(Boolean);
       await createShipperUser(form, adminEmail);
+      let updatedUsers = await fetchShipperUsersByAdmin(adminEmail);
+
+      if (isSuperAdmin && selectedCreateAdminIds.length > 0) {
+        const createdUsers = updatedUsers.filter((user) =>
+          createdContactEmails.includes(user.email.toLowerCase()),
+        );
+
+        const assignedUsers = await Promise.all(
+          createdUsers.map((user) =>
+            updateShipperUserAdminAssignments({
+              superAdminEmail: adminEmail,
+              userId: user.id,
+              adminUserIds: selectedCreateAdminIds,
+            }),
+          ),
+        );
+        const assignedUsersById = new Map(
+          assignedUsers.map((user) => [user.id, user]),
+        );
+        updatedUsers = updatedUsers.map(
+          (user) => assignedUsersById.get(user.id) ?? user,
+        );
+      }
+
       setForm(defaultShipperUserForm);
+      setSelectedCreateAdminIds([]);
       setShowCreateForm(false);
-      await loadUsers();
+      setUsers(updatedUsers);
       showToast("success", t("admin.userRegistration.created"));
     } catch {
       showToast("error", t("admin.userRegistration.createFailed"));
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleCreateForm = () => {
+    setShowCreateForm((currentValue) => {
+      if (currentValue) {
+        setSelectedCreateAdminIds([]);
+      }
+
+      return !currentValue;
+    });
   };
 
   const fillAddressFromZipcode = async () => {
@@ -599,7 +640,7 @@ export default function UserRegistrationForm({
           </h2>
           <button
             type="button"
-            onClick={() => setShowCreateForm((value) => !value)}
+            onClick={toggleCreateForm}
             className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
           >
             <Plus className="h-4 w-4" />
@@ -910,6 +951,32 @@ export default function UserRegistrationForm({
               value={form.notes}
               onChange={(value) => updateField("notes", value)}
             />
+            {isSuperAdmin && (
+              <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                <div className="mb-3">
+                  <h4 className="font-bold text-gray-900 dark:text-white">
+                    {t("admin.userRegistration.assignedAdmins")}
+                  </h4>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t("admin.userRegistration.assignedAdminsDescription")}
+                  </p>
+                </div>
+                <AdminOperatorCheckboxGrid
+                  adminOperators={adminOperators}
+                  selectedAdminIds={selectedCreateAdminIds}
+                  assignmentsReadOnly={false}
+                  onToggle={(operatorId) =>
+                    setSelectedCreateAdminIds((currentIds) =>
+                      currentIds.includes(operatorId)
+                        ? currentIds.filter(
+                            (currentId) => currentId !== operatorId,
+                          )
+                        : [...currentIds, operatorId],
+                    )
+                  }
+                />
+              </section>
+            )}
           </div>
 
           <div className="mt-6 flex justify-end gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
@@ -1134,52 +1201,12 @@ export function UserDetailModal({
               )}
             </div>
 
-            {adminOperators.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                {t("superAdmin.operators.noOperators")}
-              </div>
-            ) : (
-              <div className="grid gap-2 md:grid-cols-2">
-                {adminOperators.map((operator) => (
-                  <label
-                    key={operator.id}
-                    className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedAdminIds.includes(operator.id)}
-                      disabled={assignmentsReadOnly}
-                      onChange={() => toggleAdminAssignment(operator.id)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
-                    />
-                    <span className="min-w-0">
-                      <span className="flex min-w-0 flex-wrap items-center gap-2">
-                        <span
-                          className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white"
-                          title={operator.user_name || operator.email}
-                        >
-                          {operator.user_name || operator.email}
-                        </span>
-                        {getStaffRoleLabels(operator).map((roleLabel) => (
-                          <span
-                            key={roleLabel}
-                            className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          >
-                            {roleLabel}
-                          </span>
-                        ))}
-                      </span>
-                      <span
-                        className="block truncate text-xs text-gray-500 dark:text-gray-400"
-                        title={operator.email}
-                      >
-                        {operator.email}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
+            <AdminOperatorCheckboxGrid
+              adminOperators={adminOperators}
+              selectedAdminIds={selectedAdminIds}
+              assignmentsReadOnly={assignmentsReadOnly}
+              onToggle={toggleAdminAssignment}
+            />
 
             {assignmentError && (
               <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
@@ -1369,6 +1396,69 @@ function AssignedAdminsSummary({
   assignments: NonNullable<ShipperUser["admin_assignments"]>;
 }) {
   return <ResponsibleAdminBadges assignments={assignments} />;
+}
+
+function AdminOperatorCheckboxGrid({
+  adminOperators,
+  selectedAdminIds,
+  assignmentsReadOnly,
+  onToggle,
+}: {
+  adminOperators: AdminOperator[];
+  selectedAdminIds: string[];
+  assignmentsReadOnly: boolean;
+  onToggle: (operatorId: string) => void;
+}) {
+  if (adminOperators.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+        {t("superAdmin.operators.noOperators")}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2 md:grid-cols-2">
+      {adminOperators.map((operator) => (
+        <label
+          key={operator.id}
+          className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+        >
+          <input
+            type="checkbox"
+            checked={selectedAdminIds.includes(operator.id)}
+            disabled={assignmentsReadOnly}
+            onChange={() => onToggle(operator.id)}
+            className="mt-1 h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+          <span className="min-w-0">
+            <span className="flex min-w-0 flex-wrap items-center gap-2">
+              <span
+                className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white"
+                title={operator.user_name || operator.email}
+              >
+                {operator.user_name || operator.email}
+              </span>
+              {getStaffRoleLabels(operator).map((roleLabel) => (
+                <span
+                  key={roleLabel}
+                  className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  {roleLabel}
+                </span>
+              ))}
+            </span>
+            <span
+              className="block truncate text-xs text-gray-500 dark:text-gray-400"
+              title={operator.email}
+            >
+              {operator.email}
+            </span>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
 }
 
 function ConfirmActionModal({
