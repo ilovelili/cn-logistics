@@ -7,6 +7,7 @@ export interface AdminOperator {
   email: string;
   user_name: string | null;
   staff_role: AdminOperatorStaffRole;
+  staff_roles: AdminOperatorStaffRole[];
   assigned_shipper_users?: AssignedShipperUser[];
   created_at: string;
   updated_at: string;
@@ -48,14 +49,14 @@ export interface AssignedShipperUser {
 export interface AdminOperatorForm {
   email: string;
   user_name: string;
-  staff_role: AdminOperatorStaffRole;
+  staff_roles: AdminOperatorStaffRole[];
   password: string;
 }
 
 export const defaultAdminOperatorForm: AdminOperatorForm = {
   email: "",
   user_name: "",
-  staff_role: "sales",
+  staff_roles: ["sales"],
   password: "12345",
 };
 
@@ -78,7 +79,7 @@ export async function createAdminOperator(
   const { error } = await supabase.rpc("create_admin_operator", {
     operator_email: form.email.trim(),
     operator_name: form.user_name.trim(),
-    operator_staff_role: form.staff_role,
+    operator_staff_roles: form.staff_roles,
     operator_password: form.password,
     super_admin_email: superAdminEmail,
   });
@@ -92,18 +93,18 @@ export async function updateAdminOperator({
   superAdminEmail,
   operatorId,
   operatorName,
-  staffRole,
+  staffRoles,
 }: {
   superAdminEmail: string;
   operatorId: string;
   operatorName: string;
-  staffRole: AdminOperatorStaffRole;
+  staffRoles: AdminOperatorStaffRole[];
 }) {
   const { error } = await supabase.rpc("update_admin_operator", {
     super_admin_email: superAdminEmail,
     target_operator_id: operatorId,
     operator_name: operatorName.trim(),
-    operator_staff_role: staffRole,
+    operator_staff_roles: staffRoles,
   });
 
   if (error) {

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Plus, X } from "lucide-react";
-import { t } from "../lib/i18n";
+import { t, type TranslationKey } from "../lib/i18n";
 import {
   defaultShipmentJobForm,
   fetchShipmentTrackingEventTemplates,
@@ -624,11 +624,19 @@ function AssignedAdminFields({
                   >
                     {assignment.user_name || assignment.email}
                   </span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
-                    {t(
-                      `superAdmin.operators.staffRole.${assignment.staff_role}`,
-                    )}
-                  </span>
+                  {(assignment.staff_roles?.length
+                    ? assignment.staff_roles
+                    : [assignment.staff_role]
+                  ).map((role) => (
+                    <span
+                      key={role}
+                      className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700"
+                    >
+                      {t(
+                        `superAdmin.operators.staffRole.${role}` as TranslationKey,
+                      )}
+                    </span>
+                  ))}
                 </span>
                 <span
                   className="block truncate text-xs text-slate-500"

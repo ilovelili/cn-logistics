@@ -50,6 +50,36 @@ function getStaffRoleLabelKey(role: AdminOperatorStaffRole): TranslationKey {
   return `superAdmin.operators.staffRole.${role}` as TranslationKey;
 }
 
+function getOperatorStaffRoles(
+  operator: Pick<AdminOperator, "staff_role" | "staff_roles">,
+) {
+  return operator.staff_roles?.length > 0
+    ? operator.staff_roles
+    : [operator.staff_role];
+}
+
+function getStaffRoleLabels(roles: AdminOperatorStaffRole[]) {
+  return roles.map((role) => t(getStaffRoleLabelKey(role)));
+}
+
+function getOperatorCreateErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.includes("email already exists")
+  ) {
+    return t("superAdmin.operators.emailAlreadyExists");
+  }
+
+  return t("superAdmin.operators.createFailed");
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 export default function AdminOperatorManagement({
   superAdminEmail,
 }: AdminOperatorManagementProps) {
@@ -69,11 +99,11 @@ export default function AdminOperatorManagement({
   const [editTarget, setEditTarget] = useState<AdminOperator | null>(null);
   const [editForm, setEditForm] = useState<{
     user_name: string;
-    staff_role: AdminOperatorStaffRole;
+    staff_roles: AdminOperatorStaffRole[];
     shipper_user_ids: string[];
   }>({
     user_name: "",
-    staff_role: "sales",
+    staff_roles: ["sales"],
     shipper_user_ids: [],
   });
   const [selectedShipperUser, setSelectedShipperUser] =
@@ -130,7 +160,7 @@ export default function AdminOperatorManagement({
         operator.id,
         operator.email,
         operator.user_name,
-        t(getStaffRoleLabelKey(operator.staff_role)),
+        ...getStaffRoleLabels(getOperatorStaffRoles(operator)),
         ...(operator.assigned_shipper_users ?? []).flatMap((shipperUser) => [
           shipperUser.shipper_name,
           shipperUser.email,
@@ -157,6 +187,17 @@ export default function AdminOperatorManagement({
 
       const aValue = a[sortKey] ?? "";
       const bValue = b[sortKey] ?? "";
+      if (sortKey === "staff_role") {
+        return (
+          getStaffRoleLabels(getOperatorStaffRoles(a))
+            .join(", ")
+            .localeCompare(
+              getStaffRoleLabels(getOperatorStaffRoles(b)).join(", "),
+              "ja",
+            ) * direction
+        );
+      }
+
       return String(aValue).localeCompare(String(bValue), "ja") * direction;
     });
   }, [filteredOperators, sortDirection, sortKey]);
@@ -183,6 +224,25 @@ export default function AdminOperatorManagement({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const normalizedFormEmail = normalizeEmail(form.email);
+    if (
+      operators.some(
+        (operator) => normalizeEmail(operator.email) === normalizedFormEmail,
+      )
+    ) {
+      showToast("error", t("superAdmin.operators.emailAlreadyExists"));
+      return;
+    }
+    if (
+      shipperUsers.some(
+        (shipperUser) =>
+          normalizeEmail(shipperUser.email) === normalizedFormEmail,
+      )
+    ) {
+      showToast("error", t("superAdmin.operators.emailUsedByShipper"));
+      return;
+    }
+
     setSaving(true);
     try {
       await createAdminOperator(form, superAdminEmail);
@@ -220,8 +280,8 @@ export default function AdminOperatorManagement({
       await loadShipperUsers();
       await loadOperators();
       showToast("success", t("superAdmin.operators.created"));
-    } catch {
-      showToast("error", t("superAdmin.operators.createFailed"));
+    } catch (error) {
+      showToast("error", getOperatorCreateErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -260,7 +320,7 @@ export default function AdminOperatorManagement({
     setEditTarget(operator);
     setEditForm({
       user_name: operator.user_name ?? "",
-      staff_role: operator.staff_role,
+      staff_roles: getOperatorStaffRoles(operator),
       shipper_user_ids: (operator.assigned_shipper_users ?? []).map(
         (shipperUser) => shipperUser.id,
       ),
@@ -277,7 +337,7 @@ export default function AdminOperatorManagement({
         superAdminEmail,
         operatorId: editTarget.id,
         operatorName: editForm.user_name,
-        staffRole: editForm.staff_role,
+        staffRoles: editForm.staff_roles,
       });
       await syncOperatorShipperAssignments(
         editTarget.id,
@@ -345,9 +405,7 @@ export default function AdminOperatorManagement({
         width: 160,
         sortKey: "staff_role",
         render: (operator) => (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            {t(getStaffRoleLabelKey(operator.staff_role))}
-          </span>
+          <StaffRoleChips roles={getOperatorStaffRoles(operator)} />
         ),
       },
       {
@@ -517,17 +575,13 @@ export default function AdminOperatorManagement({
               required
               onChange={(value) => setForm({ ...form, user_name: value })}
             />
-            <FormSelect
+            <FormRoleMultiSelect
               label={t("superAdmin.operators.staffRole")}
-              value={form.staff_role}
-              options={adminOperatorStaffRoleOptions.map((option) => ({
-                value: option.value,
-                label: t(option.labelKey),
-              }))}
+              value={form.staff_roles}
               onChange={(value) =>
                 setForm({
                   ...form,
-                  staff_role: value as typeof form.staff_role,
+                  staff_roles: value,
                 })
               }
             />
@@ -794,14 +848,14 @@ function EditOperatorModal({
   operator: AdminOperator;
   form: {
     user_name: string;
-    staff_role: AdminOperatorStaffRole;
+    staff_roles: AdminOperatorStaffRole[];
     shipper_user_ids: string[];
   };
   shipperUsers: ShipperUser[];
   saving: boolean;
   onChange: (form: {
     user_name: string;
-    staff_role: AdminOperatorStaffRole;
+    staff_roles: AdminOperatorStaffRole[];
     shipper_user_ids: string[];
   }) => void;
   onCancel: () => void;
@@ -839,17 +893,13 @@ function EditOperatorModal({
             required
             onChange={(value) => onChange({ ...form, user_name: value })}
           />
-          <FormSelect
+          <FormRoleMultiSelect
             label={t("superAdmin.operators.staffRole")}
-            value={form.staff_role}
-            options={adminOperatorStaffRoleOptions.map((option) => ({
-              value: option.value,
-              label: t(option.labelKey),
-            }))}
+            value={form.staff_roles}
             onChange={(value) =>
               onChange({
                 ...form,
-                staff_role: value as AdminOperatorStaffRole,
+                staff_roles: value,
               })
             }
           />
@@ -975,36 +1025,64 @@ function FormField({
   );
 }
 
-function FormSelect({
+function StaffRoleChips({ roles }: { roles: AdminOperatorStaffRole[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {roles.map((role) => (
+        <span
+          key={role}
+          className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        >
+          {t(getStaffRoleLabelKey(role))}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function FormRoleMultiSelect({
   label,
   value,
-  options,
   onChange,
 }: {
   label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
+  value: AdminOperatorStaffRole[];
+  onChange: (value: AdminOperatorStaffRole[]) => void;
 }) {
+  const selectedRoleSet = new Set(value);
+  const toggleRole = (role: AdminOperatorStaffRole) => {
+    if (selectedRoleSet.has(role)) {
+      const nextRoles = value.filter((currentRole) => currentRole !== role);
+      onChange(nextRoles.length > 0 ? nextRoles : value);
+      return;
+    }
+
+    onChange([...value, role]);
+  };
+
   return (
-    <label className="block">
+    <div>
       <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
         {label}
         <span className="ml-1 text-rose-500">*</span>
       </span>
-      <select
-        value={value}
-        required
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+      <div className="mt-2 grid gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+        {adminOperatorStaffRoleOptions.map((option) => (
+          <label
+            key={option.value}
+            className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-800 transition hover:border-cyan-300 hover:bg-cyan-50/50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/20"
+          >
+            <input
+              type="checkbox"
+              checked={selectedRoleSet.has(option.value)}
+              onChange={() => toggleRole(option.value)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            {t(option.labelKey)}
+          </label>
         ))}
-      </select>
-    </label>
+      </div>
+    </div>
   );
 }
 

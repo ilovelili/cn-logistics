@@ -335,6 +335,10 @@ const ja = {
   "superAdmin.operators.loadFailed": "管理者一覧の読み込みに失敗しました",
   "superAdmin.operators.created": "管理者を登録しました",
   "superAdmin.operators.createFailed": "管理者登録に失敗しました",
+  "superAdmin.operators.emailAlreadyExists":
+    "このメールアドレスは既に登録されています。既存の管理者は一覧から編集してください。",
+  "superAdmin.operators.emailUsedByShipper":
+    "このメールアドレスは既に荷主ユーザーとして登録されています。管理者には別のメールアドレスを使用してください。",
   "superAdmin.operators.updated": "管理者を更新しました",
   "superAdmin.operators.updateFailed": "管理者の更新に失敗しました",
   "superAdmin.operators.deleted": "管理者を削除しました",
@@ -734,6 +738,10 @@ const en: Messages = {
   "superAdmin.operators.loadFailed": "Failed to load admins",
   "superAdmin.operators.created": "Admin registered",
   "superAdmin.operators.createFailed": "Failed to register admin",
+  "superAdmin.operators.emailAlreadyExists":
+    "This email address is already registered. Edit the existing admin from the list, or use another email.",
+  "superAdmin.operators.emailUsedByShipper":
+    "This email address is already registered as a shipper user. Use a different email for the admin.",
   "superAdmin.operators.updated": "Admin updated",
   "superAdmin.operators.updateFailed": "Failed to update admin",
   "superAdmin.operators.deleted": "Admin deleted",

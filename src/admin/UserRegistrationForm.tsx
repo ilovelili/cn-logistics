@@ -36,6 +36,13 @@ function getStaffRoleLabel(role: AdminOperatorStaffRole) {
   return t(`superAdmin.operators.staffRole.${role}`);
 }
 
+function getStaffRoleLabels(operator: AdminOperator) {
+  return (operator.staff_roles?.length
+    ? operator.staff_roles
+    : [operator.staff_role]
+  ).map(getStaffRoleLabel);
+}
+
 function isSameShipperGroup(first: ShipperUser, second: ShipperUser) {
   return (
     first.shipper_name === second.shipper_name &&
@@ -1153,9 +1160,14 @@ export function UserDetailModal({
                         >
                           {operator.user_name || operator.email}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                          {getStaffRoleLabel(operator.staff_role)}
-                        </span>
+                        {getStaffRoleLabels(operator).map((roleLabel) => (
+                          <span
+                            key={roleLabel}
+                            className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          >
+                            {roleLabel}
+                          </span>
+                        ))}
                       </span>
                       <span
                         className="block truncate text-xs text-gray-500 dark:text-gray-400"
