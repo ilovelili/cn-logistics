@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { t } from "../lib/i18n";
+import InstantTooltip from "./InstantTooltip";
 
 interface TableHorizontalScrollHintProps {
   adminTheme?: boolean;
@@ -22,33 +23,43 @@ export default function TableHorizontalScrollHint({
           : "border-cyan-200 bg-white text-cyan-800"
       }`}
     >
-      <button
-        type="button"
-        onClick={() => onScroll(-1)}
-        disabled={atStart}
-        className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
-          adminTheme
-            ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
-            : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
-        }`}
-        aria-label={t("jobs.tableScrollLeft")}
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-      </button>
+      <InstantTooltip label={t("jobs.tableScrollLeft")} align="left">
+        {(tooltipId) => (
+          <button
+            type="button"
+            onClick={() => onScroll(-1)}
+            disabled={atStart}
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
+              adminTheme
+                ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
+                : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
+            }`}
+            aria-label={t("jobs.tableScrollLeft")}
+            aria-describedby={tooltipId}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+      </InstantTooltip>
       <span className="px-1">{t("jobs.tableScrollHint")}</span>
-      <button
-        type="button"
-        onClick={() => onScroll(1)}
-        disabled={atEnd}
-        className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
-          adminTheme
-            ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
-            : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
-        }`}
-        aria-label={t("jobs.tableScrollRight")}
-      >
-        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-      </button>
+      <InstantTooltip label={t("jobs.tableScrollRight")}>
+        {(tooltipId) => (
+          <button
+            type="button"
+            onClick={() => onScroll(1)}
+            disabled={atEnd}
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
+              adminTheme
+                ? "hover:bg-cyan-50 disabled:text-gray-300 disabled:hover:bg-transparent dark:hover:bg-cyan-950/50 dark:disabled:text-gray-700"
+                : "hover:bg-cyan-50 disabled:text-slate-300 disabled:hover:bg-transparent"
+            }`}
+            aria-label={t("jobs.tableScrollRight")}
+            aria-describedby={tooltipId}
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+      </InstantTooltip>
     </div>
   );
 }

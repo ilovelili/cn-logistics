@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
+  CheckCircle2,
+  FileStack,
   Filter,
   Plus,
   Search,
+  ShipWheel,
   Star,
   X,
 } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
+import InstantTooltip from "./InstantTooltip";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
 } from "./ShipmentJobsTable";
@@ -53,6 +58,7 @@ interface ShipmentJobsProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
   loading: boolean;
+  error?: string | null;
   profileEmail: string;
   canManageShipments?: boolean;
   onRefresh: () => Promise<void>;
@@ -68,6 +74,7 @@ export default function ShipmentJobs({
   jobs,
   documents,
   loading,
+  error,
   profileEmail,
   canManageShipments = false,
   onRefresh,
@@ -141,6 +148,35 @@ export default function ShipmentJobs({
   const documentsByJob = useMemo(() => {
     return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
+  const summaryStats = useMemo(() => {
+    const customsHold = jobs.filter(
+      (job) => job.status === "customs_hold",
+    ).length;
+    const delivered = jobs.filter((job) => job.status === "delivered").length;
+    const pendingDocumentApprovals = documents.filter(
+      (document) =>
+        document.scope === "customer" && document.approval_status === "pending",
+    ).length;
+
+    return {
+      totalJobs: jobs.length,
+      customsHold,
+      delivered,
+      pendingDocumentApprovals,
+    };
+  }, [documents, jobs]);
+
+  const showAllJobs = () => {
+    onStatusFilterChange("all");
+    onTradeFilterChange("all");
+    onTransportFilterChange("all");
+  };
+
+  const showJobsByStatus = (status: StatusFilter) => {
+    onStatusFilterChange(status);
+    onTradeFilterChange("all");
+    onTransportFilterChange("all");
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -261,7 +297,7 @@ export default function ShipmentJobs({
       )}
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("jobs.title")}
@@ -276,6 +312,37 @@ export default function ShipmentJobs({
               {t("jobs.new")}
             </button>
           )}
+        </div>
+        {error && <ShipmentSetupError error={error} />}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <ShipmentSummaryCard
+            label={t("dashboard.totalJobs")}
+            value={loading ? "-" : summaryStats.totalJobs}
+            icon={<ShipWheel className="h-5 w-5" />}
+            tone="blue"
+            onClick={showAllJobs}
+          />
+          <ShipmentSummaryCard
+            label={t("status.customsHold")}
+            value={loading ? "-" : summaryStats.customsHold}
+            icon={<AlertTriangle className="h-5 w-5" />}
+            tone="amber"
+            onClick={() => showJobsByStatus("customs_hold")}
+          />
+          <ShipmentSummaryCard
+            label={t("status.delivered")}
+            value={loading ? "-" : summaryStats.delivered}
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            tone="emerald"
+            onClick={() => showJobsByStatus("delivered")}
+          />
+          <ShipmentSummaryCard
+            label={t("documents.pendingApproval")}
+            value={loading ? "-" : summaryStats.pendingDocumentApprovals}
+            icon={<FileStack className="h-5 w-5" />}
+            tone="rose"
+            onClick={showAllJobs}
+          />
         </div>
       </div>
 
@@ -358,6 +425,8 @@ export default function ShipmentJobs({
         onSelectJob={setSelectedJob}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
+        requesterEmail={profileEmail}
+        onRefresh={onRefresh}
         adminTheme
         approvedDocumentsOnly={!canManageShipments}
       />
@@ -418,6 +487,75 @@ export default function ShipmentJobs({
           }
         }}
       />
+    </div>
+  );
+}
+
+function ShipmentSummaryCard({
+  label,
+  value,
+  icon,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: number | string;
+  icon: React.ReactNode;
+  tone: "blue" | "amber" | "emerald" | "rose";
+  onClick?: () => void;
+}) {
+  const tones = {
+    blue:
+      "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    amber:
+      "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+    emerald:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+    rose:
+      "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+  };
+  const Component = onClick ? "button" : "div";
+
+  return (
+    <Component
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`w-full rounded-xl border border-gray-200 bg-white p-4 text-left transition dark:border-gray-800 dark:bg-gray-950 ${
+        onClick
+          ? "hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-slate-100 dark:hover:border-cyan-700 dark:focus:ring-gray-800"
+          : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-2xl font-black text-gray-900 dark:text-white">
+            {value}
+          </div>
+          <div className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">
+            {label}
+          </div>
+        </div>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
+        >
+          {icon}
+        </div>
+      </div>
+    </Component>
+  );
+}
+
+function ShipmentSetupError({ error }: { error: string }) {
+  return (
+    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+        <div>
+          <div className="font-bold">{t("dashboard.setup.title")}</div>
+          <p className="mt-1 text-sm">{t("dashboard.setup.body")}</p>
+          <p className="mt-2 break-all text-xs">{error}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -648,21 +786,28 @@ function StarRatingInput({
       <div className="text-sm font-black text-slate-950">{label}</div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {[1, 2, 3, 4, 5].map((star) => (
-          <button
+          <InstantTooltip
             key={star}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(star)}
-            className={`rounded-2xl p-2 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-              star <= value ? "text-amber-400" : "text-slate-300"
-            }`}
-            aria-label={`${label}: ${t("feedback.star", { count: star })}`}
+            label={`${label}: ${t("feedback.star", { count: star })}`}
           >
-            <Star
-              className="h-7 w-7"
-              fill={star <= value ? "currentColor" : "none"}
-            />
-          </button>
+            {(tooltipId) => (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange(star)}
+                className={`rounded-2xl p-2 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+                  star <= value ? "text-amber-400" : "text-slate-300"
+                }`}
+                aria-label={`${label}: ${t("feedback.star", { count: star })}`}
+                aria-describedby={tooltipId}
+              >
+                <Star
+                  className="h-7 w-7"
+                  fill={star <= value ? "currentColor" : "none"}
+                />
+              </button>
+            )}
+          </InstantTooltip>
         ))}
         <span className="ml-1 text-sm font-bold text-slate-500">
           {value ? t("feedback.ratingValue", { rating: value }) : "-"}

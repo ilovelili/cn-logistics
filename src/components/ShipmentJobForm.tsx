@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Plus, X } from "lucide-react";
 import { t, type TranslationKey } from "../lib/i18n";
+import InstantTooltip from "./InstantTooltip";
 import {
   defaultShipmentJobForm,
   fetchShipmentTrackingEventTemplates,
@@ -795,14 +796,19 @@ function TrackingEventFields({
                 }
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
               />
-              <button
-                type="button"
-                onClick={() => onRemove(index)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
-                aria-label={t("common.delete")}
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <InstantTooltip label={t("common.delete")}>
+                {(tooltipId) => (
+                  <button
+                    type="button"
+                    onClick={() => onRemove(index)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
+                    aria-label={t("common.delete")}
+                    aria-describedby={tooltipId}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </InstantTooltip>
             </div>
           ))}
         </div>
@@ -851,15 +857,20 @@ function VesselFlightNumberFields({
                 onChange={(event) => onChange(index, event.target.value)}
                 className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
               />
-              <button
-                type="button"
-                disabled={values.length === 1}
-                onClick={() => onRemove(index)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={t("common.delete")}
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <InstantTooltip label={t("common.delete")}>
+                {(tooltipId) => (
+                  <button
+                    type="button"
+                    disabled={values.length === 1}
+                    onClick={() => onRemove(index)}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={t("common.delete")}
+                    aria-describedby={tooltipId}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </InstantTooltip>
             </div>
           </label>
         ))}

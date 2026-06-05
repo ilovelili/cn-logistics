@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle, Plus, Save, Search, X, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  Edit3,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react";
 import {
   AdminOperator,
   AdminOperatorStaffRole,
@@ -557,6 +566,7 @@ export default function UserRegistrationForm({
           <div className="flex flex-nowrap gap-1.5">
             <TableActionButton
               variant="primary"
+              icon={<Edit3 className="h-3.5 w-3.5" />}
               onClick={() => setSelectedUser(user)}
             >
               {t("common.edit")}
@@ -1367,6 +1377,7 @@ function ApprovalButtons({
     <div className="flex flex-nowrap gap-1.5">
       <TableActionButton
         variant="success"
+        icon={<CheckCircle className="h-3.5 w-3.5" />}
         disabled={disabled}
         onClick={onApprove}
       >
@@ -1374,6 +1385,7 @@ function ApprovalButtons({
       </TableActionButton>
       <TableActionButton
         variant="warning"
+        icon={<XCircle className="h-3.5 w-3.5" />}
         disabled={disabled}
         onClick={onReject}
       >
@@ -1381,6 +1393,7 @@ function ApprovalButtons({
       </TableActionButton>
       <TableActionButton
         variant="danger"
+        icon={<Trash2 className="h-3.5 w-3.5" />}
         disabled={deleteDisabled}
         onClick={onDelete}
       >
@@ -1409,7 +1422,11 @@ function AdminOperatorCheckboxGrid({
   assignmentsReadOnly: boolean;
   onToggle: (operatorId: string) => void;
 }) {
-  if (adminOperators.length === 0) {
+  const visibleOperators = assignmentsReadOnly
+    ? adminOperators.filter((operator) => selectedAdminIds.includes(operator.id))
+    : adminOperators;
+
+  if (visibleOperators.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
         {t("superAdmin.operators.noOperators")}
@@ -1419,44 +1436,64 @@ function AdminOperatorCheckboxGrid({
 
   return (
     <div className="grid gap-2 md:grid-cols-2">
-      {adminOperators.map((operator) => (
-        <label
+      {visibleOperators.map((operator) => {
+        const content = (
+          <>
+            {!assignmentsReadOnly && (
+              <input
+                type="checkbox"
+                checked={selectedAdminIds.includes(operator.id)}
+                onChange={() => onToggle(operator.id)}
+                className="mt-1 h-4 w-4 rounded border-gray-300"
+              />
+            )}
+            <span className="min-w-0">
+              <span className="flex min-w-0 flex-wrap items-center gap-2">
+                <span
+                  className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white"
+                  title={operator.user_name || operator.email}
+                >
+                  {operator.user_name || operator.email}
+                </span>
+                {getStaffRoleLabels(operator).map((roleLabel) => (
+                  <span
+                    key={roleLabel}
+                    className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    {roleLabel}
+                  </span>
+                ))}
+              </span>
+              <span
+                className="block truncate text-xs text-gray-500 dark:text-gray-400"
+                title={operator.email}
+              >
+                {operator.email}
+              </span>
+            </span>
+          </>
+        );
+
+        if (assignmentsReadOnly) {
+          return (
+            <div
+              key={operator.id}
+              className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+            >
+              {content}
+            </div>
+          );
+        }
+
+        return (
+          <label
           key={operator.id}
           className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
         >
-          <input
-            type="checkbox"
-            checked={selectedAdminIds.includes(operator.id)}
-            disabled={assignmentsReadOnly}
-            onChange={() => onToggle(operator.id)}
-            className="mt-1 h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <span className="min-w-0">
-            <span className="flex min-w-0 flex-wrap items-center gap-2">
-              <span
-                className="min-w-0 truncate text-sm font-bold text-gray-900 dark:text-white"
-                title={operator.user_name || operator.email}
-              >
-                {operator.user_name || operator.email}
-              </span>
-              {getStaffRoleLabels(operator).map((roleLabel) => (
-                <span
-                  key={roleLabel}
-                  className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  {roleLabel}
-                </span>
-              ))}
-            </span>
-            <span
-              className="block truncate text-xs text-gray-500 dark:text-gray-400"
-              title={operator.email}
-            >
-              {operator.email}
-            </span>
-          </span>
-        </label>
-      ))}
+            {content}
+          </label>
+        );
+      })}
     </div>
   );
 }

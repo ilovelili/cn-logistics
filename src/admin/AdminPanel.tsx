@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  FileStack,
   FilePlus2,
   ListChecks,
   LogOut,
@@ -8,22 +7,18 @@ import {
   Moon,
   Star,
   Sun,
-  LayoutDashboard,
   UserPlus,
   ShieldCheck,
 } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
-import AdminDashboard from "./AdminDashboard";
 import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
 import StandardFlowManagement from "./StandardFlowManagement";
-import DocumentControl, {
-  DocumentApprovalFilter,
-} from "../components/DocumentControl";
 import ProfileButton from "../components/ProfileButton";
 import LanguageSelect from "../components/LanguageSelect";
+import InstantTooltip from "../components/InstantTooltip";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { ShipperUser, fetchShipperUsersByAdmin } from "../lib/shipperUsers";
 import { AppUserRole } from "../lib/auth";
@@ -31,9 +26,7 @@ import { t } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
 type AdminView =
-  | "dashboard"
   | "shipmentEntry"
-  | "documents"
   | "userRegistration"
   | "adminOperators"
   | "standardFlow"
@@ -43,7 +36,6 @@ interface AdminPanelProps {
   darkMode: boolean;
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  jobsLoading: boolean;
   onToggleDark: () => void;
   profileEmail: string;
   profileRole: AppUserRole;
@@ -62,7 +54,6 @@ export default function AdminPanel({
   darkMode,
   jobs,
   documents,
-  jobsLoading,
   onToggleDark,
   profileEmail,
   profileRole,
@@ -72,8 +63,8 @@ export default function AdminPanel({
   onLogout,
   onRefreshJobs,
 }: AdminPanelProps) {
-  const { isAdminAuthenticated, logout } = useAdminAuth();
-  const [view, setView] = useState<AdminView>("dashboard");
+  const { logout } = useAdminAuth();
+  const [view, setView] = useState<AdminView>("shipmentEntry");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<ShipperUser[]>([]);
@@ -82,8 +73,6 @@ export default function AdminPanel({
   >([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
-  const [documentApprovalFilter, setDocumentApprovalFilter] =
-    useState<DocumentApprovalFilter>("all");
   const isSuperAdmin = profileRole === "super_admin";
   const shipmentShipperOptions = useMemo(
     () =>
@@ -98,9 +87,8 @@ export default function AdminPanel({
     [switchableUsers],
   );
   useEffect(() => {
-    setView("dashboard");
+    setView("shipmentEntry");
     setShipmentEntryCriteria({ kind: "all" });
-    setDocumentApprovalFilter("all");
   }, [profileEmail, profileRole]);
 
   useEffect(() => {
@@ -154,11 +142,6 @@ export default function AdminPanel({
 
   const navItems = [
     {
-      id: "dashboard" as AdminView,
-      label: t("admin.nav.dashboard"),
-      icon: LayoutDashboard,
-    },
-    {
       id: "shipmentEntry" as AdminView,
       label: t("admin.nav.shipmentEntry"),
       icon: FilePlus2,
@@ -172,11 +155,6 @@ export default function AdminPanel({
           },
         ]
       : []),
-    {
-      id: "documents" as AdminView,
-      label: t("app.nav.documents"),
-      icon: FileStack,
-    },
     {
       id: "userRegistration" as AdminView,
       label: t("admin.nav.userRegistration"),
@@ -211,14 +189,19 @@ export default function AdminPanel({
       <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSidebarToggle}
-              className="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-              aria-label="メニューを切り替え"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            <InstantTooltip label={t("app.menu.toggle")} align="left">
+              {(tooltipId) => (
+                <button
+                  type="button"
+                  onClick={handleSidebarToggle}
+                  className="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                  aria-label={t("app.menu.toggle")}
+                  aria-describedby={tooltipId}
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
+            </InstantTooltip>
             <div className="min-w-0">
               <span
                 className="block truncate font-bold text-gray-900 dark:text-white sm:inline"
@@ -308,19 +291,29 @@ export default function AdminPanel({
                 </button>
               </div>
             )}
-            <button
-              onClick={onToggleDark}
-              className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+            <InstantTooltip
+              label={darkMode ? t("app.theme.light") : t("app.theme.dark")}
             >
-              <span className="relative flex items-center justify-center w-5 h-5">
-                <Sun
-                  className={`w-5 h-5 text-amber-500 absolute transition-all duration-300 ${darkMode ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-50"}`}
-                />
-                <Moon
-                  className={`w-5 h-5 text-gray-600 dark:text-gray-300 absolute transition-all duration-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
-                />
-              </span>
-            </button>
+              {(tooltipId) => (
+                <button
+                  onClick={onToggleDark}
+                  className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                  aria-label={
+                    darkMode ? t("app.theme.light") : t("app.theme.dark")
+                  }
+                  aria-describedby={tooltipId}
+                >
+                  <span className="relative flex items-center justify-center w-5 h-5">
+                    <Sun
+                      className={`w-5 h-5 text-amber-500 absolute transition-all duration-300 ${darkMode ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-50"}`}
+                    />
+                    <Moon
+                      className={`w-5 h-5 text-gray-600 dark:text-gray-300 absolute transition-all duration-300 ${darkMode ? "opacity-0 -rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`}
+                    />
+                  </span>
+                </button>
+              )}
+            </InstantTooltip>
             <ProfileButton email={profileEmail} />
             <button
               onClick={onLogout ?? logout}
@@ -358,9 +351,6 @@ export default function AdminPanel({
                       if (item.id === "shipmentEntry") {
                         setShipmentEntryCriteria({ kind: "all" });
                       }
-                      if (item.id === "documents") {
-                        setDocumentApprovalFilter("all");
-                      }
                       setView(item.id);
                       setSidebarOpen(false);
                     }}
@@ -380,21 +370,6 @@ export default function AdminPanel({
         )}
 
         <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
-          {view === "dashboard" && (
-            <AdminDashboard
-              jobs={jobs}
-              documents={documents}
-              loading={jobsLoading}
-              onOpenShipmentEntry={(criteria) => {
-                setShipmentEntryCriteria(criteria);
-                setView("shipmentEntry");
-              }}
-              onOpenDocuments={(approvalFilter) => {
-                setDocumentApprovalFilter(approvalFilter);
-                setView("documents");
-              }}
-            />
-          )}
           {view === "shipmentEntry" && (
             <ShipmentEntryForm
               jobs={jobs}
@@ -407,21 +382,6 @@ export default function AdminPanel({
               adminOperators={switchableOperators}
               criteria={shipmentEntryCriteria}
               onRefresh={onRefreshJobs}
-            />
-          )}
-          {view === "documents" && (
-            <DocumentControl
-              jobs={jobs}
-              documents={documents}
-              loading={jobsLoading}
-              onRefresh={onRefreshJobs}
-              isAdminAuthenticated={isAdminAuthenticated}
-              requesterEmail={profileEmail}
-              approvalFilter={documentApprovalFilter}
-              shipperOptions={shipmentShipperOptions}
-              shipperUsers={switchableUsers}
-              isSuperAdmin={isSuperAdmin}
-              adminOperators={switchableOperators}
             />
           )}
           {view === "userRegistration" && (

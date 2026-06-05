@@ -272,13 +272,19 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
           <h2 className="text-lg font-black text-slate-950 dark:text-white">
             {t("profile.title")}
           </h2>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <InstantTooltip label={t("jobs.detail.close")}>
+            {(tooltipId) => (
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                aria-label={t("jobs.detail.close")}
+                aria-describedby={tooltipId}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </InstantTooltip>
         </div>
 
         {cropImageUrl ? (

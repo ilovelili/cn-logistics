@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  AlertTriangle,
   CheckCircle,
+  CheckCircle2,
   Edit3,
+  FileStack,
   Filter,
   Plus,
   Search,
+  ShipWheel,
   X,
   XCircle,
 } from "lucide-react";
 import ShipmentJobForm from "../components/ShipmentJobForm";
+import InstantTooltip from "../components/InstantTooltip";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
 } from "../components/ShipmentJobsTable";
@@ -89,6 +94,8 @@ export default function ShipmentEntryForm({
   const [statusColorMap, setStatusColorMap] = useState<ShipmentStatusColorMap>(
     {},
   );
+  const [activeCriteria, setActiveCriteria] =
+    useState<ShipmentEntryCriteria>(criteria);
   const shipperNames = useMemo(
     () => [
       ...new Set(
@@ -133,18 +140,18 @@ export default function ShipmentEntryForm({
         .filter(
           (document) =>
             document.scope === "customer" &&
-            criteria.kind === "documentApproval" &&
-            document.approval_status === criteria.approvalStatus,
+            activeCriteria.kind === "documentApproval" &&
+            document.approval_status === activeCriteria.approvalStatus,
         )
         .map((document) => document.shipment_job_id),
     );
 
     return jobs
       .filter((job) => {
-        if (criteria.kind === "status") {
-          return job.status === criteria.status;
+        if (activeCriteria.kind === "status") {
+          return job.status === activeCriteria.status;
         }
-        if (criteria.kind === "documentApproval") {
+        if (activeCriteria.kind === "documentApproval") {
           return pendingApprovalJobIds.has(job.id);
         }
         return true;
@@ -175,7 +182,7 @@ export default function ShipmentEntryForm({
   }, [
     shipperFilter,
     shipperOptions,
-    criteria,
+    activeCriteria,
     documents,
     jobs,
     query,
@@ -218,6 +225,23 @@ export default function ShipmentEntryForm({
   const documentsByJob = useMemo(() => {
     return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
+  const summaryStats = useMemo(() => {
+    const customsHold = jobs.filter(
+      (job) => job.status === "customs_hold",
+    ).length;
+    const delivered = jobs.filter((job) => job.status === "delivered").length;
+    const pendingDocumentApprovals = documents.filter(
+      (document) =>
+        document.scope === "customer" && document.approval_status === "pending",
+    ).length;
+
+    return {
+      totalJobs: jobs.length,
+      customsHold,
+      delivered,
+      pendingDocumentApprovals,
+    };
+  }, [documents, jobs]);
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -225,6 +249,7 @@ export default function ShipmentEntryForm({
   };
 
   useEffect(() => {
+    setActiveCriteria(criteria);
     setMode("update");
     setSelectedJob(null);
     setQuery("");
@@ -253,6 +278,7 @@ export default function ShipmentEntryForm({
     setCurrentPage(1);
   }, [
     pageSize,
+    activeCriteria,
     shipperFilter,
     query,
     sortDirection,
@@ -309,6 +335,20 @@ export default function ShipmentEntryForm({
     setSortDirection("asc");
   };
 
+  const openMetricFilter = (nextCriteria: ShipmentEntryCriteria) => {
+    setActiveCriteria(nextCriteria);
+    setMode("update");
+    setSelectedJob(null);
+    setQuery("");
+    setShipperFilter("all");
+    setTradeFilter("all");
+    setTransportFilter("all");
+    setStatusFilter(
+      nextCriteria.kind === "status" ? nextCriteria.status : "all",
+    );
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-6">
       {toast && (
@@ -328,10 +368,49 @@ export default function ShipmentEntryForm({
         </div>
       )}
 
-      <div>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           {t("admin.entry.title")}
         </h2>
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 xl:max-w-4xl xl:grid-cols-4">
+          <ShipmentHeaderMetric
+            label={t("dashboard.totalJobs")}
+            value={summaryStats.totalJobs}
+            icon={<ShipWheel className="h-4 w-4" />}
+            tone="blue"
+            onClick={() => openMetricFilter({ kind: "all" })}
+          />
+          <ShipmentHeaderMetric
+            label={t("status.customsHold")}
+            value={summaryStats.customsHold}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            tone="amber"
+            onClick={() =>
+              openMetricFilter({ kind: "status", status: "customs_hold" })
+            }
+          />
+          <ShipmentHeaderMetric
+            label={t("status.delivered")}
+            value={summaryStats.delivered}
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            tone="emerald"
+            onClick={() =>
+              openMetricFilter({ kind: "status", status: "delivered" })
+            }
+          />
+          <ShipmentHeaderMetric
+            label={t("documents.pendingApproval")}
+            value={summaryStats.pendingDocumentApprovals}
+            icon={<FileStack className="h-4 w-4" />}
+            tone="rose"
+            onClick={() =>
+              openMetricFilter({
+                kind: "documentApproval",
+                approvalStatus: "pending",
+              })
+            }
+          />
+        </div>
       </div>
 
       <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900 sm:inline-grid sm:w-auto">
@@ -442,6 +521,7 @@ export default function ShipmentEntryForm({
             onSelectJob={setSelectedJob}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
+            onRefresh={onRefresh}
           />
           <AdminShipmentJobModal
             job={selectedJob}
@@ -469,6 +549,58 @@ export default function ShipmentEntryForm({
         </section>
       )}
     </div>
+  );
+}
+
+function ShipmentHeaderMetric({
+  label,
+  value,
+  icon,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  icon: ReactNode;
+  tone: "blue" | "amber" | "emerald" | "rose";
+  onClick?: () => void;
+}) {
+  const tones = {
+    blue:
+      "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200",
+    amber:
+      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
+    emerald:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
+    rose:
+      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200",
+  };
+  const Component = onClick ? "button" : "div";
+
+  return (
+    <Component
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`flex min-w-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-left shadow-sm transition dark:border-gray-800 dark:bg-gray-900 ${
+        onClick
+          ? "hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-slate-100 dark:hover:border-cyan-700 dark:focus:ring-gray-800"
+          : ""
+      }`}
+    >
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${tones[tone]}`}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className="text-lg font-black leading-none text-gray-900 dark:text-white">
+          {value}
+        </div>
+        <div className="mt-1 truncate text-[11px] font-bold text-gray-500 dark:text-gray-400">
+          {label}
+        </div>
+      </div>
+    </Component>
   );
 }
 
@@ -514,14 +646,19 @@ function AdminShipmentJobModal({
               {t("common.jobNumber")}: {job.job_number || "-"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-            aria-label={t("jobs.detail.close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <InstantTooltip label={t("jobs.detail.close")}>
+            {(tooltipId) => (
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                aria-label={t("jobs.detail.close")}
+                aria-describedby={tooltipId}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </InstantTooltip>
         </div>
 
         <ShipmentJobForm

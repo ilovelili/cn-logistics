@@ -1,5 +1,21 @@
-import { CalendarDays, FileText, MoreHorizontal } from "lucide-react";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  AlertCircle,
+  CalendarDays,
+  CheckCircle,
+  Edit3,
+  Eye,
+  FileClock,
+  FileText,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { t } from "../lib/i18n";
 import {
   isCustomerDocumentDownloadable,
@@ -13,6 +29,8 @@ import {
   statusLabels,
   tradeModeLabels,
   transportModeLabels,
+  softDeleteShipmentDocument,
+  updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
 import PaginationControls from "./PaginationControls";
 import DocumentPreviewModal from "./DocumentPreviewModal";
@@ -22,6 +40,7 @@ import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import TableActionButton from "./TableActionButton";
+import InstantTooltip from "./InstantTooltip";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
 import {
@@ -66,6 +85,11 @@ interface ShipmentJobsTableColumn {
   render: (job: ShipmentJob) => ReactNode;
 }
 
+interface ShipmentDocumentDeleteTarget {
+  job: ShipmentJob;
+  document: ShipmentDocument;
+}
+
 const columnSettingsStorageKey = "shipment_jobs_table_columns_v6";
 
 interface ShipmentJobsTableProps {
@@ -95,6 +119,7 @@ interface ShipmentJobsTableProps {
   onSelectJob: (job: ShipmentJob) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export default function ShipmentJobsTable({
@@ -124,13 +149,96 @@ export default function ShipmentJobsTable({
   onSelectJob,
   onPageChange,
   onPageSizeChange,
+  onRefresh,
 }: ShipmentJobsTableProps) {
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
+  const [requestingDocumentId, setRequestingDocumentId] = useState<
+    string | null
+  >(null);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] =
+    useState<ShipmentDocumentDeleteTarget | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [stickyHeaderEnabled, toggleStickyHeader] =
     useStickyTableHeaderPreference();
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollHint = useHorizontalScrollHint(scrollContainerRef);
+  const showToast = useCallback((type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+  const requestDocument = useCallback(async (document: ShipmentDocument) => {
+    if (!requesterEmail || !canRequestDocument(document)) return;
+
+    setRequestingDocumentId(document.id);
+    try {
+      await updateShipmentDocumentApproval(
+        document.id,
+        "pending",
+        requesterEmail,
+      );
+      await onRefresh?.();
+      showToast(
+        "success",
+        t("documents.batchRequested", { count: 1 }),
+      );
+    } catch {
+      showToast("error", t("documents.batchRequestFailed"));
+    } finally {
+      setRequestingDocumentId(null);
+    }
+  }, [
+    onRefresh,
+    requesterEmail,
+    showToast,
+  ]);
+  const approveDocument = useCallback(async (document: ShipmentDocument) => {
+    if (!requesterEmail || document.approval_status !== "pending") return;
+
+    setRequestingDocumentId(document.id);
+    try {
+      await updateShipmentDocumentApproval(
+        document.id,
+        "approved",
+        requesterEmail,
+      );
+      await onRefresh?.();
+      showToast("success", t("admin.documents.approved"));
+    } catch {
+      showToast("error", t("admin.documents.updateFailed"));
+    } finally {
+      setRequestingDocumentId(null);
+    }
+  }, [
+    onRefresh,
+    requesterEmail,
+    showToast,
+  ]);
+  const deleteDocument = useCallback(async () => {
+    if (!deleteTarget || !requesterEmail) return;
+
+    setDeletingDocumentId(deleteTarget.document.id);
+    try {
+      await softDeleteShipmentDocument(deleteTarget.document.id, requesterEmail);
+      await onRefresh?.();
+      showToast(
+        "success",
+        t("documents.deletedWithName", { name: deleteTarget.document.name }),
+      );
+      setDeleteTarget(null);
+    } catch {
+      showToast("error", t("documents.deleteFailed"));
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  }, [deleteTarget, onRefresh, requesterEmail, showToast]);
+  const canDeleteDocuments = Boolean(requesterEmail) && !approvedDocumentsOnly;
   const columns = useMemo(
     () =>
       buildColumns(
@@ -144,8 +252,14 @@ export default function ShipmentJobsTable({
         isSuperAdmin,
         adminOperators,
         statusColorMap,
+        requestingDocumentId,
+        deletingDocumentId,
+        canDeleteDocuments,
         onSelectJob,
         setPreviewDocument,
+        requestDocument,
+        approveDocument,
+        setDeleteTarget,
       ),
     [
       adminTheme,
@@ -158,8 +272,14 @@ export default function ShipmentJobsTable({
       isSuperAdmin,
       adminOperators,
       statusColorMap,
+      requestingDocumentId,
+      deletingDocumentId,
+      canDeleteDocuments,
       onSelectJob,
       setPreviewDocument,
+      requestDocument,
+      approveDocument,
+      setDeleteTarget,
     ],
   );
   const columnSettingsRoleKey = `${columnSettingsStorageKey}-${
@@ -200,6 +320,22 @@ export default function ShipmentJobsTable({
           : "rounded-3xl border-slate-200"
       }`}
     >
+      {toast && (
+        <div
+          className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+            toast.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-rose-500 text-white"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          {toast.message}
+        </div>
+      )}
       <div
         className={`flex items-center justify-between border-b px-5 py-4 ${
           adminTheme
@@ -412,9 +548,21 @@ export default function ShipmentJobsTable({
           <DocumentPreviewModal
             document={previewDocument}
             adminTheme={adminTheme}
+            hideNativeToolbar={
+              approvedDocumentsOnly &&
+              !isCustomerDocumentDownloadable(previewDocument)
+            }
             onClose={() => setPreviewDocument(null)}
           />
         )}
+      {deleteTarget && (
+        <ShipmentDocumentDeleteConfirmModal
+          target={deleteTarget}
+          deleting={deletingDocumentId === deleteTarget.document.id}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => void deleteDocument()}
+        />
+      )}
     </section>
   );
 }
@@ -430,8 +578,14 @@ function buildColumns(
   isSuperAdmin: boolean,
   adminOperators: AdminOperator[],
   statusColorMap: ShipmentStatusColorMap,
+  requestingDocumentId: string | null,
+  deletingDocumentId: string | null,
+  canDeleteDocuments: boolean,
   onSelectJob: (job: ShipmentJob) => void,
   onPreviewDocument: (document: ShipmentDocument) => void,
+  onRequestDocument: (document: ShipmentDocument) => void,
+  onApproveDocument: (document: ShipmentDocument) => void,
+  onDeleteDocument: (target: ShipmentDocumentDeleteTarget) => void,
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
   const strongText = adminTheme
@@ -635,13 +789,20 @@ function buildColumns(
     {
       id: "documents",
       label: t("common.documents"),
-      width: 190,
+      width: 320,
       render: (job) => (
         <DocumentPills
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "customer",
           )}
           approvedOnly={approvedDocumentsOnly}
+          requesterEmail={requesterEmail}
+          requestingDocumentId={requestingDocumentId}
+          deletingDocumentId={deletingDocumentId}
+          canDelete={canDeleteDocuments}
+          onRequest={onRequestDocument}
+          onApprove={onApproveDocument}
+          onDelete={(document) => onDeleteDocument({ job, document })}
           onPreview={onPreviewDocument}
         />
       ),
@@ -652,13 +813,16 @@ function buildColumns(
     columns.push({
       id: "internal_documents",
       label: t("common.internalDocuments"),
-      width: 170,
+      width: 320,
       render: (job) => (
         <DocumentPills
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "internal",
           )}
           muted
+          deletingDocumentId={deletingDocumentId}
+          canDelete={canDeleteDocuments}
+          onDelete={(document) => onDeleteDocument({ job, document })}
           onPreview={onPreviewDocument}
         />
       ),
@@ -670,7 +834,11 @@ function buildColumns(
     label: t("admin.userRegistration.action"),
     width: 110,
     render: (job) => (
-      <TableActionButton variant="primary" onClick={() => onSelectJob(job)}>
+      <TableActionButton
+        variant="primary"
+        icon={<Edit3 className="h-3.5 w-3.5" />}
+        onClick={() => onSelectJob(job)}
+      >
         {t("common.edit")}
       </TableActionButton>
     ),
@@ -683,11 +851,25 @@ function DocumentPills({
   documents,
   muted = false,
   approvedOnly = false,
+  requesterEmail,
+  requestingDocumentId,
+  deletingDocumentId,
+  canDelete = false,
+  onRequest,
+  onApprove,
+  onDelete,
   onPreview,
 }: {
   documents?: ShipmentDocument[];
   muted?: boolean;
   approvedOnly?: boolean;
+  requesterEmail?: string;
+  requestingDocumentId?: string | null;
+  deletingDocumentId?: string | null;
+  canDelete?: boolean;
+  onRequest?: (document: ShipmentDocument) => void;
+  onApprove?: (document: ShipmentDocument) => void;
+  onDelete?: (document: ShipmentDocument) => void;
   onPreview: (document: ShipmentDocument) => void;
 }) {
   if (!documents?.length) {
@@ -695,15 +877,35 @@ function DocumentPills({
   }
 
   return (
-    <div className="flex flex-col items-start gap-1.5">
+    <div className="flex flex-col items-start gap-2">
       {documents.map((document) => {
         const canPreview =
           !approvedOnly || isCustomerDocumentDownloadable(document);
-        const pillClass = muted
-          ? "border border-indigo-200 bg-transparent text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-950/40"
-          : !canPreview
-            ? "bg-slate-100 text-slate-400 dark:bg-gray-800 dark:text-gray-500"
-            : "border border-cyan-200 bg-transparent text-cyan-800 transition hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40";
+        const canRequest =
+          !muted &&
+          approvedOnly &&
+          Boolean(requesterEmail) &&
+          Boolean(onRequest) &&
+          canRequestDocument(document);
+        const canApprove =
+          !muted &&
+          !approvedOnly &&
+          Boolean(requesterEmail) &&
+          Boolean(onApprove) &&
+          document.approval_status === "pending";
+        const isPendingRequest =
+          !muted && approvedOnly && document.approval_status === "pending";
+        const showDelete = canDelete && Boolean(onDelete);
+        const actionButtonBase =
+          "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50";
+        const rowClass = muted
+          ? "border-indigo-200 bg-indigo-50/40 dark:border-indigo-900 dark:bg-indigo-950/20"
+          : "border-slate-200 bg-white dark:border-gray-800 dark:bg-gray-900";
+        const nameClass = muted
+          ? "text-indigo-700 dark:text-indigo-200"
+          : canPreview
+            ? "text-cyan-800 dark:text-cyan-200"
+            : "text-slate-500 dark:text-gray-400";
         const content = (
           <>
             <FileText className="h-3 w-3 shrink-0" />
@@ -713,36 +915,156 @@ function DocumentPills({
           </>
         );
 
-        if (!canPreview) {
-          return (
-            <span
-              key={document.id}
-              onClick={(event) => event.stopPropagation()}
-              className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}
-              title={document.name}
-            >
-              {content}
-            </span>
-          );
-        }
-
         return (
-          <button
-            type="button"
+          <div
             key={document.id}
             onClick={(event) => {
               event.stopPropagation();
-              if (canPreview) {
-                onPreview(document);
-              }
             }}
-            className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}
-            title={document.name}
+            className={`w-full rounded-lg border p-2 ${rowClass}`}
           >
-            {content}
-          </button>
+            <div className="flex min-w-0 items-start gap-2">
+              <span
+                className={`inline-flex min-w-0 flex-1 items-center gap-1 text-xs font-semibold ${nameClass}`}
+                title={document.name}
+              >
+                {content}
+              </span>
+              <div className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
+                {canPreview && (
+                  <InstantTooltip label={t("documents.preview")}>
+                    {(tooltipId) => (
+                      <button
+                        type="button"
+                        onClick={() => onPreview(document)}
+                        className={`${actionButtonBase} border-cyan-200 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40`}
+                        aria-label={t("documents.preview")}
+                        aria-describedby={tooltipId}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </InstantTooltip>
+                )}
+                {(canRequest || isPendingRequest || canApprove) && (
+                  <InstantTooltip
+                    label={
+                      canApprove
+                        ? t("documents.downloadApprove")
+                        : t("documents.downloadRequest")
+                    }
+                  >
+                    {(tooltipId) => (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (canApprove) {
+                            onApprove?.(document);
+                          } else if (canRequest) {
+                            onRequest?.(document);
+                          }
+                        }}
+                        disabled={
+                          isPendingRequest ||
+                          requestingDocumentId === document.id
+                        }
+                        className={`${actionButtonBase} border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200 dark:hover:bg-amber-950/50`}
+                        aria-label={
+                          canApprove
+                            ? t("documents.downloadApprove")
+                            : t("documents.downloadRequest")
+                        }
+                        aria-describedby={tooltipId}
+                      >
+                        <FileClock className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </InstantTooltip>
+                )}
+                {showDelete && (
+                  <InstantTooltip label={t("common.delete")}>
+                    {(tooltipId) => (
+                      <button
+                        type="button"
+                        onClick={() => onDelete?.(document)}
+                        disabled={deletingDocumentId === document.id}
+                        className={`${actionButtonBase} border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40`}
+                        aria-label={t("common.delete")}
+                        aria-describedby={tooltipId}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </InstantTooltip>
+                )}
+              </div>
+            </div>
+          </div>
         );
       })}
+    </div>
+  );
+}
+
+function canRequestDocument(document: ShipmentDocument) {
+  return (
+    document.approval_status === "not_requested" ||
+    document.approval_status === "rejected"
+  );
+}
+
+function ShipmentDocumentDeleteConfirmModal({
+  target,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  target: ShipmentDocumentDeleteTarget;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("admin.userRegistration.confirmTitle", {
+            action: t("common.delete"),
+          })}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("documents.deleteConfirm")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">
+            {target.document.name}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("common.invoice")}: {target.job.invoice_number || "-"}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("common.jobNumber")}: {target.job.job_number || "-"}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? t("common.saving") : t("common.delete")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

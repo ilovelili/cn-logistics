@@ -24,6 +24,7 @@ import {
   tradeModeLabels,
   transportModeLabels,
 } from "../lib/shipmentJobs";
+import InstantTooltip from "./InstantTooltip";
 
 interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
@@ -114,14 +115,19 @@ export default function ShipmentJobDetailModal({
                     : t("feedback.open")}
               </button>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-              aria-label={t("jobs.detail.close")}
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <InstantTooltip label={t("jobs.detail.close")}>
+              {(tooltipId) => (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label={t("jobs.detail.close")}
+                  aria-describedby={tooltipId}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </InstantTooltip>
           </div>
         </div>
 

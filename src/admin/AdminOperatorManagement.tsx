@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Save, Search, X, XCircle } from "lucide-react";
+import { Edit3, Plus, Save, Search, Trash2, X, XCircle } from "lucide-react";
 import {
   AdminOperator,
   AdminOperatorStaffRole,
@@ -440,12 +440,14 @@ export default function AdminOperatorManagement({
           <div className="flex items-center gap-2">
             <TableActionButton
               variant="success"
+              icon={<Edit3 className="h-3.5 w-3.5" />}
               onClick={() => openEditModal(operator)}
             >
               {t("common.edit")}
             </TableActionButton>
             <TableActionButton
               variant="danger"
+              icon={<Trash2 className="h-3.5 w-3.5" />}
               disabled={deletingId === operator.id}
               onClick={() => setDeleteTarget(operator)}
             >

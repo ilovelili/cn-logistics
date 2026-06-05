@@ -1,5 +1,6 @@
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { t } from "../lib/i18n";
+import InstantTooltip from "./InstantTooltip";
 
 interface PaginationControlsProps {
   adminTheme?: boolean;
@@ -72,22 +73,27 @@ export default function PaginationControls({
         <div
           className={`inline-flex overflow-hidden rounded-xl border ${groupClass}`}
         >
-          <button
-            type="button"
-            aria-disabled={currentPage === 1}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              if (currentPage !== 1) {
-                runWithoutViewportJump(() => onPageChange(1));
-              }
-            }}
-            className={`inline-flex min-w-10 items-center justify-center border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${inactiveButtonClass} ${
-              currentPage === 1 ? inactiveStateClass : ""
-            }`}
-            aria-label={t("jobs.pagination.first")}
-          >
-            <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <InstantTooltip label={t("jobs.pagination.first")} align="left">
+            {(tooltipId) => (
+              <button
+                type="button"
+                aria-disabled={currentPage === 1}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  if (currentPage !== 1) {
+                    runWithoutViewportJump(() => onPageChange(1));
+                  }
+                }}
+                className={`inline-flex min-w-10 items-center justify-center border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${inactiveButtonClass} ${
+                  currentPage === 1 ? inactiveStateClass : ""
+                }`}
+                aria-label={t("jobs.pagination.first")}
+                aria-describedby={tooltipId}
+              >
+                <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </InstantTooltip>
           {pageItems.map((pageItem) => (
             <button
               key={pageItem}
@@ -103,22 +109,27 @@ export default function PaginationControls({
               {pageItem}
             </button>
           ))}
-          <button
-            type="button"
-            aria-disabled={currentPage === pageCount}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              if (currentPage !== pageCount) {
-                runWithoutViewportJump(() => onPageChange(pageCount));
-              }
-            }}
-            className={`inline-flex min-w-10 items-center justify-center px-3 py-2 text-sm font-semibold transition ${inactiveButtonClass} ${
-              currentPage === pageCount ? inactiveStateClass : ""
-            }`}
-            aria-label={t("jobs.pagination.last")}
-          >
-            <ChevronsRight className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <InstantTooltip label={t("jobs.pagination.last")}>
+            {(tooltipId) => (
+              <button
+                type="button"
+                aria-disabled={currentPage === pageCount}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  if (currentPage !== pageCount) {
+                    runWithoutViewportJump(() => onPageChange(pageCount));
+                  }
+                }}
+                className={`inline-flex min-w-10 items-center justify-center px-3 py-2 text-sm font-semibold transition ${inactiveButtonClass} ${
+                  currentPage === pageCount ? inactiveStateClass : ""
+                }`}
+                aria-label={t("jobs.pagination.last")}
+                aria-describedby={tooltipId}
+              >
+                <ChevronsRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </InstantTooltip>
         </div>
 
         <div className="flex items-center gap-2">

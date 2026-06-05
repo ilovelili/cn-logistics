@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3,
-  FileStack,
   LogOut,
   Menu,
   Moon,
@@ -9,16 +7,11 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import ShipmentDashboard from "./components/ShipmentDashboard";
 import ShipmentJobs from "./components/ShipmentJobs";
-import BatchDocumentDownload from "./components/BatchDocumentDownload";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LoginPage from "./components/LoginPage";
 import ProfileButton from "./components/ProfileButton";
-import DocumentControl, {
-  DocumentApprovalFilter,
-} from "./components/DocumentControl";
 import { AdminAuthProvider } from "./admin/AdminAuthContext";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminPanel from "./admin/AdminPanel";
@@ -34,7 +27,7 @@ import {
   TransportMode,
 } from "./lib/shipmentJobs";
 
-type View = "dashboard" | "jobs" | "documents";
+type View = "jobs";
 type JobsStatusFilter = ShipmentStatus | "all";
 type AuthRole = "user" | "admin";
 
@@ -85,7 +78,7 @@ function MainApp({
   onBackToAdmin?: () => void;
   onLogout: () => void;
 }) {
-  const [currentView, setCurrentView] = useState<View>("dashboard");
+  const [currentView, setCurrentView] = useState<View>("jobs");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const showAdminMode = initialAdminMode;
@@ -99,8 +92,6 @@ function MainApp({
   const [jobsTransportFilter, setJobsTransportFilter] = useState<
     TransportMode | "all"
   >("all");
-  const [documentsApprovalFilter, setDocumentsApprovalFilter] =
-    useState<DocumentApprovalFilter>("all");
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const { isAdminAuthenticated } = useAdminAuth();
@@ -164,7 +155,6 @@ function MainApp({
         darkMode={darkMode}
         jobs={jobs}
         documents={documents}
-        jobsLoading={jobsLoading}
         onToggleDark={onToggleDark}
         profileEmail={profileEmail}
         profileRole={profileRole}
@@ -178,38 +168,8 @@ function MainApp({
   }
 
   const navigation = [
-    { id: "dashboard" as View, name: t("app.nav.dashboard"), icon: BarChart3 },
     { id: "jobs" as View, name: t("app.nav.jobs"), icon: ShipWheel },
-    { id: "documents" as View, name: t("app.nav.documents"), icon: FileStack },
   ];
-
-  const openJobsWithStatus = (status: JobsStatusFilter) => {
-    setJobsStatusFilter(status);
-    setJobsTradeFilter("all");
-    setJobsTransportFilter("all");
-    setCurrentView("jobs");
-  };
-
-  const openJobsWithTrade = (tradeMode: TradeMode) => {
-    setJobsStatusFilter("all");
-    setJobsTradeFilter(tradeMode);
-    setJobsTransportFilter("all");
-    setCurrentView("jobs");
-  };
-
-  const openJobsWithTransport = (transportMode: TransportMode) => {
-    setJobsStatusFilter("all");
-    setJobsTradeFilter("all");
-    setJobsTransportFilter(transportMode);
-    setCurrentView("jobs");
-  };
-
-  const openDocumentsWithFilter = (
-    approvalFilter: DocumentApprovalFilter = "all",
-  ) => {
-    setDocumentsApprovalFilter(approvalFilter);
-    setCurrentView("documents");
-  };
 
   const handleSidebarToggle = () => {
     if (window.matchMedia("(min-width: 1024px)").matches) {
@@ -221,25 +181,13 @@ function MainApp({
 
   const renderView = () => {
     switch (currentView) {
-      case "dashboard":
-        return (
-          <ShipmentDashboard
-            jobs={visibleJobs}
-            documents={visibleDocuments}
-            loading={jobsLoading}
-            error={jobsError}
-            onOpenJobs={openJobsWithStatus}
-            onOpenJobsByTrade={openJobsWithTrade}
-            onOpenJobsByTransport={openJobsWithTransport}
-            onOpenDocuments={openDocumentsWithFilter}
-          />
-        );
       case "jobs":
         return (
           <ShipmentJobs
             jobs={visibleJobs}
             documents={visibleDocuments}
             loading={jobsLoading}
+            error={jobsError}
             profileEmail={profileEmail}
             canManageShipments={
               profileRole !== "normal" && isAdminAuthenticated
@@ -253,37 +201,24 @@ function MainApp({
             onTransportFilterChange={setJobsTransportFilter}
           />
         );
-      case "documents":
-        return profileRole === "normal" ? (
-          <BatchDocumentDownload
-            jobs={visibleJobs}
-            documents={visibleDocuments}
-            loading={jobsLoading}
-            requesterEmail={profileEmail}
-            onRefresh={loadJobs}
-          />
-        ) : (
-          <DocumentControl
-            jobs={visibleJobs}
-            documents={visibleDocuments}
-            loading={jobsLoading}
-            onRefresh={loadJobs}
-            isAdminAuthenticated={isAdminAuthenticated}
-            requesterEmail={profileEmail}
-            approvalFilter={documentsApprovalFilter}
-          />
-        );
       default:
         return (
-          <ShipmentDashboard
+          <ShipmentJobs
             jobs={visibleJobs}
             documents={visibleDocuments}
             loading={jobsLoading}
             error={jobsError}
-            onOpenJobs={openJobsWithStatus}
-            onOpenJobsByTrade={openJobsWithTrade}
-            onOpenJobsByTransport={openJobsWithTransport}
-            onOpenDocuments={openDocumentsWithFilter}
+            profileEmail={profileEmail}
+            canManageShipments={
+              profileRole !== "normal" && isAdminAuthenticated
+            }
+            onRefresh={loadJobs}
+            statusFilter={jobsStatusFilter}
+            tradeFilter={jobsTradeFilter}
+            transportFilter={jobsTransportFilter}
+            onStatusFilterChange={setJobsStatusFilter}
+            onTradeFilterChange={setJobsTradeFilter}
+            onTransportFilterChange={setJobsTransportFilter}
           />
         );
     }
@@ -307,12 +242,18 @@ function MainApp({
                     </h1>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white lg:hidden"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <InstantTooltip label={t("jobs.detail.close")}>
+                  {(tooltipId) => (
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white lg:hidden"
+                      aria-label={t("jobs.detail.close")}
+                      aria-describedby={tooltipId}
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
+                </InstantTooltip>
               </div>
             </div>
 
@@ -324,9 +265,6 @@ function MainApp({
                   <button
                     key={item.id}
                     onClick={() => {
-                      if (item.id === "documents") {
-                        setDocumentsApprovalFilter("all");
-                      }
                       setCurrentView(item.id);
                       setSidebarOpen(false);
                     }}
@@ -357,13 +295,18 @@ function MainApp({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between">
-              <button
-                onClick={handleSidebarToggle}
-                className="rounded-xl bg-gray-100 p-2 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                aria-label="メニューを切り替え"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+              <InstantTooltip label={t("app.menu.toggle")} align="left">
+                {(tooltipId) => (
+                  <button
+                    onClick={handleSidebarToggle}
+                    className="rounded-xl bg-gray-100 p-2 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    aria-label={t("app.menu.toggle")}
+                    aria-describedby={tooltipId}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                )}
+              </InstantTooltip>
               <div className="ml-auto flex items-center gap-3">
                 {onBackToAdmin && (
                   <div className="hidden items-center gap-2 sm:flex">

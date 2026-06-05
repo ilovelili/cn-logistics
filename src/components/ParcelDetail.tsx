@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import InstantTooltip from "./InstantTooltip";
 
 interface ParcelDetail {
   id: string;
@@ -651,13 +652,29 @@ function DocumentsTab({ documents }: { documents: ParcelDocument[] }) {
                 {docStatusLabels[doc.status] || doc.status}
               </span>
               {doc.status !== "pending" ? (
-                <button className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500">
-                  <Eye className="w-4 h-4" />
-                </button>
+                <InstantTooltip label="表示">
+                  {(tooltipId) => (
+                    <button
+                      className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
+                      aria-label="表示"
+                      aria-describedby={tooltipId}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
+                </InstantTooltip>
               ) : (
-                <button className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-400">
-                  <Upload className="w-4 h-4" />
-                </button>
+                <InstantTooltip label="アップロード">
+                  {(tooltipId) => (
+                    <button
+                      className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-400"
+                      aria-label="アップロード"
+                      aria-describedby={tooltipId}
+                    >
+                      <Upload className="w-4 h-4" />
+                    </button>
+                  )}
+                </InstantTooltip>
               )}
             </div>
           </div>

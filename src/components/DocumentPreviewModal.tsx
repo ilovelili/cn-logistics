@@ -1,19 +1,30 @@
 import { X } from "lucide-react";
 import { t } from "../lib/i18n";
-import type { ShipmentDocument } from "../lib/shipmentJobs";
+import {
+  isCustomerDocumentDownloadable,
+  type ShipmentDocument,
+} from "../lib/shipmentJobs";
+import InstantTooltip from "./InstantTooltip";
 
 interface DocumentPreviewModalProps {
   document: ShipmentDocument;
   adminTheme: boolean;
+  hideNativeToolbar?: boolean;
   onClose: () => void;
 }
 
 export default function DocumentPreviewModal({
   document,
   adminTheme,
+  hideNativeToolbar = false,
   onClose,
 }: DocumentPreviewModalProps) {
-  const previewUrl = document.file_url || "/sample-document.pdf";
+  const shouldHideNativeToolbar =
+    hideNativeToolbar ||
+    (!adminTheme && !isCustomerDocumentDownloadable(document));
+  const previewUrl = shouldHideNativeToolbar
+    ? appendPdfViewerParams(document.file_url || "/sample-document.pdf")
+    : document.file_url || "/sample-document.pdf";
 
   return (
     <div
@@ -55,22 +66,32 @@ export default function DocumentPreviewModal({
               {t("documents.preview")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`p-2 transition ${
-              adminTheme
-                ? "rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-                : "rounded-2xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            }`}
-            aria-label={t("jobs.detail.close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <InstantTooltip label={t("jobs.detail.close")}>
+            {(tooltipId) => (
+              <button
+                type="button"
+                onClick={onClose}
+                className={`p-2 transition ${
+                  adminTheme
+                    ? "rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+                    : "rounded-2xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                }`}
+                aria-label={t("jobs.detail.close")}
+                aria-describedby={tooltipId}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </InstantTooltip>
         </div>
         <iframe
           title={document.name}
           src={previewUrl}
+          sandbox={
+            shouldHideNativeToolbar
+              ? "allow-same-origin allow-scripts"
+              : undefined
+          }
           className={
             adminTheme
               ? "h-[72vh] w-full bg-gray-100 dark:bg-gray-950"
@@ -80,4 +101,9 @@ export default function DocumentPreviewModal({
       </div>
     </div>
   );
+}
+
+function appendPdfViewerParams(url: string) {
+  const separator = url.includes("#") ? "&" : "#";
+  return `${url}${separator}toolbar=0&navpanes=0`;
 }
