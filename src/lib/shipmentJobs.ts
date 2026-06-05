@@ -513,7 +513,6 @@ export async function createShipmentTrackingEventTemplate(
       description: form.description.trim(),
       sort_order: form.sort_order,
       is_active: form.is_active,
-      color_hex: normalizeStatusColor(form.color_hex),
     })
     .select("*")
     .single();
@@ -536,7 +535,6 @@ export async function updateShipmentTrackingEventTemplate(
       description: form.description.trim(),
       sort_order: form.sort_order,
       is_active: form.is_active,
-      color_hex: normalizeStatusColor(form.color_hex),
     })
     .eq("id", id)
     .select("*")

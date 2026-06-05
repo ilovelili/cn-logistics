@@ -24,7 +24,7 @@ const emptyTemplateForm: ShipmentTrackingEventTemplateForm = {
   description: "",
   sort_order: 10,
   is_active: true,
-  color_hex: "#0891b2",
+  color_hex: "",
 };
 
 type StandardFlowColumnId =
@@ -32,7 +32,6 @@ type StandardFlowColumnId =
   | "key"
   | "status"
   | "order"
-  | "color"
   | "active"
   | "action";
 
@@ -45,7 +44,6 @@ const standardFlowColumns: {
   { id: "key", label: t("superAdmin.standardFlow.key"), width: 220 },
   { id: "status", label: t("superAdmin.standardFlow.templateText"), width: 320 },
   { id: "order", label: t("superAdmin.standardFlow.order"), width: 110 },
-  { id: "color", label: t("superAdmin.standardFlow.color"), width: 76 },
   { id: "active", label: t("superAdmin.standardFlow.active"), width: 92 },
   { id: "action", label: t("admin.userRegistration.action"), width: 170 },
 ];
@@ -290,7 +288,7 @@ export default function StandardFlowManagement() {
         <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
           {t("superAdmin.standardFlow.add")}
         </h3>
-        <div className="grid gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(240px,0.8fr)_110px_76px_92px_92px] lg:items-end">
+        <div className="grid gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(240px,1fr)_110px_92px_170px] lg:items-end">
           <TemplateTextField
             label={t("superAdmin.standardFlow.key")}
             value={newTemplate.name}
@@ -315,16 +313,6 @@ export default function StandardFlowManagement() {
               setNewTemplate((current) => ({
                 ...current,
                 sort_order: value,
-              }))
-            }
-          />
-          <TemplateColorField
-            label={t("superAdmin.standardFlow.color")}
-            value={newTemplate.color_hex}
-            onChange={(value) =>
-              setNewTemplate((current) => ({
-                ...current,
-                color_hex: value,
               }))
             }
           />
@@ -550,7 +538,7 @@ function renderTemplateCell({
 }) {
   switch (columnId) {
     case "statusBadge":
-      return <StatusPreview name={draft.name} color={draft.color_hex} />;
+      return <StatusPreview name={draft.name} />;
     case "key":
       return (
         <TemplateTextField
@@ -575,15 +563,6 @@ function renderTemplateCell({
           label={t("superAdmin.standardFlow.order")}
           value={draft.sort_order}
           onChange={(value) => updateDraft(template.id, "sort_order", value)}
-          hideLabel
-        />
-      );
-    case "color":
-      return (
-        <TemplateColorField
-          label={t("superAdmin.standardFlow.color")}
-          value={draft.color_hex}
-          onChange={(value) => updateDraft(template.id, "color_hex", value)}
           hideLabel
         />
       );
@@ -708,42 +687,6 @@ function TemplateNumberField({
   );
 }
 
-function TemplateColorField({
-  label,
-  value,
-  hideLabel = false,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  hideLabel?: boolean;
-  onChange: (value: string) => void;
-}) {
-  const normalizedColor = normalizeColorInput(value);
-
-  return (
-    <label className="block">
-      {!hideLabel && (
-        <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-          {label}
-        </span>
-      )}
-      <div
-        className={`${hideLabel ? "" : "mt-2"} flex h-[42px] items-center justify-center rounded-xl border border-gray-300 bg-white px-2 dark:border-gray-700 dark:bg-gray-800`}
-        title={value}
-      >
-        <input
-          type="color"
-          value={normalizedColor}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label={label}
-          className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
-        />
-      </div>
-    </label>
-  );
-}
-
 function TemplateCheckbox({
   label,
   checked,
@@ -773,7 +716,7 @@ function TemplateCheckbox({
   );
 }
 
-function StatusPreview({ name, color }: { name: string; color: string }) {
+function StatusPreview({ name }: { name: string }) {
   if (!isShipmentStatus(name)) {
     return null;
   }
@@ -781,7 +724,6 @@ function StatusPreview({ name, color }: { name: string; color: string }) {
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${statusBadgeClasses[name]}`}
-      style={getStatusPreviewStyle(color)}
     >
       {statusLabels[name]}
     </span>
@@ -796,7 +738,7 @@ function templateToForm(
     description: template.description,
     sort_order: template.sort_order,
     is_active: template.is_active,
-    color_hex: template.color_hex ?? getDefaultStatusColor(template.name),
+    color_hex: template.color_hex ?? "",
   };
 }
 
@@ -813,44 +755,10 @@ function isValidTemplateForm(
     form &&
       form.name.trim() &&
       form.description.trim() &&
-      /^#[0-9a-f]{6}$/i.test(form.color_hex.trim()) &&
       Number.isFinite(form.sort_order),
   );
 }
 
 function isShipmentStatus(value: string): value is ShipmentStatus {
   return value in statusLabels;
-}
-
-function normalizeColorInput(value: string) {
-  return /^#[0-9a-f]{6}$/i.test(value) ? value : "#0891b2";
-}
-
-function getStatusPreviewStyle(value: string) {
-  if (!/^#[0-9a-f]{6}$/i.test(value)) {
-    return undefined;
-  }
-
-  return {
-    backgroundColor: `${value}1a`,
-    borderColor: `${value}66`,
-    color: value,
-  };
-}
-
-function getDefaultStatusColor(name: string) {
-  const defaultColors: Record<string, string> = {
-    pickup: "#0284c7",
-    warehouse_in: "#2563eb",
-    customs_origin: "#d97706",
-    terminal_in: "#4f46e5",
-    departure: "#7c3aed",
-    arrival: "#0891b2",
-    customs_destination: "#e11d48",
-    destination_warehouse_in: "#0d9488",
-    delivery: "#65a30d",
-    delivered: "#059669",
-  };
-
-  return defaultColors[name] ?? "#0891b2";
 }

@@ -360,7 +360,7 @@ const ja = {
   "superAdmin.standardFlow.confirmDelete":
     "この標準フローを削除します。削除後は出荷案件の標準フローテンプレートとして利用できません。",
   "superAdmin.standardFlow.validationFailed":
-    "ステータスキー、テンプレート文言、色を正しく入力してください",
+    "ステータスキー、テンプレート文言、表示順を正しく入力してください",
   "superAdmin.feedback.title": "評価一覧",
   "superAdmin.feedback.list": "評価履歴",
   "superAdmin.feedback.average": "平均評価",
@@ -748,7 +748,7 @@ const en: Messages = {
   "superAdmin.standardFlow.confirmDelete":
     "This standard flow will be deleted and can no longer be used as a shipment standard flow template.",
   "superAdmin.standardFlow.validationFailed":
-    "Enter a valid status key, template text, and color",
+    "Enter a valid status key, template text, and order",
   "superAdmin.feedback.title": "Feedback",
   "superAdmin.feedback.list": "Feedback history",
   "superAdmin.feedback.average": "Average rating",

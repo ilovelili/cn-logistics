@@ -23,8 +23,6 @@ import {
   ShipmentJob,
   ShipmentStatusColorMap,
   shipmentStatusOrder,
-  standardFlowStatusOptions,
-  statusAccentClasses,
   statusBadgeClasses,
   statusLabels,
   tradeModeLabels,
@@ -1076,20 +1074,15 @@ function ShipmentProgressStatus({
   job: ShipmentJob;
   statusColorMap: ShipmentStatusColorMap;
 }) {
-  const completedAt = getShipmentCompletedAt(job);
-  const isCompletedStatus =
-    job.status === "completed" || job.status === "delivered";
-  const recentlyCompleted =
-    isCompletedStatus && isWithinRecentBusinessDays(completedAt, 3);
-  const staleCompleted = isCompletedStatus && !recentlyCompleted;
   const activeStepCount = getShipmentProgressStepCount(job);
-  const progressLabel = getShipmentProgressLabel(job, activeStepCount);
-  const statusClass = staleCompleted
-    ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-    : statusBadgeClasses[job.status];
-  const customColor = !staleCompleted
-    ? job.progress_color_hex || statusColorMap[job.status]
-    : undefined;
+  const progressPercent = getShipmentProgressPercent(job, activeStepCount);
+  const progressLabel = getShipmentProgressLabel(
+    job,
+    activeStepCount,
+    progressPercent,
+  );
+  const statusClass = statusBadgeClasses[job.status];
+  const customColor = job.progress_color_hex || statusColorMap[job.status];
   const customBadgeStyle = customColor
     ? getStatusColorBadgeStyle(customColor)
     : undefined;
@@ -1103,27 +1096,17 @@ function ShipmentProgressStatus({
         {statusLabels[job.status]}
       </span>
       <div
-        className="grid grid-cols-10 gap-0.5"
+        className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
         aria-label={t("common.status")}
         title={progressLabel}
       >
-        {Array.from({ length: 10 }, (_, stepIndex) => (
-          <span
-            key={stepIndex}
-            className={`h-1.5 rounded-full ${getProgressSegmentClass(
-              stepIndex,
-              activeStepCount,
-              staleCompleted,
-            )}`}
-            style={getProgressSegmentStyle(
-              stepIndex,
-              activeStepCount,
-              statusColorMap,
-              job.progress_color_hex,
-              staleCompleted,
-            )}
-          />
-        ))}
+        <span
+          className="block h-full rounded-full transition-[width]"
+          style={{
+            width: `${progressPercent}%`,
+            backgroundColor: customColor || getDefaultManualProgressColor(job),
+          }}
+        />
       </div>
     </div>
   );
@@ -1161,70 +1144,29 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
   return statusIndex >= 0 ? statusIndex + 1 : 1;
 }
 
-function getShipmentProgressLabel(job: ShipmentJob, activeStepCount: number) {
-  const progressPercent =
-    typeof job.progress_percent === "number" ? `${job.progress_percent}%` : null;
+function getShipmentProgressPercent(job: ShipmentJob, activeStepCount: number) {
+  if (typeof job.progress_percent === "number") {
+    return Math.max(0, Math.min(100, Math.round(job.progress_percent)));
+  }
+
+  return Math.max(0, Math.min(100, activeStepCount * 10));
+}
+
+function getShipmentProgressLabel(
+  job: ShipmentJob,
+  activeStepCount: number,
+  progressPercent: number,
+) {
+  const progressPercentLabel =
+    typeof job.progress_percent === "number" ? `${progressPercent}%` : null;
   const progressStep =
     typeof job.progress_step === "number"
       ? `${Math.max(1, Math.min(10, Math.round(job.progress_step)))}/10`
       : `${activeStepCount}/10`;
 
-  return progressPercent ? `${progressPercent} (${progressStep})` : progressStep;
-}
-
-function getShipmentCompletedAt(job: ShipmentJob) {
-  if (job.status !== "completed" && job.status !== "delivered") {
-    return null;
-  }
-
-  const completionEvent = [...(job.tracking_events ?? [])]
-    .filter(
-      (event) =>
-        (event.sort_order ?? 0) >= 100 || event.description.includes("完了"),
-    )
-    .sort(compareTrackingEventsNewestFirst)[0];
-
-  return (
-    completionEvent?.event_date ??
-    completionEvent?.updated_at ??
-    completionEvent?.created_at ??
-    job.updated_at
-  );
-}
-
-function compareTrackingEventsNewestFirst(
-  first: ShipmentJob["tracking_events"][number],
-  second: ShipmentJob["tracking_events"][number],
-) {
-  const firstTime = getTrackingEventTime(first);
-  const secondTime = getTrackingEventTime(second);
-
-  if (secondTime !== firstTime) {
-    return secondTime - firstTime;
-  }
-
-  return (second.sort_order ?? 0) - (first.sort_order ?? 0);
-}
-
-function getTrackingEventTime(event: ShipmentJob["tracking_events"][number]) {
-  return Math.max(
-    parseDate(event.event_date)?.getTime() ?? 0,
-    parseDate(event.updated_at)?.getTime() ?? 0,
-    parseDate(event.created_at)?.getTime() ?? 0,
-  );
-}
-
-function getProgressSegmentClass(
-  stepIndex: number,
-  activeStepCount: number,
-  staleCompleted: boolean,
-) {
-  if (staleCompleted || stepIndex >= activeStepCount) {
-    return "bg-gray-200 dark:bg-gray-700";
-  }
-
-  const segmentStatus = standardFlowStatusOptions[stepIndex]?.value;
-  return segmentStatus ? statusAccentClasses[segmentStatus] : "bg-blue-500";
+  return progressPercentLabel
+    ? `${progressPercentLabel} (${progressStep})`
+    : progressStep;
 }
 
 function getStatusColorBadgeStyle(color: string) {
@@ -1235,75 +1177,16 @@ function getStatusColorBadgeStyle(color: string) {
   };
 }
 
-function getProgressSegmentStyle(
-  stepIndex: number,
-  activeStepCount: number,
-  statusColorMap: ShipmentStatusColorMap,
-  manualColor: string | null,
-  staleCompleted: boolean,
-) {
-  if (staleCompleted || stepIndex >= activeStepCount) {
-    return undefined;
+function getDefaultManualProgressColor(job: ShipmentJob) {
+  if (job.status === "customs_hold") {
+    return "#d97706";
   }
 
-  if (manualColor) {
-    return { backgroundColor: manualColor };
+  if (job.status === "completed" || job.status === "delivered") {
+    return "#059669";
   }
 
-  const segmentStatus = standardFlowStatusOptions[stepIndex]?.value;
-  const color = segmentStatus ? statusColorMap[segmentStatus] : undefined;
-  if (!color) {
-    return undefined;
-  }
-
-  return { backgroundColor: color };
-}
-
-function isWithinRecentBusinessDays(
-  value: string | null,
-  maxBusinessDays: number,
-) {
-  const date = parseDate(value);
-  if (!date) {
-    return false;
-  }
-
-  return countBusinessDays(date, new Date()) <= maxBusinessDays;
-}
-
-function parseDate(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function countBusinessDays(startDate: Date, endDate: Date) {
-  const start = startOfLocalDay(startDate);
-  const end = startOfLocalDay(endDate);
-
-  if (end < start) {
-    return 0;
-  }
-
-  let count = 0;
-  const cursor = new Date(start);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-}
-
-function startOfLocalDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return "#059669";
 }
 
 function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
