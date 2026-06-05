@@ -195,40 +195,6 @@ export default function ShipmentJobForm({
     }));
   };
 
-  const updateStatusPeriodDate = (
-    statusIndex: number,
-    boundary: "from" | "to",
-    value: string,
-  ) => {
-    setForm((current) => {
-      const currentStandardStatus = getCurrentStandardStatus(current.status);
-      const currentStatusIndex = standardFlowStatusOptions.findIndex(
-        (option) => option.value === currentStandardStatus,
-      );
-
-      if (
-        boundary === "to" &&
-        statusIndex === currentStatusIndex &&
-        currentStandardStatus === "delivered"
-      ) {
-        return { ...current, completed_to_date: value };
-      }
-
-      const eventIndex = boundary === "from" ? statusIndex : statusIndex + 1;
-      const trackingEvents = ensureTrackingEventAtIndex(
-        current.tracking_events,
-        eventIndex,
-      );
-
-      return {
-        ...current,
-        tracking_events: trackingEvents.map((event, index) =>
-          index === eventIndex ? { ...event, event_date: value } : event,
-        ),
-      };
-    });
-  };
-
   const addTrackingEvent = () => {
     setForm((current) => ({
       ...current,
@@ -391,8 +357,6 @@ export default function ShipmentJobForm({
         onChange={updateVesselFlightNumber}
       />
 
-      <StatusPeriodFields form={form} onDateChange={updateStatusPeriodDate} />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUploadField
           label={t("common.documents")}
@@ -474,80 +438,6 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
-}
-
-function StatusPeriodFields({
-  form,
-  onDateChange,
-}: {
-  form: ShipmentJobFormState;
-  onDateChange: (
-    statusIndex: number,
-    boundary: "from" | "to",
-    value: string,
-  ) => void;
-}) {
-  const currentStandardStatus = getCurrentStandardStatus(form.status);
-  const currentIndex = standardFlowStatusOptions.findIndex(
-    (option) => option.value === currentStandardStatus,
-  );
-  const visibleStatuses =
-    currentIndex >= 0
-      ? standardFlowStatusOptions.slice(0, currentIndex + 1)
-      : standardFlowStatusOptions.slice(0, 1);
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="mb-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-          {t("form.statusPeriods")}
-        </span>
-      </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {visibleStatuses.map((option, index) => {
-          const currentEvent = form.tracking_events[index];
-          const nextEvent = form.tracking_events[index + 1];
-          const isCurrent = index === visibleStatuses.length - 1;
-          const toDate =
-            isCurrent && option.value === "delivered"
-              ? form.completed_to_date
-              : nextEvent?.event_date;
-
-          return (
-            <div
-              key={option.value}
-              className="rounded-xl border border-slate-200 bg-white p-3"
-            >
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="text-sm font-bold text-slate-900">
-                  {statusLabels[option.value]}
-                </div>
-                {isCurrent && (
-                  <span className="rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-bold text-cyan-700">
-                    {t("dashboard.currentStatusShort")}
-                  </span>
-                )}
-              </div>
-              <div className="grid gap-3">
-                <TextField
-                  label={t("common.fromDate")}
-                  type="date"
-                  value={currentEvent?.event_date ?? ""}
-                  onChange={(value) => onDateChange(index, "from", value)}
-                />
-                <TextField
-                  label={t("common.toDate")}
-                  type="date"
-                  value={toDate ?? ""}
-                  onChange={(value) => onDateChange(index, "to", value)}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 function getCurrentStandardStatus(status: ShipmentJobFormState["status"]) {
