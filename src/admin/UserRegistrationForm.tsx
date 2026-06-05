@@ -101,6 +101,11 @@ export default function UserRegistrationForm({
   const [selectedCreateAdminIds, setSelectedCreateAdminIds] = useState<
     string[]
   >([]);
+  const [pendingContactDelete, setPendingContactDelete] = useState<{
+    index: number;
+    title: string;
+    detail: string;
+  } | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     ShipperUserApprovalStatus | "all"
@@ -889,6 +894,18 @@ export default function UserRegistrationForm({
         />
       )}
 
+      {pendingContactDelete && (
+        <ContactDeleteConfirmModal
+          title={pendingContactDelete.title}
+          detail={pendingContactDelete.detail}
+          onCancel={() => setPendingContactDelete(null)}
+          onConfirm={() => {
+            removeContact(pendingContactDelete.index);
+            setPendingContactDelete(null);
+          }}
+        />
+      )}
+
       {showCreateForm && (
         <form
           onSubmit={handleSubmit}
@@ -948,7 +965,16 @@ export default function UserRegistrationForm({
               contacts={form.contacts}
               onChange={updateContact}
               onAdd={addContact}
-              onRemove={removeContact}
+              onRemove={(index) => {
+                const contact = form.contacts[index];
+                setPendingContactDelete({
+                  index,
+                  title:
+                    contact?.contact_person ||
+                    `${t("admin.userRegistration.contacts")} ${index + 1}`,
+                  detail: contact?.email || "-",
+                });
+              }}
             />
             <TextArea
               label={t("admin.userRegistration.shipperAddress")}
@@ -1559,6 +1585,53 @@ function ConfirmActionModal({
             className={`rounded-lg px-4 py-2 text-sm font-bold text-white transition ${confirmClass}`}
           >
             {actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactDeleteConfirmModal({
+  title,
+  detail,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  detail: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("common.deleteConfirmTitle")}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("common.deleteConfirm")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">{title}</div>
+          <div className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400">
+            {detail}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-700"
+          >
+            {t("common.delete")}
           </button>
         </div>
       </div>
