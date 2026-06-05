@@ -1083,10 +1083,13 @@ function ShipmentProgressStatus({
     isCompletedStatus && isWithinRecentBusinessDays(completedAt, 3);
   const staleCompleted = isCompletedStatus && !recentlyCompleted;
   const activeStepCount = getShipmentProgressStepCount(job);
+  const progressLabel = getShipmentProgressLabel(job, activeStepCount);
   const statusClass = staleCompleted
     ? "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
     : statusBadgeClasses[job.status];
-  const customColor = !staleCompleted ? statusColorMap[job.status] : undefined;
+  const customColor = !staleCompleted
+    ? job.progress_color_hex || statusColorMap[job.status]
+    : undefined;
   const customBadgeStyle = customColor
     ? getStatusColorBadgeStyle(customColor)
     : undefined;
@@ -1102,7 +1105,7 @@ function ShipmentProgressStatus({
       <div
         className="grid grid-cols-10 gap-0.5"
         aria-label={t("common.status")}
-        title={`${activeStepCount}/10`}
+        title={progressLabel}
       >
         {Array.from({ length: 10 }, (_, stepIndex) => (
           <span
@@ -1116,6 +1119,7 @@ function ShipmentProgressStatus({
               stepIndex,
               activeStepCount,
               statusColorMap,
+              job.progress_color_hex,
               staleCompleted,
             )}
           />
@@ -1126,6 +1130,14 @@ function ShipmentProgressStatus({
 }
 
 function getShipmentProgressStepCount(job: ShipmentJob) {
+  if (typeof job.progress_step === "number") {
+    return Math.max(1, Math.min(10, Math.round(job.progress_step)));
+  }
+
+  if (typeof job.progress_percent === "number") {
+    return Math.max(0, Math.min(10, Math.ceil(job.progress_percent / 10)));
+  }
+
   if (job.status === "completed" || job.status === "delivered") {
     return 10;
   }
@@ -1147,6 +1159,17 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
 
   const statusIndex = shipmentStatusOrder.indexOf(job.status);
   return statusIndex >= 0 ? statusIndex + 1 : 1;
+}
+
+function getShipmentProgressLabel(job: ShipmentJob, activeStepCount: number) {
+  const progressPercent =
+    typeof job.progress_percent === "number" ? `${job.progress_percent}%` : null;
+  const progressStep =
+    typeof job.progress_step === "number"
+      ? `${Math.max(1, Math.min(10, Math.round(job.progress_step)))}/10`
+      : `${activeStepCount}/10`;
+
+  return progressPercent ? `${progressPercent} (${progressStep})` : progressStep;
 }
 
 function getShipmentCompletedAt(job: ShipmentJob) {
@@ -1216,10 +1239,15 @@ function getProgressSegmentStyle(
   stepIndex: number,
   activeStepCount: number,
   statusColorMap: ShipmentStatusColorMap,
+  manualColor: string | null,
   staleCompleted: boolean,
 ) {
   if (staleCompleted || stepIndex >= activeStepCount) {
     return undefined;
+  }
+
+  if (manualColor) {
+    return { backgroundColor: manualColor };
   }
 
   const segmentStatus = standardFlowStatusOptions[stepIndex]?.value;

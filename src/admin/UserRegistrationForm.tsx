@@ -1149,6 +1149,7 @@ export function UserDetailModal({
       const updatedUsers = await updateShipperContacts(user.id, form);
       onSaved(updatedUsers);
       onNotify?.("success", t("admin.userRegistration.updated"));
+      onClose();
     } catch {
       setError(t("admin.userRegistration.updateFailed"));
       onNotify?.("error", t("admin.userRegistration.updateFailed"));
@@ -1177,6 +1178,7 @@ export function UserDetailModal({
       });
       onAssignmentsSaved(updatedUser);
       onNotify?.("success", t("admin.userRegistration.assignmentUpdated"));
+      onClose();
     } catch {
       setAssignmentError(t("admin.userRegistration.assignmentUpdateFailed"));
       onNotify?.("error", t("admin.userRegistration.assignmentUpdateFailed"));

@@ -37,6 +37,34 @@ type PendingFormDelete =
   | { kind: "vessel"; index: number; title: string; detail: string }
   | { kind: "tracking"; index: number; title: string; detail: string };
 
+const manualProgressColorOptions = [
+  {
+    value: "#059669",
+    label: t("progress.color.inProgress"),
+    classes:
+      "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+    activeClasses: "ring-2 ring-emerald-500 ring-offset-2",
+  },
+  {
+    value: "#d97706",
+    label: t("progress.color.warning"),
+    classes: "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100",
+    activeClasses: "ring-2 ring-amber-500 ring-offset-2",
+  },
+  {
+    value: "#64748b",
+    label: t("progress.color.invalid"),
+    classes: "border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200",
+    activeClasses: "ring-2 ring-slate-500 ring-offset-2",
+  },
+  {
+    value: "#e11d48",
+    label: t("progress.color.alert"),
+    classes: "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100",
+    activeClasses: "ring-2 ring-rose-500 ring-offset-2",
+  },
+] as const;
+
 export default function ShipmentJobForm({
   job,
   shipperOptions = [],
@@ -425,6 +453,15 @@ export default function ShipmentJobForm({
         onToggle={toggleAssignedAdmin}
       />
 
+      <ManualProgressFields
+        progressPercent={form.progress_percent}
+        progressStep={form.progress_step}
+        progressColorHex={form.progress_color_hex}
+        onPercentChange={(value) => updateField("progress_percent", value)}
+        onStepChange={(value) => updateField("progress_step", value)}
+        onColorChange={(value) => updateField("progress_color_hex", value)}
+      />
+
       <TrackingEventFields
         values={form.tracking_events}
         onAdd={addTrackingEvent}
@@ -566,6 +603,149 @@ function FormDeleteConfirmModal({
       </div>
     </div>
   );
+}
+
+function ManualProgressFields({
+  progressPercent,
+  progressStep,
+  progressColorHex,
+  onPercentChange,
+  onStepChange,
+  onColorChange,
+}: {
+  progressPercent: string;
+  progressStep: string;
+  progressColorHex: string;
+  onPercentChange: (value: string) => void;
+  onStepChange: (value: string) => void;
+  onColorChange: (value: string) => void;
+}) {
+  const percentValue = clampNumericInput(progressPercent, 0, 100);
+  const stepValue = clampNumericInput(progressStep, 1, 10);
+  const colorValue = getManualProgressColorValue(progressColorHex);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-4">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("progress.manualTitle")}
+        </span>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(180px,0.6fr)_minmax(180px,0.5fr)]">
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {t("progress.percent")}
+          </span>
+          <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={percentValue}
+                onChange={(event) => onPercentChange(event.target.value)}
+                className="min-w-0 flex-1 accent-slate-950"
+              />
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={progressPercent}
+                onChange={(event) => onPercentChange(event.target.value)}
+                className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-right text-sm font-bold text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                aria-label={t("progress.percent")}
+              />
+              <span className="text-sm font-bold text-slate-500">%</span>
+            </div>
+            <p className="mt-2 text-xs font-medium text-slate-500">
+              {t("progress.percentHelp")}
+            </p>
+          </div>
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {t("progress.step")}
+          </span>
+          <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={progressStep}
+                onChange={(event) => onStepChange(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                aria-label={t("progress.step")}
+              />
+              <span className="whitespace-nowrap text-sm font-bold text-slate-500">
+                / 10
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-10 gap-1" aria-hidden="true">
+              {Array.from({ length: 10 }, (_, index) => (
+                <span
+                  key={index}
+                  className="h-1.5 rounded-full"
+                  style={{
+                    backgroundColor:
+                      index < stepValue ? colorValue : "rgb(226 232 240)",
+                  }}
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-xs font-medium text-slate-500">
+              {t("progress.stepHelp")}
+            </p>
+          </div>
+        </label>
+
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {t("progress.color")}
+          </span>
+          <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            {manualProgressColorOptions.map((option) => {
+              const selected = option.value === colorValue;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onColorChange(option.value)}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold transition ${option.classes} ${
+                    selected ? option.activeClasses : ""
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: option.value }}
+                  />
+                  <span className="min-w-0 truncate">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getManualProgressColorValue(value: string) {
+  return (
+    manualProgressColorOptions.find((option) => option.value === value)?.value ??
+    manualProgressColorOptions[0].value
+  );
+}
+
+function clampNumericInput(value: string, min: number, max: number) {
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return min;
+  }
+
+  return Math.max(min, Math.min(max, Math.round(parsedValue)));
 }
 
 function AssignedAdminFields({

@@ -319,6 +319,7 @@ export default function ShipmentEntryForm({
     try {
       await updateShipmentJob(selectedJob.id, form, adminEmail);
       await onRefresh();
+      setSelectedJob(null);
       showToast("success", t("admin.entry.updated"));
     } catch {
       showToast("error", t("admin.entry.updateFailed"));

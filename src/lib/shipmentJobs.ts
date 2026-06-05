@@ -49,6 +49,9 @@ export interface ShipmentJob {
   hbl_hawb: string | null;
   bl_awb_date: string | null;
   assigned_admin_user_ids: string[];
+  progress_percent: number | null;
+  progress_step: number | null;
+  progress_color_hex: string | null;
   documents: string[];
   internal_documents: string[];
   notes: string | null;
@@ -134,6 +137,9 @@ export interface ShipmentJobForm {
   hbl_hawb: string;
   bl_awb_date: string;
   assigned_admin_user_ids: string[];
+  progress_percent: string;
+  progress_step: string;
+  progress_color_hex: string;
   documents: string;
   internal_documents: string;
   document_files: File[];
@@ -315,6 +321,9 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   hbl_hawb: "",
   bl_awb_date: "",
   assigned_admin_user_ids: [],
+  progress_percent: "",
+  progress_step: "",
+    progress_color_hex: "#059669",
   documents: "",
   internal_documents: "",
   document_files: [],
@@ -360,6 +369,13 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     hbl_hawb: job.hbl_hawb ?? "",
     bl_awb_date: job.bl_awb_date ?? "",
     assigned_admin_user_ids: job.assigned_admin_user_ids ?? [],
+    progress_percent:
+      typeof job.progress_percent === "number"
+        ? String(job.progress_percent)
+        : "",
+    progress_step:
+      typeof job.progress_step === "number" ? String(job.progress_step) : "",
+    progress_color_hex: job.progress_color_hex ?? "#059669",
     documents: formatDocumentList(job.documents ?? []),
     internal_documents: formatDocumentList(job.internal_documents ?? []),
     document_files: [],
@@ -399,6 +415,9 @@ export function formToPayload(form: ShipmentJobForm) {
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
     assigned_admin_user_ids: form.assigned_admin_user_ids,
+    progress_percent: normalizeProgressPercent(form.progress_percent),
+    progress_step: normalizeProgressStep(form.progress_step),
+    progress_color_hex: normalizeStatusColor(form.progress_color_hex),
     documents: getDocumentNames(form, "customer"),
     internal_documents: getDocumentNames(form, "internal"),
     notes: form.notes || null,
@@ -551,6 +570,32 @@ export async function softDeleteShipmentTrackingEventTemplate(id: string) {
 function normalizeStatusColor(value: string) {
   const color = value.trim();
   return /^#[0-9a-f]{6}$/i.test(color) ? color : null;
+}
+
+function normalizeProgressPercent(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(parsedValue)));
+}
+
+function normalizeProgressStep(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return Math.max(1, Math.min(10, Math.round(parsedValue)));
 }
 
 export async function fetchShipmentDocuments(
