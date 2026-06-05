@@ -56,19 +56,19 @@ export default function ShipmentJobDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={t("jobs.detail.title")}
     >
       <div
-        className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl"
+        className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-black text-slate-950">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white">
                 {job.invoice_number || job.mbl_mawb || t("jobs.detail.title")}
               </h2>
               <span
@@ -77,7 +77,7 @@ export default function ShipmentJobDetailModal({
                 {statusLabels[job.status]}
               </span>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
               {job.shipper_name || "-"} → {job.consignee_name || "-"}
             </p>
           </div>
@@ -93,8 +93,8 @@ export default function ShipmentJobDetailModal({
                 }}
                 className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-black transition ${
                   feedbackLoading || feedback
-                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-600"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 }`}
               >
                 <Star
@@ -120,7 +120,7 @@ export default function ShipmentJobDetailModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                   aria-label={t("jobs.detail.close")}
                   aria-describedby={tooltipId}
                 >
@@ -228,8 +228,8 @@ function DetailCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-      <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
         {title}
       </h3>
       <div className="space-y-3">{children}</div>
@@ -246,8 +246,10 @@ function DetailField({
 }) {
   return (
     <div>
-      <div className="text-xs font-bold text-slate-400">{label}</div>
-      <div className="mt-0.5 whitespace-pre-line text-sm font-semibold text-slate-900">
+      <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
+        {label}
+      </div>
+      <div className="mt-0.5 whitespace-pre-line text-sm font-semibold text-gray-900 dark:text-white">
         {value || "-"}
       </div>
     </div>
@@ -260,12 +262,12 @@ function StatusPeriodTimeline({
   periods: ShipmentStatusPeriod[];
 }) {
   return (
-    <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-lg font-black text-slate-950">
+    <section className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <h3 className="mb-4 text-lg font-black text-gray-900 dark:text-white">
         {t("form.statusPeriods")}
       </h3>
       {periods.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-400">
+        <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
           {t("common.noData")}
         </div>
       ) : (
@@ -275,14 +277,14 @@ function StatusPeriodTimeline({
             return (
               <div
                 key={period.status}
-                className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
                       isCurrent
                         ? "bg-cyan-600 text-white"
-                        : "bg-slate-200 text-slate-600"
+                        : "bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
                     {index + 1}
@@ -295,17 +297,17 @@ function StatusPeriodTimeline({
                         {statusLabels[period.status]}
                       </span>
                       {isCurrent && (
-                        <span className="text-xs font-bold text-cyan-700">
+                        <span className="text-xs font-bold text-cyan-700 dark:text-cyan-300">
                           {t("dashboard.currentStatusShort")}
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 text-xs font-semibold text-slate-500">
+                    <div className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       {formatDateRange(period.fromDate, period.toDate)}
                     </div>
                   </div>
                 </div>
-                <div className="text-sm font-bold text-slate-700">
+                <div className="text-sm font-bold text-gray-700 dark:text-gray-200">
                   {t("common.workingDaysSpent")}:{" "}
                   {formatWorkingDays(period.durationDays)}
                 </div>
@@ -326,24 +328,24 @@ function TrackingTimeline({
   const groupedEvents = groupTrackingEventsByDate(events ?? []);
 
   return (
-    <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-lg font-black text-slate-950">
+    <section className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <h3 className="mb-4 text-lg font-black text-gray-900 dark:text-white">
         {t("tracking.title")}
       </h3>
       {groupedEvents.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-400">
+        <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
           {t("tracking.noEvents")}
         </div>
       ) : (
         <div className="space-y-5">
           {groupedEvents.map(([date, dateEvents]) => (
             <div key={date} className="relative pl-8">
-              <div className="absolute left-2 top-1 h-full w-px bg-slate-200" />
+              <div className="absolute left-2 top-1 h-full w-px bg-gray-200 dark:bg-gray-800" />
               <div className="relative mb-3 flex items-center gap-2">
-                <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+                <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
                   <CalendarDays className="h-3.5 w-3.5" />
                 </span>
-                <div className="text-sm font-black text-slate-950">
+                <div className="text-sm font-black text-gray-900 dark:text-white">
                   {new Date(`${date}T00:00:00`).toLocaleDateString("ja-JP", {
                     year: "numeric",
                     month: "long",
@@ -356,15 +358,15 @@ function TrackingTimeline({
                 {dateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900"
                   >
                     {event.location && (
-                      <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                      <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400">
                         <MapPin className="h-3.5 w-3.5" />
                         {event.location}
                       </div>
                     )}
-                    <div className="text-sm font-bold text-slate-900">
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">
                       {event.description}
                     </div>
                   </div>
@@ -447,10 +449,12 @@ function DocumentSection({
   canDownload: (document: ShipmentDocument) => boolean;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-lg font-black text-slate-950">{title}</h3>
+    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <h3 className="mb-4 text-lg font-black text-gray-900 dark:text-white">
+        {title}
+      </h3>
       {documents.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-400">
+        <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
           {t("common.noData")}
         </div>
       ) : (
@@ -460,15 +464,15 @@ function DocumentSection({
             return (
               <div
                 key={document.id}
-                className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900"
               >
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center gap-2">
                     <FileText
-                      className={`h-4 w-4 shrink-0 ${muted ? "text-slate-400" : "text-cyan-700"}`}
+                      className={`h-4 w-4 shrink-0 ${muted ? "text-gray-400 dark:text-gray-500" : "text-cyan-700 dark:text-cyan-300"}`}
                     />
                     <span
-                      className="truncate text-sm font-bold text-slate-900"
+                      className="truncate text-sm font-bold text-gray-900 dark:text-white"
                       title={document.name}
                     >
                       {document.name}
@@ -484,7 +488,7 @@ function DocumentSection({
                   type="button"
                   disabled={!downloadable}
                   onClick={() => void downloadShipmentDocument(document)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   <Download className="h-3.5 w-3.5" />
                   {downloadable

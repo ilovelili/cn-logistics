@@ -1,11 +1,12 @@
 import * as React from "react";
-import { Plus, X } from "lucide-react";
+import { Eye, Plus, Trash2, X } from "lucide-react";
 import { t, type TranslationKey } from "../lib/i18n";
 import InstantTooltip from "./InstantTooltip";
 import {
   defaultShipmentJobForm,
   fetchShipmentTrackingEventTemplates,
   ShipmentJob,
+  ShipmentDocument,
   ShipmentJobForm as ShipmentJobFormState,
   ShipmentTrackingEventTemplate,
   shipmentStatusDateFields,
@@ -23,6 +24,9 @@ interface ShipmentJobFormProps {
   shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
+  documents?: ShipmentDocument[];
+  onPreviewDocument?: (document: ShipmentDocument) => void;
+  onDeleteDocument?: (document: ShipmentDocument) => void;
   submitLabel: string;
   loading?: boolean;
   onCancel?: () => void;
@@ -34,6 +38,9 @@ export default function ShipmentJobForm({
   shipperOptions = [],
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
+  documents = [],
+  onPreviewDocument,
+  onDeleteDocument,
   submitLabel,
   loading = false,
   onCancel,
@@ -390,13 +397,23 @@ export default function ShipmentJobForm({
         <FileUploadField
           label={t("common.documents")}
           existingFiles={splitDocumentNames(form.documents)}
+          existingDocuments={documents.filter(
+            (document) => document.scope === "customer",
+          )}
           files={form.document_files}
+          onPreviewDocument={onPreviewDocument}
+          onDeleteDocument={onDeleteDocument}
           onChange={(files) => updateField("document_files", files)}
         />
         <FileUploadField
           label={t("common.internalDocuments")}
           existingFiles={splitDocumentNames(form.internal_documents)}
+          existingDocuments={documents.filter(
+            (document) => document.scope === "internal",
+          )}
           files={form.internal_document_files}
+          onPreviewDocument={onPreviewDocument}
+          onDeleteDocument={onDeleteDocument}
           onChange={(files) => updateField("internal_document_files", files)}
         />
       </div>
@@ -988,12 +1005,18 @@ function TextAreaField({
 function FileUploadField({
   label,
   existingFiles,
+  existingDocuments = [],
   files,
+  onPreviewDocument,
+  onDeleteDocument,
   onChange,
 }: {
   label: string;
   existingFiles: string[];
+  existingDocuments?: ShipmentDocument[];
   files: File[];
+  onPreviewDocument?: (document: ShipmentDocument) => void;
+  onDeleteDocument?: (document: ShipmentDocument) => void;
   onChange: (files: File[]) => void;
 }) {
   const inputId = React.useId();
@@ -1022,11 +1045,84 @@ function FileUploadField({
         />
       </label>
 
-      <FileNameList title={t("form.existingFiles")} names={existingFiles} />
+      {existingDocuments.length > 0 ? (
+        <DocumentNameList
+          title={t("form.existingFiles")}
+          documents={existingDocuments}
+          onPreviewDocument={onPreviewDocument}
+          onDeleteDocument={onDeleteDocument}
+        />
+      ) : (
+        <FileNameList title={t("form.existingFiles")} names={existingFiles} />
+      )}
       <FileNameList
         title={t("form.selectedFiles")}
         names={files.map((file) => file.name)}
       />
+    </div>
+  );
+}
+
+function DocumentNameList({
+  title,
+  documents,
+  onPreviewDocument,
+  onDeleteDocument,
+}: {
+  title: string;
+  documents: ShipmentDocument[];
+  onPreviewDocument?: (document: ShipmentDocument) => void;
+  onDeleteDocument?: (document: ShipmentDocument) => void;
+}) {
+  if (!documents.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="text-xs font-bold text-slate-500">{title}</div>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {documents.map((document) => (
+          <span
+            key={document.id}
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+          >
+            <span className="max-w-44 truncate" title={document.name}>
+              {document.name}
+            </span>
+            {onPreviewDocument && (
+              <InstantTooltip label={t("documents.preview")}>
+                {(tooltipId) => (
+                  <button
+                    type="button"
+                    onClick={() => onPreviewDocument(document)}
+                    className="rounded-full p-0.5 text-cyan-700 transition hover:bg-cyan-100"
+                    aria-label={t("documents.preview")}
+                    aria-describedby={tooltipId}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </InstantTooltip>
+            )}
+            {onDeleteDocument && (
+              <InstantTooltip label={t("common.delete")}>
+                {(tooltipId) => (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteDocument(document)}
+                    className="rounded-full p-0.5 text-rose-700 transition hover:bg-rose-100"
+                    aria-label={t("common.delete")}
+                    aria-describedby={tooltipId}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </InstantTooltip>
+            )}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

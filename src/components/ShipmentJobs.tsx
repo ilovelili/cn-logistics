@@ -666,30 +666,32 @@ function FeedbackModal({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={t("feedback.title")}
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-[2rem] bg-white shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
           <div>
-            <h2 className="text-2xl font-black text-slate-950">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white">
               {t("feedback.title")}
             </h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">{title}</p>
-            <p className="mt-1 text-xs font-bold text-slate-500">
+            <p className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">
+              {title}
+            </p>
+            <p className="mt-1 text-xs font-bold text-gray-500 dark:text-gray-400">
               {t("common.jobNumber")}: {job.job_number || "-"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             aria-label={t("feedback.close")}
           >
             <X className="h-5 w-5" />
@@ -719,7 +721,7 @@ function FeedbackModal({
           </div>
 
           <label className="block">
-            <span className="text-sm font-black text-slate-950">
+            <span className="text-sm font-black text-gray-900 dark:text-white">
               {t("feedback.reason")}
             </span>
             <textarea
@@ -728,7 +730,7 @@ function FeedbackModal({
               onChange={(event) => setReason(event.target.value)}
               rows={5}
               placeholder={t("feedback.reasonPlaceholder")}
-              className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 read-only:cursor-not-allowed read-only:text-slate-500"
+              className="mt-3 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 read-only:cursor-not-allowed read-only:text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900"
             />
           </label>
 
@@ -736,14 +738,14 @@ function FeedbackModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
+              className="rounded-lg border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={!isComplete || saving || isAlreadySubmitted}
-              className="rounded-2xl bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isAlreadySubmitted
                 ? t("feedback.submitted")
@@ -783,7 +785,9 @@ function StarRatingInput({
 }) {
   return (
     <div>
-      <div className="text-sm font-black text-slate-950">{label}</div>
+      <div className="text-sm font-black text-gray-900 dark:text-white">
+        {label}
+      </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {[1, 2, 3, 4, 5].map((star) => (
           <InstantTooltip
@@ -795,8 +799,10 @@ function StarRatingInput({
                 type="button"
                 disabled={disabled}
                 onClick={() => onChange(star)}
-                className={`rounded-2xl p-2 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-                  star <= value ? "text-amber-400" : "text-slate-300"
+                className={`rounded-xl p-2 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:hover:bg-amber-950/40 ${
+                  star <= value
+                    ? "text-amber-400"
+                    : "text-gray-300 dark:text-gray-700"
                 }`}
                 aria-label={`${label}: ${t("feedback.star", { count: star })}`}
                 aria-describedby={tooltipId}
@@ -809,7 +815,7 @@ function StarRatingInput({
             )}
           </InstantTooltip>
         ))}
-        <span className="ml-1 text-sm font-bold text-slate-500">
+        <span className="ml-1 text-sm font-bold text-gray-500 dark:text-gray-400">
           {value ? t("feedback.ratingValue", { rating: value }) : "-"}
         </span>
       </div>

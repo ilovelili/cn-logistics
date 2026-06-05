@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import ShipmentJobForm from "../components/ShipmentJobForm";
+import DocumentPreviewModal from "../components/DocumentPreviewModal";
 import InstantTooltip from "../components/InstantTooltip";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
@@ -37,6 +38,7 @@ import {
   ShipmentJob,
   ShipmentStatus,
   ShipmentStatusColorMap,
+  softDeleteShipmentDocument,
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
@@ -525,9 +527,12 @@ export default function ShipmentEntryForm({
           />
           <AdminShipmentJobModal
             job={selectedJob}
+            documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
+            adminEmail={adminEmail}
             loading={loading}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
+            onRefresh={onRefresh}
             shipperOptions={shipperOptions}
             assignedAdminsReadOnly={!canEditAssignedAdmins}
           />
@@ -606,22 +611,51 @@ function ShipmentHeaderMetric({
 
 function AdminShipmentJobModal({
   job,
+  documents,
+  adminEmail,
   loading,
   shipperOptions,
   onClose,
   onSubmit,
+  onRefresh,
   assignedAdminsReadOnly,
 }: {
   job: ShipmentJob | null;
+  documents: ShipmentDocument[];
+  adminEmail: string;
   loading: boolean;
   shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
+  onRefresh: () => Promise<void>;
   assignedAdminsReadOnly: boolean;
 }) {
+  const [previewDocument, setPreviewDocument] = useState<ShipmentDocument | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<ShipmentDocument | null>(
+    null,
+  );
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
+    null,
+  );
+
   if (!job) {
     return null;
   }
+
+  const deleteDocument = async () => {
+    if (!deleteTarget) return;
+
+    setDeletingDocumentId(deleteTarget.id);
+    try {
+      await softDeleteShipmentDocument(deleteTarget.id, adminEmail);
+      await onRefresh();
+      setDeleteTarget(null);
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  };
 
   return (
     <div
@@ -664,12 +698,78 @@ function AdminShipmentJobModal({
         <ShipmentJobForm
           key={job.id}
           job={job}
+          documents={documents}
           shipperOptions={shipperOptions}
           assignedAdminsReadOnly={assignedAdminsReadOnly}
+          onPreviewDocument={setPreviewDocument}
+          onDeleteDocument={setDeleteTarget}
           submitLabel={t("common.update")}
           loading={loading}
           onSubmit={onSubmit}
         />
+      </div>
+      {previewDocument && (
+        <DocumentPreviewModal
+          document={previewDocument}
+          adminTheme
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
+      {deleteTarget && (
+        <ShipmentEditDocumentDeleteConfirmModal
+          document={deleteTarget}
+          deleting={deletingDocumentId === deleteTarget.id}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => void deleteDocument()}
+        />
+      )}
+    </div>
+  );
+}
+
+function ShipmentEditDocumentDeleteConfirmModal({
+  document,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  document: ShipmentDocument;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("admin.userRegistration.confirmTitle", {
+            action: t("common.delete"),
+          })}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("documents.deleteConfirm")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 font-bold text-gray-900 dark:bg-gray-950 dark:text-white">
+          {document.name}
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? t("common.saving") : t("common.delete")}
+          </button>
+        </div>
       </div>
     </div>
   );
