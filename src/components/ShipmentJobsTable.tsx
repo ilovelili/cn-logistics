@@ -468,14 +468,26 @@ export default function ShipmentJobsTable({
                       }
                       className={
                         index === 0
-                          ? "whitespace-nowrap py-3 pl-3 pr-5"
+                          ? `sticky left-0 z-30 whitespace-nowrap py-3 pl-3 pr-5 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
+                              adminTheme
+                                ? "bg-slate-50 dark:bg-gray-950"
+                                : "bg-slate-50"
+                            }`
                           : "whitespace-nowrap px-3 py-3"
                       }
                     />
                   ) : (
                     <th
                       key={column.id}
-                      className="whitespace-nowrap px-3 py-3 text-left"
+                      className={`whitespace-nowrap px-3 py-3 text-left ${
+                        index === 0
+                          ? `sticky left-0 z-30 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
+                              adminTheme
+                                ? "bg-slate-50 dark:bg-gray-950"
+                                : "bg-slate-50"
+                            }`
+                          : ""
+                      }`}
                     >
                       {column.label}
                     </th>
@@ -501,8 +513,21 @@ export default function ShipmentJobsTable({
                         : "hover:bg-slate-50/80"
                   }`}
                 >
-                  {visibleTableColumns.map((column) => (
-                    <td key={column.id} className="px-3 py-4">
+                  {visibleTableColumns.map((column, index) => (
+                    <td
+                      key={column.id}
+                      className={`px-3 py-4 ${
+                        index === 0
+                          ? `sticky left-0 z-10 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
+                              selectedJobId === job.id
+                                ? "bg-cyan-50 dark:bg-cyan-950"
+                                : adminTheme
+                                  ? "bg-white dark:bg-gray-900"
+                                  : "bg-white"
+                            }`
+                          : ""
+                      }`}
+                    >
                       {column.render(job)}
                     </td>
                   ))}

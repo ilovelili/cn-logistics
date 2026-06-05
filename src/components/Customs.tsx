@@ -256,7 +256,7 @@ export default function Customs() {
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
             >
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
                   申告書
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -285,7 +285,7 @@ export default function Customs() {
                   key={declaration.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <td className="px-6 py-4">
+                  <td className="sticky left-0 z-10 bg-white px-6 py-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-gray-400" />
                       <div>

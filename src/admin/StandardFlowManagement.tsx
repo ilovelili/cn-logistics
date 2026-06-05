@@ -395,7 +395,9 @@ export default function StandardFlowManagement() {
                   <th
                     key={column.id}
                     className={`py-3 pr-4 font-bold ${
-                      index === 0 ? "pl-5" : ""
+                      index === 0
+                        ? "sticky left-0 z-30 bg-white pl-5 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                        : ""
                     } ${
                       index === visibleTableColumns.length - 1 ? "pr-5" : ""
                     }`}
@@ -433,7 +435,9 @@ export default function StandardFlowManagement() {
                         <td
                           key={column.id}
                           className={`py-4 pr-4 align-middle ${
-                            index === 0 ? "pl-5" : ""
+                            index === 0
+                              ? "sticky left-0 z-10 bg-white pl-5 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                              : ""
                           } ${
                             index === visibleTableColumns.length - 1
                               ? "pr-5"

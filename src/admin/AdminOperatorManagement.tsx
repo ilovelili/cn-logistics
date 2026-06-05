@@ -686,7 +686,7 @@ export default function AdminOperatorManagement({
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
             >
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                {visibleTableColumns.map((column) =>
+                {visibleTableColumns.map((column, index) =>
                   column.sortKey ? (
                     <OperatorSortableHeader
                       key={column.id}
@@ -695,11 +695,20 @@ export default function AdminOperatorManagement({
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={changeSort}
+                      className={
+                        index === 0
+                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                          : ""
+                      }
                     />
                   ) : (
                     <th
                       key={column.id}
-                      className="py-3 pr-4 text-left font-bold"
+                      className={`py-3 pr-4 text-left font-bold ${
+                        index === 0
+                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                          : ""
+                      }`}
                     >
                       {column.label}
                     </th>
@@ -729,8 +738,15 @@ export default function AdminOperatorManagement({
               ) : (
                 paginatedOperators.map((operator) => (
                   <tr key={operator.id}>
-                    {visibleTableColumns.map((column) => (
-                      <td key={column.id} className="py-4 pr-4 text-left">
+                    {visibleTableColumns.map((column, index) => (
+                      <td
+                        key={column.id}
+                        className={`py-4 pr-4 text-left ${
+                          index === 0
+                            ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                            : ""
+                        }`}
+                      >
                         {column.render(operator)}
                       </td>
                     ))}
@@ -762,12 +778,14 @@ function OperatorSortableHeader({
   activeSortKey,
   direction,
   onSort,
+  className = "",
 }: {
   label: string;
   sortKey: SortKey;
   activeSortKey: SortKey;
   direction: SortDirection;
   onSort: (sortKey: SortKey) => void;
+  className?: string;
 }) {
   return (
     <SortableTableHeader
@@ -776,7 +794,7 @@ function OperatorSortableHeader({
       activeSortKey={activeSortKey}
       direction={direction}
       onSort={onSort}
-      className="py-3 pr-4 font-bold"
+      className={`py-3 pr-4 font-bold ${className}`}
       buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
       activeClassName="text-gray-900 dark:text-white"
       inactiveClassName="text-gray-500 dark:text-gray-400"

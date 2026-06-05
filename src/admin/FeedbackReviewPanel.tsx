@@ -351,7 +351,7 @@ export default function FeedbackReviewPanel({
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
             >
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                {visibleTableColumns.map((column) => (
+                {visibleTableColumns.map((column, index) => (
                   <SortableTableHeader
                     key={column.id}
                     label={column.label}
@@ -359,7 +359,11 @@ export default function FeedbackReviewPanel({
                     activeSortKey={sortKey}
                     direction={sortDirection}
                     onSort={handleSort}
-                    className="py-3 pr-4 text-left"
+                    className={`py-3 pr-4 text-left ${
+                      index === 0
+                        ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                        : ""
+                    }`}
                     buttonClassName="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
                     activeClassName="text-gray-900 dark:text-white"
                     inactiveClassName="text-gray-500 dark:text-gray-400"
@@ -395,8 +399,15 @@ export default function FeedbackReviewPanel({
                     }
                     className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
                   >
-                    {visibleTableColumns.map((column) => (
-                      <td key={column.id} className="py-4 pr-4 align-middle">
+                    {visibleTableColumns.map((column, index) => (
+                      <td
+                        key={column.id}
+                        className={`py-4 pr-4 align-middle ${
+                          index === 0
+                            ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                            : ""
+                        }`}
+                      >
                         {column.render(item)}
                       </td>
                     ))}

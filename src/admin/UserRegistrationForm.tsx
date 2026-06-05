@@ -783,7 +783,7 @@ export default function UserRegistrationForm({
                     className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
                   >
                     <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                      {visibleTableColumns.map((column) =>
+                      {visibleTableColumns.map((column, index) =>
                         column.sortKey ? (
                           <SortableTableHeader
                             key={column.id}
@@ -792,7 +792,11 @@ export default function UserRegistrationForm({
                             activeSortKey={sortKey}
                             direction={sortDirection}
                             onSort={changeSort}
-                            className="py-3 pr-4 font-bold"
+                            className={`py-3 pr-4 font-bold ${
+                              index === 0
+                                ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                : ""
+                            }`}
                             buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
                             activeClassName="text-gray-900 dark:text-white"
                             inactiveClassName="text-gray-500 dark:text-gray-400"
@@ -800,7 +804,11 @@ export default function UserRegistrationForm({
                         ) : (
                           <th
                             key={column.id}
-                            className="py-3 pr-4 text-left font-bold"
+                            className={`py-3 pr-4 text-left font-bold ${
+                              index === 0
+                                ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                : ""
+                            }`}
                           >
                             {column.label}
                           </th>
@@ -814,10 +822,14 @@ export default function UserRegistrationForm({
                         key={user.id}
                         className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
                       >
-                        {visibleTableColumns.map((column) => (
+                        {visibleTableColumns.map((column, index) => (
                           <td
                             key={column.id}
-                            className="overflow-hidden py-4 pr-4"
+                            className={`overflow-hidden py-4 pr-4 ${
+                              index === 0
+                                ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                : ""
+                            }`}
                           >
                             {column.render(user)}
                           </td>
