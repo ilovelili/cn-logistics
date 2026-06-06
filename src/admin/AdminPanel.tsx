@@ -146,15 +146,6 @@ export default function AdminPanel({
       label: t("admin.nav.shipmentEntry"),
       icon: FilePlus2,
     },
-    ...(isSuperAdmin
-      ? [
-          {
-            id: "standardFlow" as AdminView,
-            label: t("superAdmin.nav.standardFlow"),
-            icon: ListChecks,
-          },
-        ]
-      : []),
     {
       id: "userRegistration" as AdminView,
       label: t("admin.nav.userRegistration"),
@@ -166,6 +157,11 @@ export default function AdminPanel({
             id: "adminOperators" as AdminView,
             label: t("superAdmin.nav.adminOperators"),
             icon: ShieldCheck,
+          },
+          {
+            id: "standardFlow" as AdminView,
+            label: t("superAdmin.nav.standardFlow"),
+            icon: ListChecks,
           },
           {
             id: "feedbackReview" as AdminView,

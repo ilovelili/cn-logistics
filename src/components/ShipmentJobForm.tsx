@@ -84,6 +84,10 @@ export default function ShipmentJobForm({
   const [trackingTemplates, setTrackingTemplates] = React.useState<
     ShipmentTrackingEventTemplate[]
   >([]);
+  const [selectedStandardFlowName, setSelectedStandardFlowName] =
+    React.useState("door_to_door");
+  const [standardFlowPickerOpen, setStandardFlowPickerOpen] =
+    React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -92,6 +96,11 @@ export default function ShipmentJobForm({
       .then((templates) => {
         if (active) {
           setTrackingTemplates(templates);
+          setSelectedStandardFlowName((currentFlowName) =>
+            templates.some((template) => template.flow_name === currentFlowName)
+              ? currentFlowName
+              : (templates[0]?.flow_name ?? "door_to_door"),
+          );
         }
       })
       .catch(() => {
@@ -239,18 +248,24 @@ export default function ShipmentJobForm({
     }));
   };
 
-  const addDefaultTrackingFlow = () => {
+  const addDefaultTrackingFlow = (flowName: string) => {
+    const selectedTemplates = trackingTemplates.filter(
+      (template) => template.flow_name === flowName,
+    );
+
     setForm((current) => ({
       ...current,
       tracking_events: [
         ...current.tracking_events,
-        ...trackingTemplates.map((template) => ({
+        ...selectedTemplates.map((template) => ({
           event_date: "",
           location: "",
           description: template.description,
         })),
       ],
     }));
+    setSelectedStandardFlowName(flowName);
+    setStandardFlowPickerOpen(false);
   };
 
   const removeTrackingEvent = (index: number) => {
@@ -465,7 +480,7 @@ export default function ShipmentJobForm({
       <TrackingEventFields
         values={form.tracking_events}
         onAdd={addTrackingEvent}
-        onAddDefaultFlow={addDefaultTrackingFlow}
+        onAddDefaultFlow={() => setStandardFlowPickerOpen(true)}
         canAddDefaultFlow={trackingTemplates.length > 0}
         onRemove={(index) => {
           const event = form.tracking_events[index];
@@ -481,6 +496,15 @@ export default function ShipmentJobForm({
         }}
         onChange={updateTrackingEvent}
       />
+
+      {standardFlowPickerOpen && (
+        <StandardFlowPickerModal
+          flowName={selectedStandardFlowName}
+          flowOptions={getStandardFlowOptions(trackingTemplates)}
+          onCancel={() => setStandardFlowPickerOpen(false)}
+          onConfirm={addDefaultTrackingFlow}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
         {onCancel && (
@@ -556,6 +580,82 @@ function ensureTrackingEventAtIndex(
   }
 
   return nextEvents;
+}
+
+function getStandardFlowOptions(templates: ShipmentTrackingEventTemplate[]) {
+  return [...new Set(templates.map((template) => template.flow_name))]
+    .filter(Boolean)
+    .sort((first, second) => first.localeCompare(second, "ja"));
+}
+
+function StandardFlowPickerModal({
+  flowName,
+  flowOptions,
+  onCancel,
+  onConfirm,
+}: {
+  flowName: string;
+  flowOptions: string[];
+  onCancel: () => void;
+  onConfirm: (flowName: string) => void;
+}) {
+  const initialFlowName = flowOptions.includes(flowName)
+    ? flowName
+    : (flowOptions[0] ?? flowName);
+  const [selectedFlowName, setSelectedFlowName] =
+    React.useState(initialFlowName);
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("tracking.selectStandardFlowTitle")}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("tracking.selectStandardFlowHelp")}
+        </p>
+        <label className="mt-5 block">
+          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+            {t("tracking.standardFlow")}
+          </span>
+          <select
+            value={selectedFlowName}
+            disabled={flowOptions.length === 0}
+            onChange={(event) => setSelectedFlowName(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-bold text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800"
+          >
+            {flowOptions.length === 0 ? (
+              <option value={selectedFlowName}>{selectedFlowName}</option>
+            ) : (
+              flowOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(selectedFlowName)}
+            disabled={flowOptions.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus className="h-4 w-4" />
+            {t("tracking.addDefaultFlow")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function FormDeleteConfirmModal({

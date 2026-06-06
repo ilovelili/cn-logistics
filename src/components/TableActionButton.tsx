@@ -4,7 +4,7 @@ type TableActionButtonVariant = "primary" | "success" | "warning" | "danger";
 
 const variantClasses: Record<TableActionButtonVariant, string> = {
   primary:
-    "border border-slate-200 bg-transparent text-slate-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800",
+    "border border-emerald-300 bg-transparent text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-100 dark:hover:bg-emerald-950/40",
   success:
     "border border-emerald-200 bg-transparent text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40",
   warning:

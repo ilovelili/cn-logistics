@@ -80,6 +80,7 @@ export interface ShipmentTrackingEventForm {
 
 export interface ShipmentTrackingEventTemplate {
   id: string;
+  flow_name: string;
   name: string;
   description: string;
   sort_order: number;
@@ -91,6 +92,7 @@ export interface ShipmentTrackingEventTemplate {
 }
 
 export interface ShipmentTrackingEventTemplateForm {
+  flow_name: string;
   name: string;
   description: string;
   sort_order: number;
@@ -476,6 +478,7 @@ export async function fetchShipmentTrackingEventTemplates(): Promise<
     .select("*")
     .eq("is_active", true)
     .is("deleted_at", null)
+    .order("flow_name", { ascending: true })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -493,6 +496,7 @@ export async function fetchAllShipmentTrackingEventTemplates(): Promise<
     .from("shipment_tracking_event_templates")
     .select("*")
     .is("deleted_at", null)
+    .order("flow_name", { ascending: true })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -509,6 +513,7 @@ export async function createShipmentTrackingEventTemplate(
   const { data, error } = await supabase
     .from("shipment_tracking_event_templates")
     .insert({
+      flow_name: normalizeFlowName(form.flow_name),
       name: form.name.trim(),
       description: form.description.trim(),
       sort_order: form.sort_order,
@@ -531,6 +536,7 @@ export async function updateShipmentTrackingEventTemplate(
   const { data, error } = await supabase
     .from("shipment_tracking_event_templates")
     .update({
+      flow_name: normalizeFlowName(form.flow_name),
       name: form.name.trim(),
       description: form.description.trim(),
       sort_order: form.sort_order,
@@ -568,6 +574,10 @@ export async function softDeleteShipmentTrackingEventTemplate(id: string) {
 function normalizeStatusColor(value: string) {
   const color = value.trim();
   return /^#[0-9a-f]{6}$/i.test(color) ? color : null;
+}
+
+function normalizeFlowName(value: string) {
+  return value.trim() || "door_to_door";
 }
 
 function normalizeProgressPercent(value: string) {
