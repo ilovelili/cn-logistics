@@ -1,7 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import {
   CheckCircle,
-  Edit3,
   Plus,
   Save,
   Search,
@@ -81,6 +87,14 @@ interface UserTableColumn {
   width: number;
   sortKey?: SortKey;
   render: (user: ShipperUserRow) => React.ReactNode;
+}
+
+function isInteractiveTableEvent(event: MouseEvent<HTMLElement>) {
+  return Boolean(
+    (event.target as HTMLElement).closest(
+      "a,button,input,select,textarea,[role='button']",
+    ),
+  );
 }
 
 interface ShipperUserRow extends ShipperUser {
@@ -563,44 +577,36 @@ export default function UserRegistrationForm({
           </span>
         ),
       },
-      {
+    ];
+
+    if (isSuperAdmin) {
+      userColumns.push({
         id: "action" as const,
         label: t("admin.userRegistration.action"),
-        width: isSuperAdmin ? 23 : 8,
+        width: 23,
         render: (user: ShipperUserRow) => (
-          <div className="flex flex-nowrap gap-1.5">
-            <TableActionButton
-              variant="primary"
-              icon={<Edit3 className="h-3.5 w-3.5" />}
-              onClick={() => setSelectedUser(user)}
-            >
-              {t("common.edit")}
-            </TableActionButton>
-            {isSuperAdmin && (
-              <ApprovalButtons
-                disabled={
-                  actionLoadingId === user.id ||
-                  !user.contact_users.some(
-                    (contactUser) =>
-                      contactUser.approval_status === "to_be_approved",
-                  )
-                }
-                deleteDisabled={actionLoadingId === user.id}
-                onApprove={() => {
-                  setPendingAction({ user, action: "approve" });
-                }}
-                onReject={() => {
-                  setPendingAction({ user, action: "reject" });
-                }}
-                onDelete={() => {
-                  setPendingAction({ user, action: "delete" });
-                }}
-              />
-            )}
-          </div>
+          <ApprovalButtons
+            disabled={
+              actionLoadingId === user.id ||
+              !user.contact_users.some(
+                (contactUser) =>
+                  contactUser.approval_status === "to_be_approved",
+              )
+            }
+            deleteDisabled={actionLoadingId === user.id}
+            onApprove={() => {
+              setPendingAction({ user, action: "approve" });
+            }}
+            onReject={() => {
+              setPendingAction({ user, action: "reject" });
+            }}
+            onDelete={() => {
+              setPendingAction({ user, action: "delete" });
+            }}
+          />
         ),
-      },
-    ];
+      });
+    }
 
     return userColumns;
   }, [actionLoadingId, isSuperAdmin]);
@@ -820,7 +826,11 @@ export default function UserRegistrationForm({
                     {paginatedUsers.map((user) => (
                       <tr
                         key={user.id}
-                        className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
+                        onDoubleClick={(event) => {
+                          if (isInteractiveTableEvent(event)) return;
+                          setSelectedUser(user);
+                        }}
+                        className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
                       >
                         {visibleTableColumns.map((column, index) => (
                           <td

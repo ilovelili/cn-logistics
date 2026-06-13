@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { Search } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
@@ -44,6 +51,14 @@ interface FeedbackTableColumn {
   label: string;
   width: number;
   render: (item: ShipmentFeedbackReview) => React.ReactNode;
+}
+
+function isInteractiveTableEvent(event: MouseEvent<HTMLElement>) {
+  return Boolean(
+    (event.target as HTMLElement).closest(
+      "a,button,input,select,textarea,[role='button']",
+    ),
+  );
 }
 
 export default function FeedbackReviewPanel({
@@ -394,9 +409,10 @@ export default function FeedbackReviewPanel({
                 paginatedFeedback.map((item) => (
                   <tr
                     key={`${item.id}-${item.admin_operator_email ?? "none"}`}
-                    onClick={() =>
-                      setSelectedShipmentJobId(item.shipment_job_id)
-                    }
+                    onDoubleClick={(event) => {
+                      if (isInteractiveTableEvent(event)) return;
+                      setSelectedShipmentJobId(item.shipment_job_id);
+                    }}
                     className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
                   >
                     {visibleTableColumns.map((column, index) => (

@@ -2,7 +2,6 @@ import {
   AlertCircle,
   CalendarDays,
   CheckCircle,
-  Edit3,
   Eye,
   FileClock,
   FileText,
@@ -14,6 +13,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { t } from "../lib/i18n";
@@ -37,7 +37,6 @@ import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableColumnSettingsButton from "./TableColumnSettings";
-import TableActionButton from "./TableActionButton";
 import InstantTooltip from "./InstantTooltip";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
@@ -253,7 +252,6 @@ export default function ShipmentJobsTable({
         requestingDocumentId,
         deletingDocumentId,
         canDeleteDocuments,
-        onSelectJob,
         setPreviewDocument,
         requestDocument,
         approveDocument,
@@ -273,7 +271,6 @@ export default function ShipmentJobsTable({
       requestingDocumentId,
       deletingDocumentId,
       canDeleteDocuments,
-      onSelectJob,
       setPreviewDocument,
       requestDocument,
       approveDocument,
@@ -505,12 +502,16 @@ export default function ShipmentJobsTable({
               {paginatedJobs.map((job) => (
                 <tr
                   key={job.id}
+                  onDoubleClick={(event) => {
+                    if (isInteractiveTableEvent(event)) return;
+                    onSelectJob(job);
+                  }}
                   className={`align-top transition ${
                     selectedJobId === job.id
-                      ? "bg-cyan-50/80 dark:bg-cyan-950/20"
+                      ? "cursor-pointer bg-cyan-50/80 dark:bg-cyan-950/20"
                       : adminTheme
-                        ? "hover:bg-slate-50/80 dark:hover:bg-gray-800/70"
-                        : "hover:bg-slate-50/80"
+                        ? "cursor-pointer hover:bg-slate-50/80 dark:hover:bg-gray-800/70"
+                        : "cursor-pointer hover:bg-slate-50/80"
                   }`}
                 >
                   {visibleTableColumns.map((column, index) => (
@@ -590,6 +591,14 @@ export default function ShipmentJobsTable({
   );
 }
 
+function isInteractiveTableEvent(event: MouseEvent<HTMLElement>) {
+  return Boolean(
+    (event.target as HTMLElement).closest(
+      "a,button,input,select,textarea,[role='button']",
+    ),
+  );
+}
+
 function buildColumns(
   documentsByJob: Record<string, ShipmentDocument[]>,
   adminTheme: boolean,
@@ -604,7 +613,6 @@ function buildColumns(
   requestingDocumentId: string | null,
   deletingDocumentId: string | null,
   canDeleteDocuments: boolean,
-  onSelectJob: (job: ShipmentJob) => void,
   onPreviewDocument: (document: ShipmentDocument) => void,
   onRequestDocument: (document: ShipmentDocument) => void,
   onApproveDocument: (document: ShipmentDocument) => void,
@@ -660,7 +668,7 @@ function buildColumns(
           {
             id: "responsible_admins" as const,
             label: t("admin.userRegistration.assignedAdmins"),
-            width: 120,
+            width: 240,
             sortKey: "responsible_admins" as const,
             render: (job: ShipmentJob) => (
               <ResponsibleAdminBadges
@@ -677,7 +685,7 @@ function buildColumns(
     {
       id: "status",
       label: t("common.status"),
-      width: 180,
+      width: 110,
       sortKey: "status",
       render: (job) => (
         <ShipmentProgressStatus job={job} statusColorMap={statusColorMap} />
@@ -851,21 +859,6 @@ function buildColumns(
       ),
     });
   }
-
-  columns.push({
-    id: "action",
-    label: t("admin.userRegistration.action"),
-    width: 110,
-    render: (job) => (
-      <TableActionButton
-        variant="primary"
-        icon={<Edit3 className="h-3.5 w-3.5" />}
-        onClick={() => onSelectJob(job)}
-      >
-        {t("common.edit")}
-      </TableActionButton>
-    ),
-  });
 
   return columns;
 }
@@ -1113,7 +1106,7 @@ function ShipmentProgressStatus({
     : undefined;
 
   return (
-    <div className="min-w-[150px] space-y-2">
+    <div className="space-y-2">
       <span
         className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}
         style={customBadgeStyle}
@@ -1121,7 +1114,7 @@ function ShipmentProgressStatus({
         {statusLabels[job.status]}
       </span>
       <div
-        className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+        className="h-2 w-20 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
         aria-label={t("common.status")}
         title={progressLabel}
       >

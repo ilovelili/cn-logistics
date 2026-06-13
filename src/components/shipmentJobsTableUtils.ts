@@ -173,7 +173,15 @@ export function getResponsibleAdminAssignments(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
 ) {
-  return getShipperAdminAssignments(job.shipper_name, shipperOptions);
+  const assignedAdminIds = new Set(job.assigned_admin_user_ids ?? []);
+
+  if (assignedAdminIds.size === 0) {
+    return [];
+  }
+
+  return getShipperAdminAssignments(job.shipper_name, shipperOptions).filter(
+    (assignment) => assignedAdminIds.has(assignment.admin_user_id),
+  );
 }
 
 function getShipperAdminAssignments(
