@@ -204,8 +204,6 @@ const ja = {
   "documents.approval.approved": "承認済み",
   "documents.approval.rejected": "却下",
 
-  "form.status": "ステータス",
-  "form.statusPeriods": "ステータス期間",
   "form.tradeMode": "取引形態",
   "form.tradeTerm": "取引条件",
   "form.transportMode": "輸送形態",
@@ -605,8 +603,6 @@ const en: Messages = {
   "documents.approval.approved": "Approved",
   "documents.approval.rejected": "Rejected",
 
-  "form.status": "Status",
-  "form.statusPeriods": "Status periods",
   "form.tradeMode": "Trade mode",
   "form.tradeTerm": "Trade term",
   "form.transportMode": "Transport mode",

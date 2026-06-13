@@ -9,10 +9,6 @@ import {
   ShipmentDocument,
   ShipmentJobForm as ShipmentJobFormState,
   ShipmentTrackingEventTemplate,
-  shipmentStatusDateFields,
-  standardFlowStatusOptions,
-  statusLabels,
-  statusOptions,
   tradeModeOptions,
   transportModeOptions,
   jobToForm,
@@ -132,48 +128,6 @@ export default function ShipmentJobForm({
       shipper_name: shipperName,
       assigned_admin_user_ids: selectedAdminIds,
     }));
-  };
-
-  const updateStatus = (status: ShipmentJobFormState["status"]) => {
-    setForm((current) => {
-      const today = new Date().toISOString().slice(0, 10);
-      const previousStandardStatus = getCurrentStandardStatus(current.status);
-      const nextStandardStatus = getCurrentStandardStatus(status);
-      const statusChanged = previousStandardStatus !== nextStandardStatus;
-      const nextStatusIndex = standardFlowStatusOptions.findIndex(
-        (option) => option.value === nextStandardStatus,
-      );
-      const trackingEvents =
-        statusChanged && nextStatusIndex >= 0
-          ? ensureTrackingEventAtIndex(current.tracking_events, nextStatusIndex)
-          : current.tracking_events;
-
-      return {
-        ...current,
-        status,
-        tracking_events:
-          statusChanged && nextStatusIndex >= 0
-            ? trackingEvents.map((event, index) =>
-                index === nextStatusIndex
-                  ? { ...event, event_date: today }
-                  : event,
-              )
-            : trackingEvents,
-        ...(status in shipmentStatusDateFields
-          ? (() => {
-              const fields =
-                shipmentStatusDateFields[
-                  status as keyof typeof shipmentStatusDateFields
-                ];
-              const fromField = fields.from as keyof ShipmentJobFormState;
-
-              return {
-                [fromField]: current[fromField] || today,
-              };
-            })()
-          : {}),
-      };
-    });
   };
 
   const availableAdminAssignments = getShipperAdminAssignments(
@@ -318,14 +272,6 @@ export default function ShipmentJobForm({
             onChange={(value) => updateField("shipper_name", value)}
           />
         )}
-        <SelectField
-          label={t("form.status")}
-          value={form.status}
-          onChange={(value) =>
-            updateStatus(value as ShipmentJobFormState["status"])
-          }
-          options={statusOptions}
-        />
         <SelectField
           label={t("form.tradeMode")}
           value={form.trade_mode}
@@ -546,40 +492,6 @@ function useShipmentForm(job?: ShipmentJob | null) {
   }, [job]);
 
   return [form, setForm] as const;
-}
-
-function getCurrentStandardStatus(status: ShipmentJobFormState["status"]) {
-  if (standardFlowStatusOptions.some((option) => option.value === status)) {
-    return status;
-  }
-
-  if (status === "completed") {
-    return "delivered";
-  }
-
-  if (status === "customs_hold") {
-    return "customs_destination";
-  }
-
-  return "pickup";
-}
-
-function ensureTrackingEventAtIndex(
-  events: ShipmentJobFormState["tracking_events"],
-  targetIndex: number,
-) {
-  const nextEvents = [...events];
-
-  while (nextEvents.length <= targetIndex) {
-    const status = standardFlowStatusOptions[nextEvents.length]?.value;
-    nextEvents.push({
-      event_date: "",
-      location: "",
-      description: status ? statusLabels[status] : t("tracking.description"),
-    });
-  }
-
-  return nextEvents;
 }
 
 function getStandardFlowOptions(templates: ShipmentTrackingEventTemplate[]) {

@@ -15,10 +15,8 @@ import {
   documentApprovalClasses,
   documentApprovalLabels,
   downloadShipmentDocument,
-  getStandardFlowStatusPeriods,
   ShipmentDocument,
   ShipmentJob,
-  ShipmentStatusPeriod,
   statusBadgeClasses,
   statusLabels,
   tradeModeLabels,
@@ -52,7 +50,6 @@ export default function ShipmentJobDetailModal({
   const internalDocuments = documents.filter(
     (document) => document.scope === "internal",
   );
-  const statusPeriods = getStandardFlowStatusPeriods(job);
 
   return (
     <div
@@ -188,8 +185,6 @@ export default function ShipmentJobDetailModal({
             </DetailCard>
           </div>
 
-          <StatusPeriodTimeline periods={statusPeriods} />
-
           <TrackingTimeline events={job.tracking_events} />
 
           {showInternalDocuments && (
@@ -256,70 +251,6 @@ function DetailField({
   );
 }
 
-function StatusPeriodTimeline({
-  periods,
-}: {
-  periods: ShipmentStatusPeriod[];
-}) {
-  return (
-    <section className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <h3 className="mb-4 text-lg font-black text-gray-900 dark:text-white">
-        {t("form.statusPeriods")}
-      </h3>
-      {periods.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          {t("common.noData")}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {periods.map((period, index) => {
-            const isCurrent = index === periods.length - 1;
-            return (
-              <div
-                key={period.status}
-                className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                      isCurrent
-                        ? "bg-cyan-600 text-white"
-                        : "bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full border px-3 py-1 text-xs font-bold ${statusBadgeClasses[period.status]}`}
-                      >
-                        {statusLabels[period.status]}
-                      </span>
-                      {isCurrent && (
-                        <span className="text-xs font-bold text-cyan-700 dark:text-cyan-300">
-                          {t("dashboard.currentStatusShort")}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {formatDateRange(period.fromDate, period.toDate)}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                  {t("common.workingDaysSpent")}:{" "}
-                  {formatWorkingDays(period.durationDays)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
 function TrackingTimeline({
   events,
 }: {
@@ -378,46 +309,6 @@ function TrackingTimeline({
       )}
     </section>
   );
-}
-
-function formatWorkingDays(days: number | null) {
-  return typeof days === "number" ? `${days}営業日` : "-";
-}
-
-function formatDateRange(fromDate: string | null, toDate: string | null) {
-  const from = formatDate(fromDate);
-  const to = formatDate(toDate);
-
-  if (from && to) {
-    return `${from} - ${to}`;
-  }
-
-  if (from) {
-    return `${from} -`;
-  }
-
-  if (to) {
-    return `- ${to}`;
-  }
-
-  return "-";
-}
-
-function formatDate(value: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 }
 
 function groupTrackingEventsByDate(events: ShipmentJob["tracking_events"]) {
