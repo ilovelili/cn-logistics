@@ -780,6 +780,10 @@ export function isCustomerDocumentDownloadable(document: ShipmentDocument) {
   );
 }
 
+export function isShipmentDocumentPreviewable(document: ShipmentDocument) {
+  return Boolean(document.file_url) || isCustomerDocumentDownloadable(document);
+}
+
 export interface ShipmentStatusPeriod {
   status: ShipmentStatus;
   fromDate: string | null;

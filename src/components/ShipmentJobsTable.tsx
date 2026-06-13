@@ -19,6 +19,7 @@ import {
 import { t } from "../lib/i18n";
 import {
   isCustomerDocumentDownloadable,
+  isShipmentDocumentPreviewable,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatusColorMap,
@@ -506,7 +507,7 @@ export default function ShipmentJobsTable({
                     if (isInteractiveTableEvent(event)) return;
                     onSelectJob(job);
                   }}
-                  className={`align-top transition ${
+                  className={`group/document-row align-top transition ${
                     selectedJobId === job.id
                       ? "cursor-pointer bg-cyan-50/80 dark:bg-cyan-950/20"
                       : adminTheme
@@ -517,7 +518,7 @@ export default function ShipmentJobsTable({
                   {visibleTableColumns.map((column, index) => (
                     <td
                       key={column.id}
-                      className={`px-3 py-4 ${
+                      className={`px-3 py-2 ${
                         index === 0
                           ? `sticky left-0 z-10 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
                               selectedJobId === job.id
@@ -568,7 +569,7 @@ export default function ShipmentJobsTable({
       />
       {previewDocument &&
         (!approvedDocumentsOnly ||
-          isCustomerDocumentDownloadable(previewDocument)) && (
+          isShipmentDocumentPreviewable(previewDocument)) && (
           <DocumentPreviewModal
             document={previewDocument}
             adminTheme={adminTheme}
@@ -893,10 +894,10 @@ function DocumentPills({
   }
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex max-h-10 flex-col items-start gap-1.5 overflow-hidden transition-[max-height] duration-150 group-hover/document-row:max-h-96 focus-within:max-h-96">
       {documents.map((document) => {
         const canPreview =
-          !approvedOnly || isCustomerDocumentDownloadable(document);
+          !approvedOnly || isShipmentDocumentPreviewable(document);
         const canRequest =
           !muted &&
           approvedOnly &&
@@ -937,7 +938,7 @@ function DocumentPills({
             onClick={(event) => {
               event.stopPropagation();
             }}
-            className={`w-full rounded-lg border p-2 ${rowClass}`}
+            className={`w-full rounded-lg border px-2 py-1.5 ${rowClass}`}
           >
             <div className="flex min-w-0 items-start gap-2">
               <span
