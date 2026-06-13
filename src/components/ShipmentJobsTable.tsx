@@ -37,6 +37,7 @@ import SortableTableHeader, { SortDirection } from "./SortableTableHeader";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
+import TableScrollToTopButton from "./TableScrollToTopButton";
 import TableColumnSettingsButton from "./TableColumnSettings";
 import InstantTooltip from "./InstantTooltip";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
@@ -419,11 +420,7 @@ export default function ShipmentJobsTable({
         )}
         <div
           ref={scrollContainerRef}
-          className={
-            stickyHeaderEnabled
-              ? "max-h-[70vh] overflow-auto overscroll-contain"
-              : "overflow-x-auto"
-          }
+          className="max-h-[70vh] overflow-auto overscroll-contain"
         >
           <table
             className="w-full table-fixed text-left text-sm"
@@ -555,6 +552,15 @@ export default function ShipmentJobsTable({
             </div>
           )}
         </div>
+        <TableScrollToTopButton
+          adminTheme={adminTheme}
+          onClick={() =>
+            scrollContainerRef.current?.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            })
+          }
+        />
       </div>
       <PaginationControls
         adminTheme={adminTheme}

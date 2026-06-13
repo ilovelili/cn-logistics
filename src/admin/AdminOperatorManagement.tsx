@@ -23,6 +23,7 @@ import PaginationControls from "../components/PaginationControls";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
+import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
@@ -665,18 +666,19 @@ export default function AdminOperatorManagement({
           />
         </div>
 
-        <div
-          ref={tableScrollRef}
-          className={
-            stickyHeaderEnabled
-              ? "max-h-[70vh] overflow-auto overscroll-contain"
-              : "overflow-x-auto"
-          }
-        >
-          <table
-            className="w-full table-fixed text-left text-sm"
-            style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+        <div className="relative">
+          <div
+            ref={tableScrollRef}
+            className={
+              stickyHeaderEnabled
+                ? "max-h-[70vh] overflow-auto overscroll-contain"
+                : "overflow-x-auto"
+            }
           >
+            <table
+              className="w-full table-fixed text-left text-sm"
+              style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
+            >
             <colgroup>
               {visibleTableColumns.map((column) => (
                 <col key={column.id} style={{ width: `${column.width}px` }} />
@@ -754,7 +756,17 @@ export default function AdminOperatorManagement({
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
+          <TableScrollToTopButton
+            adminTheme
+            onClick={() =>
+              tableScrollRef.current?.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              })
+            }
+          />
         </div>
         <PaginationControls
           adminTheme

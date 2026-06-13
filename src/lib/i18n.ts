@@ -69,6 +69,7 @@ const ja = {
   "common.logout": "ログアウト",
   "table.stickyHeader.enable": "ヘッダー固定を有効にする",
   "table.stickyHeader.disable": "ヘッダー固定を解除する",
+  "table.scrollToTop": "先頭へ戻る",
 
   "tracking.title": "ステータス履歴",
   "tracking.add": "履歴を追加",
@@ -467,6 +468,7 @@ const en: Messages = {
 
   "table.stickyHeader.enable": "Enable sticky header",
   "table.stickyHeader.disable": "Disable sticky header",
+  "table.scrollToTop": "Back to top",
 
   "tracking.title": "Status history",
   "tracking.add": "Add history",

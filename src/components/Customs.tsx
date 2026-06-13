@@ -12,6 +12,7 @@ import PaginationControls from "./PaginationControls";
 import StickyTableHeaderToggle from "./StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference";
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
+import TableScrollToTopButton from "./TableScrollToTopButton";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { usePagination } from "./usePagination";
 
@@ -243,15 +244,16 @@ export default function Customs() {
             onScroll={scrollHint.scrollByDirection}
           />
         </div>
-        <div
-          ref={tableScrollRef}
-          className={
-            stickyHeaderEnabled
-              ? "max-h-[70vh] overflow-auto overscroll-contain"
-              : "overflow-x-auto"
-          }
-        >
-          <table className="w-full">
+        <div className="relative">
+          <div
+            ref={tableScrollRef}
+            className={
+              stickyHeaderEnabled
+                ? "max-h-[70vh] overflow-auto overscroll-contain"
+                : "overflow-x-auto"
+            }
+          >
+            <table className="w-full">
             <thead
               className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
             >
@@ -355,7 +357,17 @@ export default function Customs() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
+          <TableScrollToTopButton
+            adminTheme
+            onClick={() =>
+              tableScrollRef.current?.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              })
+            }
+          />
         </div>
         <PaginationControls
           adminTheme
