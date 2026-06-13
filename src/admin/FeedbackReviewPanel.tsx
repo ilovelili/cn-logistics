@@ -10,6 +10,7 @@ import { Search } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
   ShipmentFeedbackReview,
+  ShipmentFeedbackTargetRole,
 } from "../lib/shipmentFeedback";
 import type { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 import { t } from "../lib/i18n";
@@ -37,7 +38,9 @@ type FeedbackColumnId =
   | "invoice"
   | "jobNumber"
   | "operator"
+  | "targetRole"
   | "submitter"
+  | "total_score"
   | "total_rating"
   | "attitude_rating"
   | "professionalism_rating"
@@ -108,6 +111,7 @@ export default function FeedbackReviewPanel({
         jobsById.get(item.shipment_job_id)?.job_number,
         item.submitter_email,
         item.admin_operator_email,
+        getFeedbackTargetRoleLabel(item.admin_operator_staff_role),
         item.reason,
       ]
         .filter(Boolean)
@@ -174,6 +178,16 @@ export default function FeedbackReviewPanel({
         ),
       },
       {
+        id: "targetRole",
+        label: t("feedback.targetRole"),
+        width: 130,
+        render: (item) => (
+          <span className="inline-flex rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-xs font-black text-cyan-800 dark:border-cyan-900 dark:text-cyan-200">
+            {getFeedbackTargetRoleLabel(item.admin_operator_staff_role)}
+          </span>
+        ),
+      },
+      {
         id: "submitter",
         label: t("superAdmin.feedback.submitter"),
         width: 200,
@@ -217,12 +231,16 @@ export default function FeedbackReviewPanel({
         render: (item) => <RatingPill value={item.price_rating} />,
       },
       {
+        id: "total_score",
+        label: t("feedback.totalScore"),
+        width: 140,
+        render: (item) => <RatingPill value={getFeedbackTotalScore(item)} />,
+      },
+      {
         id: "total_rating",
         label: t("feedback.summary"),
         width: 140,
-        render: (item) => (
-          <RatingPill value={getFeedbackServiceSummaryRating(item)} />
-        ),
+        render: (item) => <RatingPill value={getFeedbackAverageScore(item)} />,
       },
       {
         id: "reason",
@@ -480,10 +498,14 @@ function getFeedbackSortValue(
       return jobsById?.get(item.shipment_job_id)?.job_number ?? "";
     case "operator":
       return item.admin_operator_email ?? "";
+    case "targetRole":
+      return getFeedbackTargetRoleLabel(item.admin_operator_staff_role);
     case "submitter":
       return item.submitter_email;
+    case "total_score":
+      return getFeedbackTotalScore(item);
     case "total_rating":
-      return getFeedbackServiceSummaryRating(item);
+      return getFeedbackAverageScore(item);
     case "attitude_rating":
     case "professionalism_rating":
     case "speed_rating":
@@ -495,6 +517,19 @@ function getFeedbackSortValue(
     case "created_at":
       return new Date(item.created_at).getTime();
   }
+}
+
+function getFeedbackTargetRoleLabel(
+  targetRole: ShipmentFeedbackTargetRole | null,
+) {
+  if (targetRole === "sales") {
+    return t("superAdmin.operators.staffRole.sales");
+  }
+  if (targetRole === "operations") {
+    return t("superAdmin.operators.staffRole.operations");
+  }
+
+  return "-";
 }
 
 function compareFeedbackValues(
@@ -513,14 +548,18 @@ function compareFeedbackValues(
   return direction === "asc" ? comparison : -comparison;
 }
 
-function getFeedbackServiceSummaryRating(item: ShipmentFeedbackReview) {
+function getFeedbackTotalScore(item: ShipmentFeedbackReview) {
   return (
-    (item.attitude_rating +
-      item.professionalism_rating +
-      item.speed_rating +
-      item.accuracy_rating) /
-    4
+    item.attitude_rating +
+    item.professionalism_rating +
+    item.speed_rating +
+    item.accuracy_rating +
+    item.price_rating
   );
+}
+
+function getFeedbackAverageScore(item: ShipmentFeedbackReview) {
+  return getFeedbackTotalScore(item) / 5;
 }
 
 function RatingPill({ value }: { value: number }) {

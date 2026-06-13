@@ -28,9 +28,12 @@ import {
 import { SortDirection } from "./SortableTableHeader";
 import { t } from "../lib/i18n";
 import {
+  FeedbackRatingPayload,
   fetchShipmentFeedbackForUser,
+  feedbackTargetRoles,
   ShipmentFeedback,
-  submitShipmentFeedback,
+  ShipmentFeedbackTargetRole,
+  submitShipmentFeedbackForTargets,
 } from "../lib/shipmentFeedback";
 import {
   createShipmentJob,
@@ -46,13 +49,8 @@ import {
 
 type StatusFilter = ShipmentStatus | "all";
 
-type FeedbackRatings = {
-  attitudeRating: number;
-  professionalismRating: number;
-  speedRating: number;
-  accuracyRating: number;
-  priceRating: number;
-};
+type FeedbackRatings = FeedbackRatingPayload;
+type FeedbackRatingsByTarget = Record<ShipmentFeedbackTargetRole, FeedbackRatings>;
 
 interface ShipmentJobsProps {
   jobs: ShipmentJob[];
@@ -97,7 +95,7 @@ export default function ShipmentJobs({
   const [feedbackSaving, setFeedbackSaving] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [feedbackByJob, setFeedbackByJob] = useState<
-    Record<string, ShipmentFeedback>
+    Record<string, ShipmentFeedback[]>
   >({});
   const [toast, setToast] = useState<{
     type: "success" | "error";
@@ -210,11 +208,7 @@ export default function ShipmentJobs({
       try {
         const feedback = await fetchShipmentFeedbackForUser(profileEmail);
         if (!active) return;
-        setFeedbackByJob(
-          Object.fromEntries(
-            feedback.map((item) => [item.shipment_job_id, item]),
-          ),
-        );
+        setFeedbackByJob(groupFeedbackByJob(feedback));
       } catch {
         if (active) {
           setFeedbackByJob({});
@@ -234,13 +228,13 @@ export default function ShipmentJobs({
   }, [profileEmail]);
 
   useEffect(() => {
-    if (feedbackJob && feedbackByJob[feedbackJob.id]) {
+    if (feedbackJob && isFeedbackComplete(feedbackByJob[feedbackJob.id])) {
       setFeedbackJob(null);
     }
   }, [feedbackByJob, feedbackJob]);
 
   const openFeedbackModal = (job: ShipmentJob) => {
-    if (feedbackLoading || feedbackByJob[job.id]) return;
+    if (feedbackLoading || isFeedbackComplete(feedbackByJob[job.id])) return;
     setFeedbackJob(job);
   };
 
@@ -433,7 +427,11 @@ export default function ShipmentJobs({
       <ShipmentJobDetailModal
         job={selectedJob}
         documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
-        feedback={selectedJob ? feedbackByJob[selectedJob.id] : null}
+        feedback={
+          selectedJob
+            ? getFeedbackSummaryForJob(feedbackByJob[selectedJob.id])
+            : null
+        }
         feedbackLoading={feedbackLoading}
         showInternalDocuments={canManageShipments}
         onOpenFeedback={openFeedbackModal}
@@ -445,7 +443,7 @@ export default function ShipmentJobs({
         saving={feedbackSaving}
         onClose={() => setFeedbackJob(null)}
         onSubmit={async (jobId, feedback) => {
-          if (feedbackByJob[jobId]) {
+          if (isFeedbackComplete(feedbackByJob[jobId])) {
             setFeedbackJob(null);
             return;
           }
@@ -455,29 +453,31 @@ export default function ShipmentJobs({
           try {
             const existingFeedback =
               await fetchShipmentFeedbackForUser(profileEmail);
-            const existingFeedbackByJob = Object.fromEntries(
-              existingFeedback.map((item) => [item.shipment_job_id, item]),
-            );
+            const existingFeedbackByJob = groupFeedbackByJob(existingFeedback);
 
-            if (existingFeedbackByJob[jobId]) {
+            if (isFeedbackComplete(existingFeedbackByJob[jobId])) {
               setFeedbackByJob(existingFeedbackByJob);
               showToast("error", t("feedback.alreadySubmitted"));
               return;
             }
 
-            const savedFeedback = await submitShipmentFeedback({
+            const existingJobFeedback = existingFeedbackByJob[jobId] ?? [];
+            const missingTargetRoles = feedbackTargetRoles.filter(
+              (targetRole) =>
+                !existingJobFeedback.some(
+                  (item) => item.admin_operator_staff_role === targetRole,
+                ),
+            );
+            const savedFeedback = await submitShipmentFeedbackForTargets({
               shipmentJobId: jobId,
               submitterEmail: profileEmail,
-              attitudeRating: feedback.attitudeRating,
-              professionalismRating: feedback.professionalismRating,
-              speedRating: feedback.speedRating,
-              accuracyRating: feedback.accuracyRating,
-              priceRating: feedback.priceRating,
+              feedbackByTarget: feedback.feedbackByTarget,
+              targetRoles: missingTargetRoles,
               reason: feedback.reason,
             });
             setFeedbackByJob((currentFeedback) => ({
               ...currentFeedback,
-              [jobId]: savedFeedback,
+              [jobId]: [...existingJobFeedback, ...savedFeedback],
             }));
             showToast("success", t("feedback.saved"));
           } catch {
@@ -601,22 +601,34 @@ function FeedbackModal({
   onSubmit,
 }: {
   job: ShipmentJob | null;
-  initialFeedback?: ShipmentFeedback | null;
+  initialFeedback?: ShipmentFeedback[] | null;
   saving: boolean;
   onClose: () => void;
   onSubmit: (
     jobId: string,
-    feedback: FeedbackRatings & { reason: string },
+    feedback: {
+      feedbackByTarget: FeedbackRatingsByTarget;
+      reason: string;
+    },
   ) => Promise<void>;
 }) {
-  const [ratings, setRatings] = useState<FeedbackRatings>(() =>
-    getInitialFeedbackRatings(initialFeedback),
+  type PendingFeedbackSubmission = {
+    feedbackByTarget: FeedbackRatingsByTarget;
+    reason: string;
+  };
+
+  const [feedbackByTarget, setFeedbackByTarget] =
+    useState<FeedbackRatingsByTarget>(() =>
+      getInitialFeedbackRatingsByTarget(initialFeedback),
   );
-  const [reason, setReason] = useState(initialFeedback?.reason ?? "");
+  const [reason, setReason] = useState(initialFeedback?.[0]?.reason ?? "");
+  const [pendingFeedback, setPendingFeedback] =
+    useState<PendingFeedbackSubmission | null>(null);
 
   useEffect(() => {
-    setRatings(getInitialFeedbackRatings(initialFeedback));
-    setReason(initialFeedback?.reason ?? "");
+    setFeedbackByTarget(getInitialFeedbackRatingsByTarget(initialFeedback));
+    setReason(initialFeedback?.[0]?.reason ?? "");
+    setPendingFeedback(null);
   }, [initialFeedback, job?.id]);
 
   if (!job) {
@@ -625,42 +637,41 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
-  const isAlreadySubmitted = Boolean(initialFeedback);
-  const isComplete = Object.values(ratings).every((rating) => rating > 0);
+  const isAlreadySubmitted = isFeedbackComplete(initialFeedback);
+  const isComplete = isFeedbackByTargetComplete(feedbackByTarget);
   const feedbackCategories = [
     {
       key: "attitudeRating" as const,
       label: t("feedback.attitude"),
-      value: ratings.attitudeRating,
     },
     {
       key: "professionalismRating" as const,
       label: t("feedback.professionalism"),
-      value: ratings.professionalismRating,
     },
     {
       key: "speedRating" as const,
       label: t("feedback.speed"),
-      value: ratings.speedRating,
     },
     {
       key: "accuracyRating" as const,
       label: t("feedback.accuracy"),
-      value: ratings.accuracyRating,
     },
     {
       key: "priceRating" as const,
       label: t("feedback.price"),
-      value: ratings.priceRating,
     },
   ];
   const setCategoryRating = (
+    targetRole: ShipmentFeedbackTargetRole,
     key: keyof FeedbackRatings,
     ratingValue: number,
   ) => {
-    setRatings((currentRatings) => ({
-      ...currentRatings,
-      [key]: ratingValue,
+    setFeedbackByTarget((currentFeedback) => ({
+      ...currentFeedback,
+      [targetRole]: {
+        ...currentFeedback[targetRole],
+        [key]: ratingValue,
+      },
     }));
   };
 
@@ -673,7 +684,7 @@ function FeedbackModal({
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
+        className="max-h-[90vh] w-full max-w-xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
@@ -699,24 +710,43 @@ function FeedbackModal({
         </div>
 
         <form
-          className="space-y-6 p-6"
+          className="max-h-[calc(90vh-112px)] space-y-6 overflow-y-auto p-6"
           onSubmit={(event) => {
             event.preventDefault();
             if (!isComplete || isAlreadySubmitted) return;
-            void onSubmit(job.id, { ...ratings, reason: reason.trim() });
+            setPendingFeedback({
+              feedbackByTarget,
+              reason: reason.trim(),
+            });
           }}
         >
-          <div className="space-y-4">
-            {feedbackCategories.map((category) => (
-              <StarRatingInput
-                key={category.key}
-                label={category.label}
-                value={category.value}
-                disabled={isAlreadySubmitted}
-                onChange={(ratingValue) =>
-                  setCategoryRating(category.key, ratingValue)
-                }
-              />
+          <div className="space-y-6">
+            {feedbackTargetRoleOptions.map((option) => (
+              <section
+                key={option.value}
+                className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"
+              >
+                <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                  {t(option.labelKey)}
+                </h3>
+                <div className="mt-4 space-y-4">
+                  {feedbackCategories.map((category) => (
+                    <StarRatingInput
+                      key={category.key}
+                      label={category.label}
+                      value={feedbackByTarget[option.value][category.key]}
+                      disabled={isAlreadySubmitted}
+                      onChange={(ratingValue) =>
+                        setCategoryRating(
+                          option.value,
+                          category.key,
+                          ratingValue,
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
 
@@ -756,13 +786,106 @@ function FeedbackModal({
           </div>
         </form>
       </div>
+      {pendingFeedback && (
+        <FeedbackSubmitConfirmModal
+          submitting={saving}
+          title={title}
+          jobNumber={job.job_number}
+          onCancel={() => setPendingFeedback(null)}
+          onConfirm={() => {
+            void onSubmit(job.id, pendingFeedback);
+            setPendingFeedback(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function getInitialFeedbackRatings(
-  feedback?: ShipmentFeedback | null,
-): FeedbackRatings {
+function FeedbackSubmitConfirmModal({
+  submitting,
+  title,
+  jobNumber,
+  onCancel,
+  onConfirm,
+}: {
+  submitting: boolean;
+  title: string;
+  jobNumber: string | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4"
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          {t("feedback.confirmTitle")}
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          {t("feedback.confirmBody")}
+        </p>
+        <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-950">
+          <div className="font-bold text-gray-900 dark:text-white">{title}</div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("common.jobNumber")}: {jobNumber || "-"}
+          </div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("feedback.confirmTargets")}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting}
+            className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? t("common.saving") : t("feedback.submit")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getEmptyFeedbackRatings(): FeedbackRatings {
+  return {
+    attitudeRating: 0,
+    professionalismRating: 0,
+    speedRating: 0,
+    accuracyRating: 0,
+    priceRating: 0,
+  };
+}
+
+function getInitialFeedbackRatingsByTarget(
+  feedback?: ShipmentFeedback[] | null,
+): FeedbackRatingsByTarget {
+  return feedbackTargetRoles.reduce((ratingsByTarget, targetRole) => {
+    const targetFeedback = feedback?.find(
+      (item) => item.admin_operator_staff_role === targetRole,
+    );
+
+    ratingsByTarget[targetRole] = targetFeedback
+      ? getFeedbackRatings(targetFeedback)
+      : getEmptyFeedbackRatings();
+
+    return ratingsByTarget;
+  }, {} as FeedbackRatingsByTarget);
+}
+
+function getFeedbackRatings(feedback: ShipmentFeedback): FeedbackRatings {
   return {
     attitudeRating: feedback?.attitude_rating ?? 0,
     professionalismRating: feedback?.professionalism_rating ?? 0,
@@ -770,6 +893,71 @@ function getInitialFeedbackRatings(
     accuracyRating: feedback?.accuracy_rating ?? 0,
     priceRating: feedback?.price_rating ?? 0,
   };
+}
+
+const feedbackTargetRoleOptions: {
+  value: ShipmentFeedbackTargetRole;
+  labelKey:
+    | "superAdmin.operators.staffRole.sales"
+    | "superAdmin.operators.staffRole.operations";
+}[] = [
+  { value: "sales", labelKey: "superAdmin.operators.staffRole.sales" },
+  {
+    value: "operations",
+    labelKey: "superAdmin.operators.staffRole.operations",
+  },
+];
+
+function groupFeedbackByJob(feedback: ShipmentFeedback[]) {
+  return feedback.reduce<Record<string, ShipmentFeedback[]>>((grouped, item) => {
+    grouped[item.shipment_job_id] = [...(grouped[item.shipment_job_id] ?? []), item];
+    return grouped;
+  }, {});
+}
+
+function isFeedbackComplete(feedback?: ShipmentFeedback[] | null) {
+  return feedbackTargetRoles.every((targetRole) =>
+    feedback?.some((item) => item.admin_operator_staff_role === targetRole),
+  );
+}
+
+function isFeedbackByTargetComplete(feedbackByTarget: FeedbackRatingsByTarget) {
+  return feedbackTargetRoles.every((targetRole) =>
+    Object.values(feedbackByTarget[targetRole]).every((rating) => rating > 0),
+  );
+}
+
+function getFeedbackSummaryForJob(feedback?: ShipmentFeedback[]) {
+  if (!feedback?.length || !isFeedbackComplete(feedback)) {
+    return null;
+  }
+
+  const [firstFeedback] = feedback;
+  return {
+    ...firstFeedback,
+    attitude_rating: averageFeedbackRating(feedback, "attitude_rating"),
+    professionalism_rating: averageFeedbackRating(
+      feedback,
+      "professionalism_rating",
+    ),
+    speed_rating: averageFeedbackRating(feedback, "speed_rating"),
+    accuracy_rating: averageFeedbackRating(feedback, "accuracy_rating"),
+    price_rating: averageFeedbackRating(feedback, "price_rating"),
+  };
+}
+
+function averageFeedbackRating(
+  feedback: ShipmentFeedback[],
+  key:
+    | "attitude_rating"
+    | "professionalism_rating"
+    | "speed_rating"
+    | "accuracy_rating"
+    | "price_rating",
+) {
+  return (
+    feedback.reduce((total, item) => total + item[key], 0) / feedback.length
+  );
 }
 
 function StarRatingInput({

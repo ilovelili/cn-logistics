@@ -1,10 +1,13 @@
 import { supabase } from "./supabase";
 
+export type ShipmentFeedbackTargetRole = "sales" | "operations";
+
 export interface ShipmentFeedback {
   id: string;
   shipment_job_id: string;
   submitter_email: string;
   admin_operator_email: string | null;
+  admin_operator_staff_role: ShipmentFeedbackTargetRole | null;
   rating: number;
   attitude_rating: number;
   professionalism_rating: number;
@@ -45,6 +48,7 @@ export async function submitShipmentFeedback({
   speedRating,
   accuracyRating,
   priceRating,
+  targetRole,
   reason,
 }: {
   shipmentJobId: string;
@@ -54,6 +58,7 @@ export async function submitShipmentFeedback({
   speedRating: number;
   accuracyRating: number;
   priceRating: number;
+  targetRole: ShipmentFeedbackTargetRole;
   reason: string;
 }): Promise<ShipmentFeedback> {
   const { data, error } = await supabase.rpc("submit_shipment_feedback", {
@@ -64,6 +69,7 @@ export async function submitShipmentFeedback({
     feedback_speed_rating: speedRating,
     feedback_accuracy_rating: accuracyRating,
     feedback_price_rating: priceRating,
+    feedback_admin_operator_staff_role: targetRole,
     feedback_reason: reason,
   });
 
@@ -77,6 +83,50 @@ export async function submitShipmentFeedback({
   }
 
   return result;
+}
+
+export async function submitShipmentFeedbackForTargets({
+  shipmentJobId,
+  submitterEmail,
+  feedbackByTarget,
+  targetRoles = feedbackTargetRoles,
+  reason,
+}: {
+  shipmentJobId: string;
+  submitterEmail: string;
+  feedbackByTarget: Record<ShipmentFeedbackTargetRole, FeedbackRatingPayload>;
+  targetRoles?: ShipmentFeedbackTargetRole[];
+  reason: string;
+}): Promise<ShipmentFeedback[]> {
+  return Promise.all(
+    targetRoles.map((targetRole) =>
+      submitShipmentFeedback({
+        shipmentJobId,
+        submitterEmail,
+        attitudeRating: feedbackByTarget[targetRole].attitudeRating,
+        professionalismRating:
+          feedbackByTarget[targetRole].professionalismRating,
+        speedRating: feedbackByTarget[targetRole].speedRating,
+        accuracyRating: feedbackByTarget[targetRole].accuracyRating,
+        priceRating: feedbackByTarget[targetRole].priceRating,
+        targetRole,
+        reason,
+      }),
+    ),
+  );
+}
+
+export const feedbackTargetRoles: ShipmentFeedbackTargetRole[] = [
+  "sales",
+  "operations",
+];
+
+export interface FeedbackRatingPayload {
+  attitudeRating: number;
+  professionalismRating: number;
+  speedRating: number;
+  accuracyRating: number;
+  priceRating: number;
 }
 
 export async function fetchAllShipmentFeedback(
