@@ -160,6 +160,9 @@ export default function ShipmentJobsTable({
   );
   const [deleteTarget, setDeleteTarget] =
     useState<ShipmentDocumentDeleteTarget | null>(null);
+  const [expandedDocumentJobId, setExpandedDocumentJobId] = useState<
+    string | null
+  >(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -254,6 +257,8 @@ export default function ShipmentJobsTable({
         requestingDocumentId,
         deletingDocumentId,
         canDeleteDocuments,
+        expandedDocumentJobId,
+        setExpandedDocumentJobId,
         setPreviewDocument,
         requestDocument,
         approveDocument,
@@ -273,6 +278,7 @@ export default function ShipmentJobsTable({
       requestingDocumentId,
       deletingDocumentId,
       canDeleteDocuments,
+      expandedDocumentJobId,
       setPreviewDocument,
       requestDocument,
       approveDocument,
@@ -498,13 +504,19 @@ export default function ShipmentJobsTable({
               }`}
             >
               {paginatedJobs.map((job) => (
-                <tr
-                  key={job.id}
-                  onDoubleClick={(event) => {
-                    if (isInteractiveTableEvent(event)) return;
-                    onSelectJob(job);
+                  <tr
+                    key={job.id}
+                    onClick={(event) => {
+                      if (isInteractiveTableEvent(event)) return;
+                      setExpandedDocumentJobId((currentJobId) =>
+                        currentJobId === job.id ? null : job.id,
+                      );
+                    }}
+                    onDoubleClick={(event) => {
+                      if (isInteractiveTableEvent(event)) return;
+                      onSelectJob(job);
                   }}
-                  className={`group/document-row align-top transition ${
+                  className={`align-top transition ${
                     selectedJobId === job.id
                       ? "cursor-pointer bg-cyan-50/80 dark:bg-cyan-950/20"
                       : adminTheme
@@ -620,6 +632,8 @@ function buildColumns(
   requestingDocumentId: string | null,
   deletingDocumentId: string | null,
   canDeleteDocuments: boolean,
+  expandedDocumentJobId: string | null,
+  onExpandedDocumentJobIdChange: (jobId: string | null) => void,
   onPreviewDocument: (document: ShipmentDocument) => void,
   onRequestDocument: (document: ShipmentDocument) => void,
   onApproveDocument: (document: ShipmentDocument) => void,
@@ -833,6 +847,7 @@ function buildColumns(
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "customer",
           )}
+          expanded={expandedDocumentJobId === job.id}
           approvedOnly={approvedDocumentsOnly}
           requesterEmail={requesterEmail}
           requestingDocumentId={requestingDocumentId}
@@ -842,6 +857,11 @@ function buildColumns(
           onApprove={onApproveDocument}
           onDelete={(document) => onDeleteDocument({ job, document })}
           onPreview={onPreviewDocument}
+          onToggleExpanded={() =>
+            onExpandedDocumentJobIdChange(
+              expandedDocumentJobId === job.id ? null : job.id,
+            )
+          }
         />
       ),
     },
@@ -857,11 +877,17 @@ function buildColumns(
           documents={documentsByJob[job.id]?.filter(
             (document) => document.scope === "internal",
           )}
+          expanded={expandedDocumentJobId === job.id}
           muted
           deletingDocumentId={deletingDocumentId}
           canDelete={canDeleteDocuments}
           onDelete={(document) => onDeleteDocument({ job, document })}
           onPreview={onPreviewDocument}
+          onToggleExpanded={() =>
+            onExpandedDocumentJobIdChange(
+              expandedDocumentJobId === job.id ? null : job.id,
+            )
+          }
         />
       ),
     });
@@ -872,6 +898,7 @@ function buildColumns(
 
 function DocumentPills({
   documents,
+  expanded,
   muted = false,
   approvedOnly = false,
   requesterEmail,
@@ -882,8 +909,10 @@ function DocumentPills({
   onApprove,
   onDelete,
   onPreview,
+  onToggleExpanded,
 }: {
   documents?: ShipmentDocument[];
+  expanded: boolean;
   muted?: boolean;
   approvedOnly?: boolean;
   requesterEmail?: string;
@@ -894,13 +923,31 @@ function DocumentPills({
   onApprove?: (document: ShipmentDocument) => void;
   onDelete?: (document: ShipmentDocument) => void;
   onPreview: (document: ShipmentDocument) => void;
+  onToggleExpanded: () => void;
 }) {
   if (!documents?.length) {
     return <span className="text-slate-400">-</span>;
   }
 
   return (
-    <div className="flex max-h-10 flex-col items-start gap-1.5 overflow-hidden transition-[max-height] duration-150 group-hover/document-row:max-h-96 focus-within:max-h-96">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleExpanded();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        event.stopPropagation();
+        onToggleExpanded();
+      }}
+      className={`flex flex-col items-start gap-1.5 overflow-hidden transition-[max-height] duration-150 focus:outline-none ${
+        expanded ? "max-h-96" : "max-h-10"
+      }`}
+    >
       {documents.map((document) => {
         const canPreview =
           !approvedOnly || isShipmentDocumentPreviewable(document);
@@ -943,6 +990,7 @@ function DocumentPills({
             key={document.id}
             onClick={(event) => {
               event.stopPropagation();
+              onToggleExpanded();
             }}
             className={`w-full rounded-lg border px-2 py-1.5 ${rowClass}`}
           >
@@ -959,7 +1007,10 @@ function DocumentPills({
                     {(tooltipId) => (
                       <button
                         type="button"
-                        onClick={() => onPreview(document)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onPreview(document);
+                        }}
                         className={`${actionButtonBase} border-cyan-200 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40`}
                         aria-label={t("documents.preview")}
                         aria-describedby={tooltipId}
@@ -980,7 +1031,8 @@ function DocumentPills({
                     {(tooltipId) => (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           if (canApprove) {
                             onApprove?.(document);
                           } else if (canRequest) {
@@ -1009,7 +1061,10 @@ function DocumentPills({
                     {(tooltipId) => (
                       <button
                         type="button"
-                        onClick={() => onDelete?.(document)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDelete?.(document);
+                        }}
                         disabled={deletingDocumentId === document.id}
                         className={`${actionButtonBase} border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-950/40`}
                         aria-label={t("common.delete")}
