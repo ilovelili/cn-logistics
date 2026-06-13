@@ -193,7 +193,7 @@ export default function ParcelDetail({ parcelId, onClose }: Props) {
     { id: "cargo", label: "貨物情報" },
     { id: "ports", label: "港情報" },
     { id: "documents", label: `書類 (${documents.length})` },
-    { id: "tracking", label: `追跡履歴 (${trackingEvents.length})` },
+    { id: "tracking", label: `ステータス履歴 (${trackingEvents.length})` },
   ];
 
   return (

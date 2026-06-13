@@ -405,12 +405,12 @@ export default function TrackingEntryForm() {
 
           <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide">
-              最新の追跡履歴
+              最新のステータス履歴
             </h3>
             {events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
                 <Clock className="w-10 h-10 mb-2" />
-                <p className="text-sm">追跡履歴がありません</p>
+                <p className="text-sm">ステータス履歴がありません</p>
               </div>
             ) : (
               <div className="space-y-4 max-h-96 overflow-y-auto">

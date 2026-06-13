@@ -276,7 +276,7 @@ export default function Tracking() {
                 <div className="p-6">
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Clock className="w-5 h-5" />
-                    追跡履歴
+                    ステータス履歴
                   </h3>
                   <div className="space-y-4">
                     {trackingEvents.map((event, index) => (
