@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes tutorial-pointer-tap {
+  0%,
+  100% {
+    transform: translate(-0.5rem, -0.5rem) scale(1);
+  }
+  45% {
+    transform: translate(-0.2rem, -0.2rem) scale(0.86);
+  }
+}
+
+.tutorial-pointer-tap {
+  animation: tutorial-pointer-tap 1.2s ease-in-out infinite;
+}

@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
+import DynamicTutorial from "./components/DynamicTutorial";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LoginPage from "./components/LoginPage";
@@ -257,7 +258,10 @@ function MainApp({
               </div>
             </div>
 
-            <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+            <nav
+              className="flex-1 space-y-1 overflow-y-auto p-4"
+              data-tutorial-target="user-nav"
+            >
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
@@ -358,6 +362,7 @@ function MainApp({
                   )}
                 </InstantTooltip>
                 <ProfileButton email={profileEmail} />
+                <DynamicTutorial variant="user" />
                 <button
                   onClick={onLogout}
                   className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"

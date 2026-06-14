@@ -544,7 +544,10 @@ export default function AdminOperatorManagement({
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:rounded-3xl sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white">
+            <h1
+              className="text-2xl font-black text-gray-900 dark:text-white"
+              data-tutorial-target="admin-operator-page"
+            >
               {t("superAdmin.operators.title")}
             </h1>
           </div>

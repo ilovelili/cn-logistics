@@ -657,7 +657,10 @@ export default function UserRegistrationForm({
 
       <div>
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+            data-tutorial-target="shipper-registration-page"
+          >
             {t("admin.userRegistration.title")}
           </h2>
           <button

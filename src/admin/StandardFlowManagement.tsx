@@ -319,7 +319,9 @@ export default function StandardFlowManagement() {
 
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t("superAdmin.standardFlow.title")}
+          <span data-tutorial-target="standard-flow-page">
+            {t("superAdmin.standardFlow.title")}
+          </span>
         </h2>
       </div>
 

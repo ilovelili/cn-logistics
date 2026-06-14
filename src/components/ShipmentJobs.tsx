@@ -358,7 +358,10 @@ export default function ShipmentJobs({
         </section>
       )}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <section
+        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        data-tutorial-target="shipment-filters"
+      >
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

@@ -316,7 +316,9 @@ export default function FeedbackReviewPanel({
     <div className="space-y-6">
       <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-          {t("superAdmin.feedback.title")}
+          <span data-tutorial-target="feedback-review-page">
+            {t("superAdmin.feedback.title")}
+          </span>
         </h1>
       </section>
 

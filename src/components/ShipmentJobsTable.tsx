@@ -89,7 +89,7 @@ interface ShipmentDocumentDeleteTarget {
   document: ShipmentDocument;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v6";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v8";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -322,6 +322,7 @@ export default function ShipmentJobsTable({
           ? "rounded-xl border-gray-200 dark:border-gray-800 dark:bg-gray-900"
           : "rounded-3xl border-slate-200"
       }`}
+      data-tutorial-target="shipment-table"
     >
       {toast && (
         <div
@@ -527,6 +528,9 @@ export default function ShipmentJobsTable({
                   {visibleTableColumns.map((column, index) => (
                     <td
                       key={column.id}
+                      data-tutorial-target={
+                        column.id === "documents" ? "shipment-documents" : undefined
+                      }
                       className={`px-3 py-2 ${
                         index === 0
                           ? `sticky left-0 z-10 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
@@ -720,6 +724,60 @@ function buildColumns(
       render: (job) => <WorkingDaysBadge job={job} />,
     },
     {
+      id: "documents",
+      label: t("common.documents"),
+      width: 320,
+      render: (job) => (
+        <DocumentPills
+          documents={documentsByJob[job.id]?.filter(
+            (document) => document.scope === "customer",
+          )}
+          expanded={expandedDocumentJobId === job.id}
+          approvedOnly={approvedDocumentsOnly}
+          requesterEmail={requesterEmail}
+          requestingDocumentId={requestingDocumentId}
+          deletingDocumentId={deletingDocumentId}
+          canDelete={canDeleteDocuments}
+          onRequest={onRequestDocument}
+          onApprove={onApproveDocument}
+          onDelete={(document) => onDeleteDocument({ job, document })}
+          onPreview={onPreviewDocument}
+          onToggleExpanded={() =>
+            onExpandedDocumentJobIdChange(
+              expandedDocumentJobId === job.id ? null : job.id,
+            )
+          }
+        />
+      ),
+    },
+    ...(showInternalDocuments
+      ? [
+          {
+            id: "internal_documents" as const,
+            label: t("common.internalDocuments"),
+            width: 320,
+            render: (job: ShipmentJob) => (
+              <DocumentPills
+                documents={documentsByJob[job.id]?.filter(
+                  (document) => document.scope === "internal",
+                )}
+                expanded={expandedDocumentJobId === job.id}
+                muted
+                deletingDocumentId={deletingDocumentId}
+                canDelete={canDeleteDocuments}
+                onDelete={(document) => onDeleteDocument({ job, document })}
+                onPreview={onPreviewDocument}
+                onToggleExpanded={() =>
+                  onExpandedDocumentJobIdChange(
+                    expandedDocumentJobId === job.id ? null : job.id,
+                  )
+                }
+              />
+            ),
+          },
+        ]
+      : []),
+    {
       id: "trade",
       label: t("common.trade"),
       width: 100,
@@ -838,60 +896,7 @@ function buildColumns(
         </div>
       ),
     },
-    {
-      id: "documents",
-      label: t("common.documents"),
-      width: 320,
-      render: (job) => (
-        <DocumentPills
-          documents={documentsByJob[job.id]?.filter(
-            (document) => document.scope === "customer",
-          )}
-          expanded={expandedDocumentJobId === job.id}
-          approvedOnly={approvedDocumentsOnly}
-          requesterEmail={requesterEmail}
-          requestingDocumentId={requestingDocumentId}
-          deletingDocumentId={deletingDocumentId}
-          canDelete={canDeleteDocuments}
-          onRequest={onRequestDocument}
-          onApprove={onApproveDocument}
-          onDelete={(document) => onDeleteDocument({ job, document })}
-          onPreview={onPreviewDocument}
-          onToggleExpanded={() =>
-            onExpandedDocumentJobIdChange(
-              expandedDocumentJobId === job.id ? null : job.id,
-            )
-          }
-        />
-      ),
-    },
   ];
-
-  if (showInternalDocuments) {
-    columns.push({
-      id: "internal_documents",
-      label: t("common.internalDocuments"),
-      width: 320,
-      render: (job) => (
-        <DocumentPills
-          documents={documentsByJob[job.id]?.filter(
-            (document) => document.scope === "internal",
-          )}
-          expanded={expandedDocumentJobId === job.id}
-          muted
-          deletingDocumentId={deletingDocumentId}
-          canDelete={canDeleteDocuments}
-          onDelete={(document) => onDeleteDocument({ job, document })}
-          onPreview={onPreviewDocument}
-          onToggleExpanded={() =>
-            onExpandedDocumentJobIdChange(
-              expandedDocumentJobId === job.id ? null : job.id,
-            )
-          }
-        />
-      ),
-    });
-  }
 
   return columns;
 }

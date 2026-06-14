@@ -71,6 +71,50 @@ const ja = {
   "table.stickyHeader.disable": "ヘッダー固定を解除する",
   "table.scrollToTop": "先頭へ戻る",
 
+  "tutorial.open": "操作ガイドを表示",
+  "tutorial.close": "操作ガイドを閉じる",
+  "tutorial.title": "操作ガイド",
+  "tutorial.pause": "一時停止",
+  "tutorial.play": "再生",
+  "tutorial.previous": "戻る",
+  "tutorial.next": "次へ",
+  "tutorial.done": "完了",
+  "tutorial.step": "{current}/{total}ステップ",
+  "tutorial.doNotShowAgain": "今後表示しない",
+  "tutorial.user.filters.title": "検索・絞り込み",
+  "tutorial.user.filters.body":
+    "案件番号、ステータス、取引形態、輸送方法で案件一覧をすばやく絞り込めます。",
+  "tutorial.user.table.title": "案件詳細",
+  "tutorial.user.table.body":
+    "行をダブルクリックすると詳細を開けます。行を1回クリックすると書類一覧を展開できます。",
+  "tutorial.user.documents.title": "書類確認",
+  "tutorial.user.documents.body":
+    "書類アイコンからプレビューできます。DL承認が必要な書類は申請状態もここで確認できます。",
+  "tutorial.user.feedback.title": "評価入力",
+  "tutorial.user.feedback.body":
+    "案件詳細から営業・オペレーションそれぞれの評価を送信できます。評価は送信後に変更できません。",
+  "tutorial.admin.nav.title": "管理メニュー",
+  "tutorial.admin.nav.body":
+    "左メニューから出荷案件、荷主登録、管理者登録、標準フロー、評価履歴へ移動できます。",
+  "tutorial.admin.shipments.title": "出荷案件管理",
+  "tutorial.admin.shipments.body":
+    "案件の作成・編集、CN担当の割り当て、ステータス履歴や進捗管理をまとめて操作できます。行をダブルクリックすると詳細を開けます。",
+  "tutorial.admin.shippers.title": "荷主登録",
+  "tutorial.admin.shippers.body":
+    "荷主ユーザーの登録、承認状況の確認、CN担当の割り当てを管理できます。",
+  "tutorial.admin.operators.title": "管理者登録",
+  "tutorial.admin.operators.body":
+    "管理者アカウントを登録し、営業・オペレーションなどの担当区分や有効状態を管理できます。",
+  "tutorial.admin.standardFlow.title": "標準フロー管理",
+  "tutorial.admin.standardFlow.body":
+    "出荷案件で使う標準フローのステータステンプレート、表示順、有効状態を管理できます。",
+  "tutorial.admin.documents.title": "書類管理",
+  "tutorial.admin.documents.body":
+    "行を1回クリックすると書類一覧を展開できます。顧客向け書類と社内書類を分けて確認し、プレビュー、DL承認、削除を行えます。",
+  "tutorial.admin.feedback.title": "評価履歴",
+  "tutorial.admin.feedback.body":
+    "営業・オペレーション別の評価、合計評価点数、平均評価点数を後からレビューできます。",
+
   "tracking.title": "ステータス履歴",
   "tracking.add": "履歴を追加",
   "tracking.addDefaultFlow": "標準フローを追加",
@@ -475,6 +519,50 @@ const en: Messages = {
   "table.stickyHeader.enable": "Enable sticky header",
   "table.stickyHeader.disable": "Disable sticky header",
   "table.scrollToTop": "Back to top",
+
+  "tutorial.open": "Show guide",
+  "tutorial.close": "Close guide",
+  "tutorial.title": "System guide",
+  "tutorial.pause": "Pause",
+  "tutorial.play": "Play",
+  "tutorial.previous": "Back",
+  "tutorial.next": "Next",
+  "tutorial.done": "Done",
+  "tutorial.step": "Step {current} of {total}",
+  "tutorial.doNotShowAgain": "Do not show again",
+  "tutorial.user.filters.title": "Search and filters",
+  "tutorial.user.filters.body":
+    "Filter shipments quickly by job number, status, trade mode, and transport mode.",
+  "tutorial.user.table.title": "Shipment details",
+  "tutorial.user.table.body":
+    "Double-click a row to open details. Single-click a row to expand the document list.",
+  "tutorial.user.documents.title": "Document review",
+  "tutorial.user.documents.body":
+    "Preview uploaded documents from the document icons. Documents that need DL approval show their request status here.",
+  "tutorial.user.feedback.title": "Feedback entry",
+  "tutorial.user.feedback.body":
+    "Submit separate Sales and Operation feedback from shipment details. Feedback cannot be changed after submission.",
+  "tutorial.admin.nav.title": "Admin navigation",
+  "tutorial.admin.nav.body":
+    "Use the side menu to move between shipment management, shipper registration, admin registration, standard flows, and feedback history.",
+  "tutorial.admin.shipments.title": "Shipment management",
+  "tutorial.admin.shipments.body":
+    "Create and edit shipments, assign CN contacts, and manage status history and progress in one workflow. Double-click a row to open details.",
+  "tutorial.admin.shippers.title": "Shipper registration",
+  "tutorial.admin.shippers.body":
+    "Register shipper users, review approval status, and manage CN contact assignments.",
+  "tutorial.admin.operators.title": "Admin registration",
+  "tutorial.admin.operators.body":
+    "Register admin accounts and manage staff roles such as Sales and Operation, plus active status.",
+  "tutorial.admin.standardFlow.title": "Standard flow management",
+  "tutorial.admin.standardFlow.body":
+    "Manage standard flow status templates, display order, and active state for shipment workflows.",
+  "tutorial.admin.documents.title": "Document management",
+  "tutorial.admin.documents.body":
+    "Single-click a row to expand the document list. Review customer-facing and internal documents separately, then preview, approve DL requests, or delete documents.",
+  "tutorial.admin.feedback.title": "Feedback history",
+  "tutorial.admin.feedback.body":
+    "Review Sales and Operation feedback, total rating scores, and average rating scores later.",
 
   "tracking.title": "Status history",
   "tracking.add": "Add history",

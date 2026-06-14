@@ -17,6 +17,7 @@ import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
 import StandardFlowManagement from "./StandardFlowManagement";
 import ProfileButton from "../components/ProfileButton";
+import DynamicTutorial from "../components/DynamicTutorial";
 import LanguageSelect from "../components/LanguageSelect";
 import InstantTooltip from "../components/InstantTooltip";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
@@ -180,6 +181,48 @@ export default function AdminPanel({
     }
   };
 
+  const handleTutorialStepChange = (stepIndex: number) => {
+    if (stepIndex === 1) {
+      setView("shipmentEntry");
+      setShipmentEntryCriteria({ kind: "all" });
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (stepIndex === 2) {
+      setView("userRegistration");
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (stepIndex === 3 && isSuperAdmin) {
+      setView("adminOperators");
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (stepIndex === 4 && isSuperAdmin) {
+      setView("standardFlow");
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (stepIndex === 5) {
+      setView("shipmentEntry");
+      setShipmentEntryCriteria({
+        kind: "documentApproval",
+        approvalStatus: "pending",
+      });
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (stepIndex === 6 && isSuperAdmin) {
+      setView("feedbackReview");
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
       <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
@@ -311,6 +354,11 @@ export default function AdminPanel({
               )}
             </InstantTooltip>
             <ProfileButton email={profileEmail} />
+            <DynamicTutorial
+              variant="admin"
+              adminTheme
+              onStepChange={handleTutorialStepChange}
+            />
             <button
               onClick={onLogout ?? logout}
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 sm:px-4"
@@ -336,13 +384,16 @@ export default function AdminPanel({
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
-            <nav className="space-y-1">
+            <nav className="space-y-1" data-tutorial-target="admin-nav">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = view === item.id;
                 return (
                   <button
                     key={item.id}
+                    data-tutorial-target={
+                      item.id === "feedbackReview" ? "admin-feedback-nav" : undefined
+                    }
                     onClick={() => {
                       if (item.id === "shipmentEntry") {
                         setShipmentEntryCriteria({ kind: "all" });
