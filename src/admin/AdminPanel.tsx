@@ -181,45 +181,45 @@ export default function AdminPanel({
     }
   };
 
-  const handleTutorialStepChange = (stepIndex: number) => {
-    if (stepIndex === 1) {
-      setView("shipmentEntry");
-      setShipmentEntryCriteria({ kind: "all" });
-      setSidebarOpen(false);
-      return;
-    }
-
-    if (stepIndex === 2) {
-      setView("userRegistration");
-      setSidebarOpen(false);
-      return;
-    }
-
-    if (stepIndex === 3 && isSuperAdmin) {
-      setView("adminOperators");
-      setSidebarOpen(false);
-      return;
-    }
-
-    if (stepIndex === 4 && isSuperAdmin) {
-      setView("standardFlow");
-      setSidebarOpen(false);
-      return;
-    }
-
-    if (stepIndex === 5) {
-      setView("shipmentEntry");
-      setShipmentEntryCriteria({
-        kind: "documentApproval",
-        approvalStatus: "pending",
-      });
-      setSidebarOpen(false);
-      return;
-    }
-
-    if (stepIndex === 6 && isSuperAdmin) {
-      setView("feedbackReview");
-      setSidebarOpen(false);
+  const handleTutorialStepChange = (_stepIndex: number, stepId: string) => {
+    switch (stepId) {
+      case "admin-shipments":
+        setView("shipmentEntry");
+        setShipmentEntryCriteria({ kind: "all" });
+        setSidebarOpen(false);
+        return;
+      case "admin-shippers":
+        setView("userRegistration");
+        setSidebarOpen(false);
+        return;
+      case "admin-operators":
+        if (isSuperAdmin) {
+          setView("adminOperators");
+          setSidebarOpen(false);
+        }
+        return;
+      case "admin-standard-flow":
+        if (isSuperAdmin) {
+          setView("standardFlow");
+          setSidebarOpen(false);
+        }
+        return;
+      case "admin-documents":
+        setView("shipmentEntry");
+        setShipmentEntryCriteria({
+          kind: "documentApproval",
+          approvalStatus: "pending",
+        });
+        setSidebarOpen(false);
+        return;
+      case "admin-feedback":
+        if (isSuperAdmin) {
+          setView("feedbackReview");
+          setSidebarOpen(false);
+        }
+        return;
+      default:
+        return;
     }
   };
 
@@ -357,6 +357,7 @@ export default function AdminPanel({
             <DynamicTutorial
               variant="admin"
               adminTheme
+              profileRole={profileRole}
               onStepChange={handleTutorialStepChange}
             />
             <button

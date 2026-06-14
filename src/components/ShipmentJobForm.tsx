@@ -29,9 +29,12 @@ interface ShipmentJobFormProps {
   onSubmit: (form: ShipmentJobFormState) => Promise<void> | void;
 }
 
-type PendingFormDelete =
-  | { kind: "vessel"; index: number; title: string; detail: string }
-  | { kind: "tracking"; index: number; title: string; detail: string };
+type PendingFormDelete = {
+  kind: "vessel";
+  index: number;
+  title: string;
+  detail: string;
+};
 
 const manualProgressColorOptions = [
   {
@@ -222,25 +225,12 @@ export default function ShipmentJobForm({
     setStandardFlowPickerOpen(false);
   };
 
-  const removeTrackingEvent = (index: number) => {
-    setForm((current) => ({
-      ...current,
-      tracking_events: current.tracking_events.filter(
-        (_, eventIndex) => eventIndex !== index,
-      ),
-    }));
-  };
-
   const confirmPendingDelete = () => {
     if (!pendingDelete) {
       return;
     }
 
-    if (pendingDelete.kind === "vessel") {
-      removeVesselFlightNumber(pendingDelete.index);
-    } else {
-      removeTrackingEvent(pendingDelete.index);
-    }
+    removeVesselFlightNumber(pendingDelete.index);
 
     setPendingDelete(null);
   };
@@ -428,18 +418,6 @@ export default function ShipmentJobForm({
         onAdd={addTrackingEvent}
         onAddDefaultFlow={() => setStandardFlowPickerOpen(true)}
         canAddDefaultFlow={trackingTemplates.length > 0}
-        onRemove={(index) => {
-          const event = form.tracking_events[index];
-          setPendingDelete({
-            kind: "tracking",
-            index,
-            title: `${t("tracking.title")} ${index + 1}`,
-            detail:
-              [event?.event_date, event?.location, event?.description]
-                .filter(Boolean)
-                .join(" / ") || "-",
-          });
-        }}
         onChange={updateTrackingEvent}
       />
 
@@ -911,14 +889,12 @@ function TrackingEventFields({
   onAdd,
   onAddDefaultFlow,
   canAddDefaultFlow,
-  onRemove,
   onChange,
 }: {
   values: ShipmentJobFormState["tracking_events"];
   onAdd: () => void;
   onAddDefaultFlow: () => void;
   canAddDefaultFlow: boolean;
-  onRemove: (index: number) => void;
   onChange: (
     index: number,
     field: keyof ShipmentJobFormState["tracking_events"][number],
@@ -960,7 +936,7 @@ function TrackingEventFields({
           {values.map((event, index) => (
             <div
               key={index}
-              className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[150px_1fr_2fr_40px]"
+              className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[150px_1fr_2fr]"
             >
               <input
                 type="date"
@@ -989,19 +965,6 @@ function TrackingEventFields({
                 }
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
               />
-              <InstantTooltip label={t("common.delete")}>
-                {(tooltipId) => (
-                  <button
-                    type="button"
-                    onClick={() => onRemove(index)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
-                    aria-label={t("common.delete")}
-                    aria-describedby={tooltipId}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </InstantTooltip>
             </div>
           ))}
         </div>

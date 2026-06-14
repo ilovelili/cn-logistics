@@ -96,6 +96,8 @@ const ja = {
   "tutorial.admin.nav.title": "管理メニュー",
   "tutorial.admin.nav.body":
     "左メニューから出荷案件、荷主登録、管理者登録、標準フロー、評価履歴へ移動できます。",
+  "tutorial.admin.nav.bodyAdmin":
+    "左メニューから出荷案件管理、荷主登録へ移動できます。",
   "tutorial.admin.shipments.title": "出荷案件管理",
   "tutorial.admin.shipments.body":
     "案件の作成・編集、CN担当の割り当て、ステータス履歴や進捗管理をまとめて操作できます。行をダブルクリックすると詳細を開けます。",
@@ -545,6 +547,8 @@ const en: Messages = {
   "tutorial.admin.nav.title": "Admin navigation",
   "tutorial.admin.nav.body":
     "Use the side menu to move between shipment management, shipper registration, admin registration, standard flows, and feedback history.",
+  "tutorial.admin.nav.bodyAdmin":
+    "Use the side menu to move between shipment management and shipper registration.",
   "tutorial.admin.shipments.title": "Shipment management",
   "tutorial.admin.shipments.body":
     "Create and edit shipments, assign CN contacts, and manage status history and progress in one workflow. Double-click a row to open details.",

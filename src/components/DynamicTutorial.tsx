@@ -8,27 +8,44 @@ import {
   useState,
 } from "react";
 import { t } from "../lib/i18n";
+import type { AppUserRole } from "../lib/auth";
 import InstantTooltip from "./InstantTooltip";
 
 type TutorialVariant = "user" | "admin";
+type TutorialStepId =
+  | "admin-nav"
+  | "admin-shipments"
+  | "admin-shippers"
+  | "admin-operators"
+  | "admin-standard-flow"
+  | "admin-documents"
+  | "admin-feedback"
+  | "user-filters"
+  | "user-table"
+  | "user-documents";
 
 interface TutorialStep {
+  id: TutorialStepId;
   title: string;
   body: string;
   fallbackX: string;
   fallbackY: string;
   targetSelector?: string;
+  superAdminOnly?: boolean;
+  normalUserOnly?: boolean;
 }
 
 interface DynamicTutorialProps {
   variant: TutorialVariant;
   adminTheme?: boolean;
-  onStepChange?: (stepIndex: number) => void;
+  profileRole?: AppUserRole;
+  onStepChange?: (stepIndex: number, stepId: TutorialStepId) => void;
 }
 
 export default function DynamicTutorial({
   variant,
   adminTheme = false,
+  profileRole = "normal",
   onStepChange,
 }: DynamicTutorialProps) {
   const [open, setOpen] = useState(false);
@@ -39,9 +56,12 @@ export default function DynamicTutorial({
   });
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const autoOpenCheckedRef = useRef(false);
-  const steps = useMemo(() => getTutorialSteps(variant), [variant]);
-  const currentStep = steps[stepIndex];
-  const storageKey = `cn_logistics_tutorial_hidden_${variant}`;
+  const steps = useMemo(
+    () => getTutorialSteps(variant, profileRole),
+    [profileRole, variant],
+  );
+  const currentStep = steps[stepIndex] ?? steps[0];
+  const storageKey = `cn_logistics_tutorial_hidden_${variant}_${profileRole}`;
 
   const savePreference = useCallback(() => {
     if (doNotShowAgain) {
@@ -57,8 +77,14 @@ export default function DynamicTutorial({
     setOpen(false);
   }, [savePreference]);
 
+  useEffect(() => {
+    if (stepIndex >= steps.length) {
+      setStepIndex(0);
+    }
+  }, [stepIndex, steps.length]);
+
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open || !currentStep) return;
 
     const updatePointerPosition = () => {
       const target = currentStep.targetSelector
@@ -90,14 +116,19 @@ export default function DynamicTutorial({
   }, [currentStep, open]);
 
   const openTutorial = () => {
-    onStepChange?.(0);
+    if (!steps.length) return;
+
+    onStepChange?.(0, steps[0].id);
     setStepIndex(0);
     setDoNotShowAgain(localStorage.getItem(storageKey) === "true");
     setOpen(true);
   };
 
   const showStep = (nextStepIndex: number) => {
-    onStepChange?.(nextStepIndex);
+    const nextStep = steps[nextStepIndex];
+    if (!nextStep) return;
+
+    onStepChange?.(nextStepIndex, nextStep.id);
     setStepIndex(nextStepIndex);
   };
 
@@ -119,12 +150,13 @@ export default function DynamicTutorial({
 
     autoOpenCheckedRef.current = true;
     if (localStorage.getItem(storageKey) === "true") return;
+    if (!steps.length) return;
 
-    onStepChange?.(0);
+    onStepChange?.(0, steps[0].id);
     setStepIndex(0);
     setDoNotShowAgain(false);
     setOpen(true);
-  }, [onStepChange, storageKey]);
+  }, [onStepChange, steps, storageKey]);
 
   const buttonClass = adminTheme
     ? "rounded-xl bg-gray-100 p-2 text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -146,7 +178,7 @@ export default function DynamicTutorial({
         )}
       </InstantTooltip>
 
-      {open && (
+      {open && currentStep && (
         <div
           className="fixed inset-0 z-[160] overflow-hidden bg-slate-950/35 p-4"
           role="dialog"
@@ -256,17 +288,25 @@ export default function DynamicTutorial({
   );
 }
 
-function getTutorialSteps(variant: TutorialVariant): TutorialStep[] {
+function getTutorialSteps(
+  variant: TutorialVariant,
+  profileRole: AppUserRole,
+): TutorialStep[] {
   if (variant === "admin") {
     return [
       {
+        id: "admin-nav",
         title: t("tutorial.admin.nav.title"),
-        body: t("tutorial.admin.nav.body"),
+        body:
+          profileRole === "super_admin"
+            ? t("tutorial.admin.nav.body")
+            : t("tutorial.admin.nav.bodyAdmin"),
         targetSelector: '[data-tutorial-target="admin-nav"]',
         fallbackX: "7.5rem",
         fallbackY: "18rem",
       },
       {
+        id: "admin-shipments",
         title: t("tutorial.admin.shipments.title"),
         body: t("tutorial.admin.shipments.body"),
         targetSelector: '[data-tutorial-target="shipment-table"]',
@@ -274,27 +314,7 @@ function getTutorialSteps(variant: TutorialVariant): TutorialStep[] {
         fallbackY: "44%",
       },
       {
-        title: t("tutorial.admin.shippers.title"),
-        body: t("tutorial.admin.shippers.body"),
-        targetSelector: '[data-tutorial-target="shipper-registration-page"]',
-        fallbackX: "50%",
-        fallbackY: "38%",
-      },
-      {
-        title: t("tutorial.admin.operators.title"),
-        body: t("tutorial.admin.operators.body"),
-        targetSelector: '[data-tutorial-target="admin-operator-page"]',
-        fallbackX: "50%",
-        fallbackY: "38%",
-      },
-      {
-        title: t("tutorial.admin.standardFlow.title"),
-        body: t("tutorial.admin.standardFlow.body"),
-        targetSelector: '[data-tutorial-target="standard-flow-page"]',
-        fallbackX: "50%",
-        fallbackY: "38%",
-      },
-      {
+        id: "admin-documents",
         title: t("tutorial.admin.documents.title"),
         body: t("tutorial.admin.documents.body"),
         targetSelector: '[data-tutorial-target="shipment-documents"]',
@@ -302,17 +322,46 @@ function getTutorialSteps(variant: TutorialVariant): TutorialStep[] {
         fallbackY: "58%",
       },
       {
+        id: "admin-shippers",
+        title: t("tutorial.admin.shippers.title"),
+        body: t("tutorial.admin.shippers.body"),
+        targetSelector: '[data-tutorial-target="shipper-registration-page"]',
+        fallbackX: "50%",
+        fallbackY: "38%",
+      },
+      {
+        id: "admin-operators",
+        title: t("tutorial.admin.operators.title"),
+        body: t("tutorial.admin.operators.body"),
+        targetSelector: '[data-tutorial-target="admin-operator-page"]',
+        fallbackX: "50%",
+        fallbackY: "38%",
+        superAdminOnly: true,
+      },
+      {
+        id: "admin-standard-flow",
+        title: t("tutorial.admin.standardFlow.title"),
+        body: t("tutorial.admin.standardFlow.body"),
+        targetSelector: '[data-tutorial-target="standard-flow-page"]',
+        fallbackX: "50%",
+        fallbackY: "38%",
+        superAdminOnly: true,
+      },
+      {
+        id: "admin-feedback",
         title: t("tutorial.admin.feedback.title"),
         body: t("tutorial.admin.feedback.body"),
         targetSelector: '[data-tutorial-target="feedback-review-page"]',
         fallbackX: "50%",
         fallbackY: "42%",
+        superAdminOnly: true,
       },
-    ];
+    ].filter((step) => !step.superAdminOnly || profileRole === "super_admin");
   }
 
   return [
     {
+      id: "user-filters",
       title: t("tutorial.user.filters.title"),
       body: t("tutorial.user.filters.body"),
       targetSelector: '[data-tutorial-target="shipment-filters"]',
@@ -320,6 +369,7 @@ function getTutorialSteps(variant: TutorialVariant): TutorialStep[] {
       fallbackY: "28%",
     },
     {
+      id: "user-table",
       title: t("tutorial.user.table.title"),
       body: t("tutorial.user.table.body"),
       targetSelector: '[data-tutorial-target="shipment-table"]',
@@ -327,20 +377,14 @@ function getTutorialSteps(variant: TutorialVariant): TutorialStep[] {
       fallbackY: "54%",
     },
     {
+      id: "user-documents",
       title: t("tutorial.user.documents.title"),
       body: t("tutorial.user.documents.body"),
       targetSelector: '[data-tutorial-target="shipment-documents"]',
       fallbackX: "78%",
       fallbackY: "58%",
     },
-    {
-      title: t("tutorial.user.feedback.title"),
-      body: t("tutorial.user.feedback.body"),
-      targetSelector: '[data-tutorial-target="shipment-table"]',
-      fallbackX: "36%",
-      fallbackY: "76%",
-    },
-  ];
+  ].filter((step) => !step.normalUserOnly || profileRole === "normal");
 }
 
 function clamp(value: number, min: number, max: number) {
