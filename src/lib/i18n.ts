@@ -86,7 +86,7 @@ const ja = {
     "案件番号、ステータス、取引形態、輸送方法で案件一覧をすばやく絞り込めます。",
   "tutorial.user.table.title": "案件詳細",
   "tutorial.user.table.body":
-    "行をダブルクリックすると詳細を開けます。行を1回クリックすると書類一覧を展開できます。",
+    "PCでは行をダブルクリック、スマートフォンでは行内の詳細アイコンから詳細を開けます。行を1回クリックすると書類一覧を展開できます。",
   "tutorial.user.documents.title": "書類確認",
   "tutorial.user.documents.body":
     "書類アイコンからプレビューできます。DL承認が必要な書類は申請状態もここで確認できます。",
@@ -100,7 +100,7 @@ const ja = {
     "左メニューから出荷案件管理、荷主登録へ移動できます。",
   "tutorial.admin.shipments.title": "出荷案件管理",
   "tutorial.admin.shipments.body":
-    "案件の作成・編集、CN担当の割り当て、ステータス履歴や進捗管理をまとめて操作できます。行をダブルクリックすると詳細を開けます。",
+    "案件の作成・編集、CN担当の割り当て、ステータス履歴や進捗管理をまとめて操作できます。PCでは行をダブルクリック、スマートフォンでは行内の詳細アイコンから詳細を開けます。",
   "tutorial.admin.shippers.title": "荷主登録",
   "tutorial.admin.shippers.body":
     "荷主ユーザーの登録、承認状況の確認、CN担当の割り当てを管理できます。",
@@ -537,7 +537,7 @@ const en: Messages = {
     "Filter shipments quickly by job number, status, trade mode, and transport mode.",
   "tutorial.user.table.title": "Shipment details",
   "tutorial.user.table.body":
-    "Double-click a row to open details. Single-click a row to expand the document list.",
+    "On desktop, double-click a row to open details. On mobile, use the detail icon in the row. Single-click a row to expand the document list.",
   "tutorial.user.documents.title": "Document review",
   "tutorial.user.documents.body":
     "Preview uploaded documents from the document icons. Documents that need DL approval show their request status here.",
@@ -551,7 +551,7 @@ const en: Messages = {
     "Use the side menu to move between shipment management and shipper registration.",
   "tutorial.admin.shipments.title": "Shipment management",
   "tutorial.admin.shipments.body":
-    "Create and edit shipments, assign CN contacts, and manage status history and progress in one workflow. Double-click a row to open details.",
+    "Create and edit shipments, assign CN contacts, and manage status history and progress in one workflow. On desktop, double-click a row to open details. On mobile, use the detail icon in the row.",
   "tutorial.admin.shippers.title": "Shipper registration",
   "tutorial.admin.shippers.body":
     "Register shipper users, review approval status, and manage CN contact assignments.",

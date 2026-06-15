@@ -93,8 +93,17 @@ export default function DynamicTutorial({
       const rect = target?.getBoundingClientRect();
 
       if (rect && rect.width > 0 && rect.height > 0) {
-        const x = clamp(rect.left + rect.width / 2, 48, window.innerWidth - 48);
-        const y = clamp(rect.top + rect.height / 2, 48, window.innerHeight - 48);
+        const edgePadding = window.innerWidth < 640 ? 40 : 56;
+        const x = clamp(
+          rect.left + rect.width / 2,
+          edgePadding,
+          window.innerWidth - edgePadding,
+        );
+        const y = clamp(
+          rect.top + rect.height / 2,
+          edgePadding,
+          window.innerHeight - edgePadding,
+        );
         setPointerPosition({ x: `${x}px`, y: `${y}px` });
         return;
       }
@@ -180,7 +189,7 @@ export default function DynamicTutorial({
 
       {open && currentStep && (
         <div
-          className="fixed inset-0 z-[160] overflow-hidden bg-slate-950/35 p-4"
+          className="fixed inset-0 z-[160] overflow-y-auto bg-slate-950/35 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label={t("tutorial.title")}
@@ -192,24 +201,24 @@ export default function DynamicTutorial({
         >
           <div className="pointer-events-none absolute inset-0">
             <div
-              className="absolute h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-200/80 bg-cyan-100/10 shadow-[0_0_36px_rgba(103,232,249,0.38)] transition-all duration-700 ease-out"
+              className="absolute h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-200/80 bg-cyan-100/10 shadow-[0_0_30px_rgba(103,232,249,0.35)] transition-all duration-700 ease-out sm:h-24 sm:w-24 sm:shadow-[0_0_36px_rgba(103,232,249,0.38)]"
               style={{ left: pointerPosition.x, top: pointerPosition.y }}
             />
             <MousePointerClick
-              className="absolute h-14 w-14 -translate-x-2 -translate-y-2 text-cyan-100 drop-shadow-[0_8px_18px_rgba(8,145,178,0.55)] transition-all duration-700 ease-out tutorial-pointer-tap"
+              className="absolute h-10 w-10 -translate-x-1 -translate-y-1 text-cyan-100 drop-shadow-[0_8px_18px_rgba(8,145,178,0.55)] transition-all duration-700 ease-out tutorial-pointer-tap sm:h-14 sm:w-14 sm:-translate-x-2 sm:-translate-y-2"
               style={{ left: pointerPosition.x, top: pointerPosition.y }}
             />
           </div>
 
           <div
-            className="flex h-full items-end justify-center pb-8 sm:items-center sm:pb-0"
+            className="flex min-h-full items-center justify-center py-3 sm:py-6"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="relative w-full max-w-lg rounded-2xl border border-white/15 bg-white p-6 pr-16 shadow-2xl dark:bg-gray-900">
+            <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-white/15 bg-white p-5 pr-14 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:p-6 sm:pr-16 dark:bg-gray-900">
               <button
                 type="button"
                 onClick={closeTutorial}
-                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 sm:right-4 sm:top-4 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
                 aria-label={t("tutorial.close")}
               >
                 <X className="h-5 w-5" />
@@ -217,7 +226,7 @@ export default function DynamicTutorial({
               <div className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
                 {t("tutorial.title")}
               </div>
-              <h2 className="mt-3 text-2xl font-black text-gray-900 dark:text-white">
+              <h2 className="mt-3 text-xl font-black text-gray-900 sm:text-2xl dark:text-white">
                 {currentStep.title}
               </h2>
               <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
@@ -234,8 +243,8 @@ export default function DynamicTutorial({
                 {t("tutorial.doNotShowAgain")}
               </label>
 
-              <div className="mt-6 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-1.5">
+              <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {steps.map((step, index) => (
                     <button
                       key={step.title}
@@ -253,7 +262,7 @@ export default function DynamicTutorial({
                     />
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => {

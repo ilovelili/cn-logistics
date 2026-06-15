@@ -6,6 +6,7 @@ import {
   Eye,
   FileClock,
   FileText,
+  Maximize2,
   MoreHorizontal,
   Trash2,
 } from "lucide-react";
@@ -563,7 +564,30 @@ export default function ShipmentJobsTable({
                           : ""
                       }`}
                     >
-                      {column.render(job)}
+                      {index === 0 ? (
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            {column.render(job)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onSelectJob(job);
+                            }}
+                            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition sm:hidden ${
+                              adminTheme
+                                ? "border-cyan-900/70 text-cyan-200 hover:bg-cyan-950/40"
+                                : "border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+                            }`}
+                            aria-label={t("jobs.detail.title")}
+                          >
+                            <Maximize2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        column.render(job)
+                      )}
                     </td>
                   ))}
                 </tr>

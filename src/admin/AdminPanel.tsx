@@ -360,13 +360,22 @@ export default function AdminPanel({
               profileRole={profileRole}
               onStepChange={handleTutorialStepChange}
             />
-            <button
-              onClick={onLogout ?? logout}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 sm:px-4"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("common.logout")}</span>
-            </button>
+            <InstantTooltip label={t("common.logout")}>
+              {(tooltipId) => (
+                <button
+                  type="button"
+                  onClick={onLogout ?? logout}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 xl:w-auto xl:gap-2 xl:px-4"
+                  aria-label={t("common.logout")}
+                  aria-describedby={tooltipId}
+                >
+                  <LogOut className="h-5 w-5 xl:h-4 xl:w-4" />
+                  <span className="hidden whitespace-nowrap text-sm font-medium xl:inline">
+                    {t("common.logout")}
+                  </span>
+                </button>
+              )}
+            </InstantTooltip>
             <LanguageSelect />
           </div>
         </div>
