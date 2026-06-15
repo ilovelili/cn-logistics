@@ -1,27 +1,22 @@
 import { X } from "lucide-react";
 import { t } from "../lib/i18n";
-import {
-  isCustomerDocumentDownloadable,
-  type ShipmentDocument,
-} from "../lib/shipmentJobs";
+import { type ShipmentDocument } from "../lib/shipmentJobs";
 import InstantTooltip from "./InstantTooltip";
 
 interface DocumentPreviewModalProps {
   document: ShipmentDocument;
   adminTheme: boolean;
-  hideNativeToolbar?: boolean;
+  allowNativeToolbar?: boolean;
   onClose: () => void;
 }
 
 export default function DocumentPreviewModal({
   document,
   adminTheme,
-  hideNativeToolbar = false,
+  allowNativeToolbar,
   onClose,
 }: DocumentPreviewModalProps) {
-  const shouldHideNativeToolbar =
-    hideNativeToolbar ||
-    (!adminTheme && !isCustomerDocumentDownloadable(document));
+  const shouldHideNativeToolbar = !(allowNativeToolbar ?? adminTheme);
   const previewUrl = shouldHideNativeToolbar
     ? appendPdfViewerParams(document.file_url || "/sample-document.pdf")
     : document.file_url || "/sample-document.pdf";
@@ -87,11 +82,6 @@ export default function DocumentPreviewModal({
         <iframe
           title={document.name}
           src={previewUrl}
-          sandbox={
-            shouldHideNativeToolbar
-              ? "allow-same-origin allow-scripts"
-              : undefined
-          }
           className={
             adminTheme
               ? "h-[72vh] w-full bg-gray-100 dark:bg-gray-950"

@@ -301,6 +301,8 @@ export const documentApprovalClasses: Record<DocumentApprovalStatus, string> = {
   rejected: "bg-rose-50 text-rose-800 border-rose-200",
 };
 
+const DOCUMENT_DOWNLOAD_APPROVAL_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+
 export const defaultShipmentJobForm: ShipmentJobForm = {
   status: "pickup",
   under_process_from_date: "",
@@ -775,8 +777,25 @@ export function getDocumentsForJob(
 }
 
 export function isCustomerDocumentDownloadable(document: ShipmentDocument) {
+  const approvedAtTime = document.approved_at
+    ? Date.parse(document.approved_at)
+    : Number.NaN;
+
   return (
-    document.scope === "customer" && document.approval_status === "approved"
+    document.scope === "customer" &&
+    document.approval_status === "approved" &&
+    Number.isFinite(approvedAtTime) &&
+    Date.now() - approvedAtTime < DOCUMENT_DOWNLOAD_APPROVAL_WINDOW_MS
+  );
+}
+
+export function isCustomerDocumentDownloadApprovalExpired(
+  document: ShipmentDocument,
+) {
+  return (
+    document.scope === "customer" &&
+    document.approval_status === "approved" &&
+    !isCustomerDocumentDownloadable(document)
   );
 }
 

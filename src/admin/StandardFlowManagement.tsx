@@ -894,7 +894,7 @@ function buildDrafts(templates: ShipmentTrackingEventTemplate[]) {
 
 function isValidTemplateForm(
   form: ShipmentTrackingEventTemplateForm | undefined,
-) {
+): form is ShipmentTrackingEventTemplateForm {
   return Boolean(
     form &&
       form.flow_name.trim() &&

@@ -293,7 +293,7 @@ function getTutorialSteps(
   profileRole: AppUserRole,
 ): TutorialStep[] {
   if (variant === "admin") {
-    return [
+    const adminSteps: TutorialStep[] = [
       {
         id: "admin-nav",
         title: t("tutorial.admin.nav.title"),
@@ -356,10 +356,14 @@ function getTutorialSteps(
         fallbackY: "42%",
         superAdminOnly: true,
       },
-    ].filter((step) => !step.superAdminOnly || profileRole === "super_admin");
+    ];
+
+    return adminSteps.filter(
+      (step) => !step.superAdminOnly || profileRole === "super_admin",
+    );
   }
 
-  return [
+  const userSteps: TutorialStep[] = [
     {
       id: "user-filters",
       title: t("tutorial.user.filters.title"),
@@ -384,7 +388,11 @@ function getTutorialSteps(
       fallbackX: "78%",
       fallbackY: "58%",
     },
-  ].filter((step) => !step.normalUserOnly || profileRole === "normal");
+  ];
+
+  return userSteps.filter(
+    (step) => !step.normalUserOnly || profileRole === "normal",
+  );
 }
 
 function clamp(value: number, min: number, max: number) {

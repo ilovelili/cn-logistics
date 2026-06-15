@@ -2,6 +2,7 @@ import {
   AlertCircle,
   CalendarDays,
   CheckCircle,
+  Download,
   Eye,
   FileClock,
   FileText,
@@ -18,6 +19,7 @@ import {
 } from "react";
 import { t } from "../lib/i18n";
 import {
+  isCustomerDocumentDownloadApprovalExpired,
   isCustomerDocumentDownloadable,
   isShipmentDocumentPreviewable,
   ShipmentDocument,
@@ -28,6 +30,7 @@ import {
   statusLabels,
   tradeModeLabels,
   transportModeLabels,
+  downloadShipmentDocument,
   softDeleteShipmentDocument,
   updateShipmentDocumentApproval,
 } from "../lib/shipmentJobs";
@@ -155,6 +158,9 @@ export default function ShipmentJobsTable({
   const [requestingDocumentId, setRequestingDocumentId] = useState<
     string | null
   >(null);
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState<
+    string | null
+  >(null);
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
     null,
   );
@@ -222,6 +228,16 @@ export default function ShipmentJobsTable({
     requesterEmail,
     showToast,
   ]);
+  const downloadDocument = useCallback(async (document: ShipmentDocument) => {
+    setDownloadingDocumentId(document.id);
+    try {
+      await downloadShipmentDocument(document);
+    } catch {
+      showToast("error", t("documents.downloadFailed"));
+    } finally {
+      setDownloadingDocumentId(null);
+    }
+  }, [showToast]);
   const deleteDocument = useCallback(async () => {
     if (!deleteTarget || !requesterEmail) return;
 
@@ -255,6 +271,7 @@ export default function ShipmentJobsTable({
         adminOperators,
         statusColorMap,
         requestingDocumentId,
+        downloadingDocumentId,
         deletingDocumentId,
         canDeleteDocuments,
         expandedDocumentJobId,
@@ -262,6 +279,7 @@ export default function ShipmentJobsTable({
         setPreviewDocument,
         requestDocument,
         approveDocument,
+        downloadDocument,
         setDeleteTarget,
       ),
     [
@@ -276,12 +294,14 @@ export default function ShipmentJobsTable({
       adminOperators,
       statusColorMap,
       requestingDocumentId,
+      downloadingDocumentId,
       deletingDocumentId,
       canDeleteDocuments,
       expandedDocumentJobId,
       setPreviewDocument,
       requestDocument,
       approveDocument,
+      downloadDocument,
       setDeleteTarget,
     ],
   );
@@ -590,15 +610,11 @@ export default function ShipmentJobsTable({
         onPageSizeChange={onPageSizeChange}
       />
       {previewDocument &&
-        (!approvedDocumentsOnly ||
-          isShipmentDocumentPreviewable(previewDocument)) && (
+        canPreviewDocument(previewDocument, approvedDocumentsOnly) && (
           <DocumentPreviewModal
             document={previewDocument}
             adminTheme={adminTheme}
-            hideNativeToolbar={
-              approvedDocumentsOnly &&
-              !isCustomerDocumentDownloadable(previewDocument)
-            }
+            allowNativeToolbar={!approvedDocumentsOnly}
             onClose={() => setPreviewDocument(null)}
           />
         )}
@@ -634,6 +650,7 @@ function buildColumns(
   adminOperators: AdminOperator[],
   statusColorMap: ShipmentStatusColorMap,
   requestingDocumentId: string | null,
+  downloadingDocumentId: string | null,
   deletingDocumentId: string | null,
   canDeleteDocuments: boolean,
   expandedDocumentJobId: string | null,
@@ -641,6 +658,7 @@ function buildColumns(
   onPreviewDocument: (document: ShipmentDocument) => void,
   onRequestDocument: (document: ShipmentDocument) => void,
   onApproveDocument: (document: ShipmentDocument) => void,
+  onDownloadDocument: (document: ShipmentDocument) => void,
   onDeleteDocument: (target: ShipmentDocumentDeleteTarget) => void,
 ): ShipmentJobsTableColumn[] {
   const mutedText = adminTheme ? "text-slate-700 dark:text-gray-300" : "";
@@ -736,10 +754,12 @@ function buildColumns(
           approvedOnly={approvedDocumentsOnly}
           requesterEmail={requesterEmail}
           requestingDocumentId={requestingDocumentId}
+          downloadingDocumentId={downloadingDocumentId}
           deletingDocumentId={deletingDocumentId}
           canDelete={canDeleteDocuments}
           onRequest={onRequestDocument}
           onApprove={onApproveDocument}
+          onDownload={onDownloadDocument}
           onDelete={(document) => onDeleteDocument({ job, document })}
           onPreview={onPreviewDocument}
           onToggleExpanded={() =>
@@ -908,10 +928,12 @@ function DocumentPills({
   approvedOnly = false,
   requesterEmail,
   requestingDocumentId,
+  downloadingDocumentId,
   deletingDocumentId,
   canDelete = false,
   onRequest,
   onApprove,
+  onDownload,
   onDelete,
   onPreview,
   onToggleExpanded,
@@ -922,10 +944,12 @@ function DocumentPills({
   approvedOnly?: boolean;
   requesterEmail?: string;
   requestingDocumentId?: string | null;
+  downloadingDocumentId?: string | null;
   deletingDocumentId?: string | null;
   canDelete?: boolean;
   onRequest?: (document: ShipmentDocument) => void;
   onApprove?: (document: ShipmentDocument) => void;
+  onDownload?: (document: ShipmentDocument) => void;
   onDelete?: (document: ShipmentDocument) => void;
   onPreview: (document: ShipmentDocument) => void;
   onToggleExpanded: () => void;
@@ -954,8 +978,7 @@ function DocumentPills({
       }`}
     >
       {documents.map((document) => {
-        const canPreview =
-          !approvedOnly || isShipmentDocumentPreviewable(document);
+        const canPreview = canPreviewDocument(document, approvedOnly);
         const canRequest =
           !muted &&
           approvedOnly &&
@@ -968,6 +991,11 @@ function DocumentPills({
           Boolean(requesterEmail) &&
           Boolean(onApprove) &&
           document.approval_status === "pending";
+        const canDownload =
+          !muted &&
+          approvedOnly &&
+          Boolean(onDownload) &&
+          isCustomerDocumentDownloadable(document);
         const isPendingRequest =
           !muted && approvedOnly && document.approval_status === "pending";
         const showDelete = canDelete && Boolean(onDelete);
@@ -1021,6 +1049,25 @@ function DocumentPills({
                         aria-describedby={tooltipId}
                       >
                         <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </InstantTooltip>
+                )}
+                {canDownload && (
+                  <InstantTooltip label={t("common.download")}>
+                    {(tooltipId) => (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDownload?.(document);
+                        }}
+                        disabled={downloadingDocumentId === document.id}
+                        className={`${actionButtonBase} border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/50`}
+                        aria-label={t("common.download")}
+                        aria-describedby={tooltipId}
+                      >
+                        <Download className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </InstantTooltip>
@@ -1092,7 +1139,16 @@ function DocumentPills({
 function canRequestDocument(document: ShipmentDocument) {
   return (
     document.approval_status === "not_requested" ||
-    document.approval_status === "rejected"
+    document.approval_status === "rejected" ||
+    isCustomerDocumentDownloadApprovalExpired(document)
+  );
+}
+
+function canPreviewDocument(document: ShipmentDocument, approvedOnly: boolean) {
+  return (
+    !approvedOnly ||
+    document.scope === "customer" ||
+    isShipmentDocumentPreviewable(document)
   );
 }
 

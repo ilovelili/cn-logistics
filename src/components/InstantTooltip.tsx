@@ -1,4 +1,5 @@
-import { useId, type ReactNode } from "react";
+import { useCallback, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface InstantTooltipProps {
   label: string;
@@ -12,19 +13,57 @@ export default function InstantTooltip({
   align = "right",
 }: InstantTooltipProps) {
   const tooltipId = useId();
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [position, setPosition] = useState<{
+    top: number;
+    left: number;
+    align: "left" | "right";
+  } | null>(null);
+
+  const showTooltip = useCallback(() => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setPosition({
+      top: rect.bottom + 8,
+      left: align === "left" ? rect.left : rect.right,
+      align,
+    });
+  }, [align]);
+
+  const hideTooltip = useCallback(() => {
+    setPosition(null);
+  }, []);
 
   return (
-    <div className="group relative inline-flex">
+    <div
+      ref={wrapperRef}
+      className="inline-flex"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
+    >
       {children(tooltipId)}
-      <div
-        id={tooltipId}
-        role="tooltip"
-        className={`pointer-events-none absolute top-12 z-50 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-white dark:text-slate-950 ${
-          align === "left" ? "left-0" : "right-0"
-        }`}
-      >
-        {label}
-      </div>
+      {position &&
+        createPortal(
+          <div
+            id={tooltipId}
+            role="tooltip"
+            style={{
+              left: position.left,
+              top: position.top,
+              transform:
+                position.align === "left"
+                  ? "translateX(0)"
+                  : "translateX(-100%)",
+            }}
+            className="pointer-events-none fixed z-[300] whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white shadow-lg dark:bg-white dark:text-slate-950"
+          >
+            {label}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
