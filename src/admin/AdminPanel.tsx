@@ -365,12 +365,12 @@ export default function AdminPanel({
                 <button
                   type="button"
                   onClick={onLogout ?? logout}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 xl:w-auto xl:gap-2 xl:px-4"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:w-auto sm:gap-2 sm:px-4"
                   aria-label={t("common.logout")}
                   aria-describedby={tooltipId}
                 >
-                  <LogOut className="h-5 w-5 xl:h-4 xl:w-4" />
-                  <span className="hidden whitespace-nowrap text-sm font-medium xl:inline">
+                  <LogOut className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden whitespace-nowrap text-sm font-medium sm:inline">
                     {t("common.logout")}
                   </span>
                 </button>

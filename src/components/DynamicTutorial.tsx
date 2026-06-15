@@ -30,7 +30,7 @@ interface TutorialStep {
   body: string;
   fallbackX: string;
   fallbackY: string;
-  targetSelector?: string;
+  targetSelector?: string | string[];
   superAdminOnly?: boolean;
   normalUserOnly?: boolean;
 }
@@ -40,6 +40,26 @@ interface DynamicTutorialProps {
   adminTheme?: boolean;
   profileRole?: AppUserRole;
   onStepChange?: (stepIndex: number, stepId: TutorialStepId) => void;
+}
+
+const compactViewportQuery = "(max-width: 639px)";
+
+function findTutorialTarget(selector?: string | string[]) {
+  const selectors = Array.isArray(selector)
+    ? selector
+    : selector
+      ? [selector]
+      : [];
+
+  for (const currentSelector of selectors) {
+    const target = document.querySelector<HTMLElement>(currentSelector);
+
+    if (target) {
+      return target;
+    }
+  }
+
+  return null;
 }
 
 export default function DynamicTutorial({
@@ -87,13 +107,13 @@ export default function DynamicTutorial({
     if (!open || !currentStep) return;
 
     const updatePointerPosition = () => {
-      const target = currentStep.targetSelector
-        ? document.querySelector<HTMLElement>(currentStep.targetSelector)
-        : null;
+      const target = findTutorialTarget(currentStep.targetSelector);
       const rect = target?.getBoundingClientRect();
 
       if (rect && rect.width > 0 && rect.height > 0) {
-        const edgePadding = window.innerWidth < 640 ? 40 : 56;
+        const edgePadding = window.matchMedia(compactViewportQuery).matches
+          ? 40
+          : 56;
         const x = clamp(
           rect.left + rect.width / 2,
           edgePadding,
@@ -318,7 +338,10 @@ function getTutorialSteps(
         id: "admin-shipments",
         title: t("tutorial.admin.shipments.title"),
         body: t("tutorial.admin.shipments.body"),
-        targetSelector: '[data-tutorial-target="shipment-table"]',
+        targetSelector: [
+          '[data-tutorial-target="shipment-detail-button"]',
+          '[data-tutorial-target="shipment-table"]',
+        ],
         fallbackX: "50%",
         fallbackY: "44%",
       },
@@ -385,7 +408,10 @@ function getTutorialSteps(
       id: "user-table",
       title: t("tutorial.user.table.title"),
       body: t("tutorial.user.table.body"),
-      targetSelector: '[data-tutorial-target="shipment-table"]',
+      targetSelector: [
+        '[data-tutorial-target="shipment-detail-button"]',
+        '[data-tutorial-target="shipment-table"]',
+      ],
       fallbackX: "52%",
       fallbackY: "54%",
     },

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -94,6 +95,7 @@ interface ShipmentDocumentDeleteTarget {
 }
 
 const columnSettingsStorageKey = "shipment_jobs_table_columns_v8";
+const mobileDetailActionQuery = "(max-width: 639px)";
 
 interface ShipmentJobsTableProps {
   totalJobs: number;
@@ -170,6 +172,11 @@ export default function ShipmentJobsTable({
   const [expandedDocumentJobId, setExpandedDocumentJobId] = useState<
     string | null
   >(null);
+  const [showMobileDetailAction, setShowMobileDetailAction] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.matchMedia(mobileDetailActionQuery).matches,
+  );
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -178,6 +185,19 @@ export default function ShipmentJobsTable({
     useStickyTableHeaderPreference();
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollHint = useHorizontalScrollHint(scrollContainerRef);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(mobileDetailActionQuery);
+    const updateMobileDetailAction = () => {
+      setShowMobileDetailAction(mediaQuery.matches);
+    };
+
+    updateMobileDetailAction();
+    mediaQuery.addEventListener("change", updateMobileDetailAction);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMobileDetailAction);
+    };
+  }, []);
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
@@ -569,21 +589,24 @@ export default function ShipmentJobsTable({
                           <div className="min-w-0 flex-1">
                             {column.render(job)}
                           </div>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onSelectJob(job);
-                            }}
-                            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition sm:hidden ${
-                              adminTheme
-                                ? "border-cyan-900/70 text-cyan-200 hover:bg-cyan-950/40"
-                                : "border-cyan-200 text-cyan-700 hover:bg-cyan-50"
-                            }`}
-                            aria-label={t("jobs.detail.title")}
-                          >
-                            <Maximize2 className="h-3.5 w-3.5" />
-                          </button>
+                          {showMobileDetailAction && (
+                            <button
+                              type="button"
+                              data-tutorial-target="shipment-detail-button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onSelectJob(job);
+                              }}
+                              className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${
+                                adminTheme
+                                  ? "border-cyan-900/70 text-cyan-200 hover:bg-cyan-950/40"
+                                  : "border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+                              }`}
+                              aria-label={t("jobs.detail.title")}
+                            >
+                              <Maximize2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       ) : (
                         column.render(job)
