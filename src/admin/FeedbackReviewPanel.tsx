@@ -379,80 +379,80 @@ export default function FeedbackReviewPanel({
               className="w-full table-fixed text-left text-sm"
               style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
             >
-            <colgroup>
-              {visibleTableColumns.map((column) => (
-                <col key={column.id} style={{ width: `${column.width}px` }} />
-              ))}
-            </colgroup>
-            <thead
-              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
-            >
-              <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                {visibleTableColumns.map((column, index) => (
-                  <SortableTableHeader
-                    key={column.id}
-                    label={column.label}
-                    sortKey={column.id}
-                    activeSortKey={sortKey}
-                    direction={sortDirection}
-                    onSort={handleSort}
-                    className={`py-3 pr-4 text-left ${
-                      index === 0
-                        ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                        : ""
-                    }`}
-                    buttonClassName="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
-                    activeClassName="text-gray-900 dark:text-white"
-                    inactiveClassName="text-gray-500 dark:text-gray-400"
-                  />
+              <colgroup>
+                {visibleTableColumns.map((column) => (
+                  <col key={column.id} style={{ width: `${column.width}px` }} />
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading ? (
-                <tr>
-                  <td
-                    className="py-8 text-center text-gray-500"
-                    colSpan={visibleTableColumns.length}
-                  >
-                    {t("common.loadingDocuments")}
-                  </td>
+              </colgroup>
+              <thead
+                className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+              >
+                <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  {visibleTableColumns.map((column, index) => (
+                    <SortableTableHeader
+                      key={column.id}
+                      label={column.label}
+                      sortKey={column.id}
+                      activeSortKey={sortKey}
+                      direction={sortDirection}
+                      onSort={handleSort}
+                      className={`py-3 pr-4 text-left ${
+                        index === 0
+                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                          : ""
+                      }`}
+                      buttonClassName="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
+                      activeClassName="text-gray-900 dark:text-white"
+                      inactiveClassName="text-gray-500 dark:text-gray-400"
+                    />
+                  ))}
                 </tr>
-              ) : sortedFeedback.length === 0 ? (
-                <tr>
-                  <td
-                    className="py-8 text-center text-gray-500"
-                    colSpan={visibleTableColumns.length}
-                  >
-                    {t("superAdmin.feedback.noFeedback")}
-                  </td>
-                </tr>
-              ) : (
-                paginatedFeedback.map((item) => (
-                  <tr
-                    key={`${item.id}-${item.admin_operator_email ?? "none"}`}
-                    onDoubleClick={(event) => {
-                      if (isInteractiveTableEvent(event)) return;
-                      setSelectedShipmentJobId(item.shipment_job_id);
-                    }}
-                    className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
-                  >
-                    {visibleTableColumns.map((column, index) => (
-                      <td
-                        key={column.id}
-                        className={`py-4 pr-4 align-middle ${
-                          index === 0
-                            ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                            : ""
-                        }`}
-                      >
-                        {column.render(item)}
-                      </td>
-                    ))}
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {loading ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("common.loadingDocuments")}
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
+                ) : sortedFeedback.length === 0 ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("superAdmin.feedback.noFeedback")}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedFeedback.map((item) => (
+                    <tr
+                      key={`${item.id}-${item.admin_operator_email ?? "none"}`}
+                      onDoubleClick={(event) => {
+                        if (isInteractiveTableEvent(event)) return;
+                        setSelectedShipmentJobId(item.shipment_job_id);
+                      }}
+                      className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/60"
+                    >
+                      {visibleTableColumns.map((column, index) => (
+                        <td
+                          key={column.id}
+                          className={`py-4 pr-4 align-middle ${
+                            index === 0
+                              ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                              : ""
+                          }`}
+                        >
+                          {column.render(item)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
           <TableScrollToTopButton

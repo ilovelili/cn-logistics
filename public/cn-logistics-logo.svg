@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">CN Navigator logo</title>
+  <desc id="desc">A teal rounded square with a white left arrow and CN lettering.</desc>
+  <rect width="96" height="96" rx="20" fill="#2ca6b8" />
+  <path fill="#fff" d="M18 48 48 27v13h30v16H48v13L18 48Z" />
+  <rect x="49" y="36" width="34" height="24" rx="2" fill="#fff" />
+  <path
+    fill="#34445f"
+    d="M65 40h-8c-4 0-7 3.2-7 8s3 8 7 8h8v-5h-7.4c-1.7 0-2.8-1.2-2.8-3s1.1-3 2.8-3H65V40Zm4 0h4.7l6.3 9.5V40h5v16h-4.7L74 46.5V56h-5V40Z"
+  />
+</svg>

@@ -724,8 +724,8 @@ function ManualProgressFields({
 
 function getManualProgressColorValue(value: string) {
   return (
-    manualProgressColorOptions.find((option) => option.value === value)?.value ??
-    manualProgressColorOptions[0].value
+    manualProgressColorOptions.find((option) => option.value === value)
+      ?.value ?? manualProgressColorOptions[0].value
   );
 }
 

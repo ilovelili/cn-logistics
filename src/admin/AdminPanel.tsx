@@ -20,6 +20,7 @@ import ProfileButton from "../components/ProfileButton";
 import DynamicTutorial from "../components/DynamicTutorial";
 import LanguageSelect from "../components/LanguageSelect";
 import InstantTooltip from "../components/InstantTooltip";
+import LogoMark from "../components/LogoMark";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { ShipperUser, fetchShipperUsersByAdmin } from "../lib/shipperUsers";
 import { AppUserRole } from "../lib/auth";
@@ -241,12 +242,13 @@ export default function AdminPanel({
                 </button>
               )}
             </InstantTooltip>
+            <LogoMark className="h-9 w-9 rounded-xl" />
             <div className="min-w-0">
               <span
                 className="block truncate font-bold text-gray-900 dark:text-white sm:inline"
-                title="CN Logistics"
+                title="CN Navigator"
               >
-                CN Logistics
+                CN Navigator
               </span>
               <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:ml-2 sm:mt-0">
                 {isSuperAdmin ? t("common.superAdmin") : t("common.admin")}
@@ -402,7 +404,9 @@ export default function AdminPanel({
                   <button
                     key={item.id}
                     data-tutorial-target={
-                      item.id === "feedbackReview" ? "admin-feedback-nav" : undefined
+                      item.id === "feedbackReview"
+                        ? "admin-feedback-nav"
+                        : undefined
                     }
                     onClick={() => {
                       if (item.id === "shipmentEntry") {

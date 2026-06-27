@@ -53,9 +53,8 @@ function getStaffRoleLabel(role: AdminOperatorStaffRole) {
 }
 
 function getStaffRoleLabels(operator: AdminOperator) {
-  return (operator.staff_roles?.length
-    ? operator.staff_roles
-    : [operator.staff_role]
+  return (
+    operator.staff_roles?.length ? operator.staff_roles : [operator.staff_role]
   ).map(getStaffRoleLabel);
 }
 
@@ -780,78 +779,78 @@ export default function UserRegistrationForm({
                     className="w-full table-fixed text-left text-sm"
                     style={{ minWidth: "320px" }}
                   >
-                  <colgroup>
-                    {visibleTableColumns.map((column) => (
-                      <col
-                        key={column.id}
-                        style={{
-                          width: `${(column.width / visibleColumnWeight) * 100}%`,
-                        }}
-                      />
-                    ))}
-                  </colgroup>
-                  <thead
-                    className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
-                  >
-                    <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                      {visibleTableColumns.map((column, index) =>
-                        column.sortKey ? (
-                          <SortableTableHeader
-                            key={column.id}
-                            label={column.label}
-                            sortKey={column.sortKey}
-                            activeSortKey={sortKey}
-                            direction={sortDirection}
-                            onSort={changeSort}
-                            className={`py-3 pr-4 font-bold ${
-                              index === 0
-                                ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                                : ""
-                            }`}
-                            buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
-                            activeClassName="text-gray-900 dark:text-white"
-                            inactiveClassName="text-gray-500 dark:text-gray-400"
-                          />
-                        ) : (
-                          <th
-                            key={column.id}
-                            className={`py-3 pr-4 text-left font-bold ${
-                              index === 0
-                                ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                                : ""
-                            }`}
-                          >
-                            {column.label}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        onDoubleClick={(event) => {
-                          if (isInteractiveTableEvent(event)) return;
-                          setSelectedUser(user);
-                        }}
-                        className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
-                      >
-                        {visibleTableColumns.map((column, index) => (
-                          <td
-                            key={column.id}
-                            className={`overflow-hidden py-4 pr-4 ${
-                              index === 0
-                                ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                                : ""
-                            }`}
-                          >
-                            {column.render(user)}
-                          </td>
-                        ))}
+                    <colgroup>
+                      {visibleTableColumns.map((column) => (
+                        <col
+                          key={column.id}
+                          style={{
+                            width: `${(column.width / visibleColumnWeight) * 100}%`,
+                          }}
+                        />
+                      ))}
+                    </colgroup>
+                    <thead
+                      className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+                    >
+                      <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                        {visibleTableColumns.map((column, index) =>
+                          column.sortKey ? (
+                            <SortableTableHeader
+                              key={column.id}
+                              label={column.label}
+                              sortKey={column.sortKey}
+                              activeSortKey={sortKey}
+                              direction={sortDirection}
+                              onSort={changeSort}
+                              className={`py-3 pr-4 font-bold ${
+                                index === 0
+                                  ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                  : ""
+                              }`}
+                              buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
+                              activeClassName="text-gray-900 dark:text-white"
+                              inactiveClassName="text-gray-500 dark:text-gray-400"
+                            />
+                          ) : (
+                            <th
+                              key={column.id}
+                              className={`py-3 pr-4 text-left font-bold ${
+                                index === 0
+                                  ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                  : ""
+                              }`}
+                            >
+                              {column.label}
+                            </th>
+                          ),
+                        )}
                       </tr>
-                    ))}
-                  </tbody>
+                    </thead>
+                    <tbody>
+                      {paginatedUsers.map((user) => (
+                        <tr
+                          key={user.id}
+                          onDoubleClick={(event) => {
+                            if (isInteractiveTableEvent(event)) return;
+                            setSelectedUser(user);
+                          }}
+                          className="cursor-pointer border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
+                        >
+                          {visibleTableColumns.map((column, index) => (
+                            <td
+                              key={column.id}
+                              className={`overflow-hidden py-4 pr-4 ${
+                                index === 0
+                                  ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                                  : ""
+                              }`}
+                            >
+                              {column.render(user)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
                 <TableScrollToTopButton
@@ -1488,7 +1487,9 @@ function AdminOperatorCheckboxGrid({
   onToggle: (operatorId: string) => void;
 }) {
   const visibleOperators = assignmentsReadOnly
-    ? adminOperators.filter((operator) => selectedAdminIds.includes(operator.id))
+    ? adminOperators.filter((operator) =>
+        selectedAdminIds.includes(operator.id),
+      )
     : adminOperators;
 
   if (visibleOperators.length === 0) {
@@ -1552,9 +1553,9 @@ function AdminOperatorCheckboxGrid({
 
         return (
           <label
-          key={operator.id}
-          className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
-        >
+            key={operator.id}
+            className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+          >
             {content}
           </label>
         );

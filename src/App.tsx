@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  LogOut,
-  Menu,
-  Moon,
-  ShipWheel,
-  Sun,
-  X,
-} from "lucide-react";
+import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
 import DynamicTutorial from "./components/DynamicTutorial";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LoginPage from "./components/LoginPage";
+import LogoMark from "./components/LogoMark";
 import ProfileButton from "./components/ProfileButton";
 import { AdminAuthProvider } from "./admin/AdminAuthContext";
 import { useAdminAuth } from "./admin/useAdminAuth";
@@ -101,17 +95,13 @@ function MainApp({
       return jobs;
     }
 
-    const normalizedShipperName = profileShipperName
-      ?.trim()
-      .toLowerCase();
+    const normalizedShipperName = profileShipperName?.trim().toLowerCase();
     if (!normalizedShipperName) {
       return [];
     }
 
     return jobs.filter(
-      (job) =>
-        job.shipper_name?.trim().toLowerCase() ===
-        normalizedShipperName,
+      (job) => job.shipper_name?.trim().toLowerCase() === normalizedShipperName,
     );
   }, [jobs, profileShipperName, profileRole]);
   const visibleDocuments = useMemo(() => {
@@ -169,7 +159,7 @@ function MainApp({
   }
 
   const navigation = [
-    { id: "jobs" as View, name: t("app.nav.jobs"), icon: ShipWheel },
+    { id: "jobs" as View, name: t("app.nav.jobs"), icon: LogoNavigationIcon },
   ];
 
   const handleSidebarToggle = () => {
@@ -237,9 +227,10 @@ function MainApp({
             <div className="border-b border-gray-200 p-4 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <LogoMark className="h-9 w-9 rounded-xl" />
                   <div>
                     <h1 className="font-bold text-gray-900 dark:text-white">
-                      CN Logistics
+                      CN Navigator
                     </h1>
                   </div>
                 </div>
@@ -391,6 +382,10 @@ function MainApp({
   );
 }
 
+function LogoNavigationIcon({ className }: { className?: string }) {
+  return <LogoMark alt="" className={className} />;
+}
+
 function AppContent({
   darkMode,
   onToggleDark,
@@ -427,11 +422,9 @@ function AppContent({
       ? savedRole
       : "normal";
   });
-  const [profileShipperName, setProfileShipperName] = useState(
-    () => {
-      return sessionStorage.getItem("app_profile_shipper_name") ?? "";
-    },
-  );
+  const [profileShipperName, setProfileShipperName] = useState(() => {
+    return sessionStorage.getItem("app_profile_shipper_name") ?? "";
+  });
   const [switchedAccountName, setSwitchedAccountName] = useState(() => {
     return sessionStorage.getItem("app_switched_account_name") ?? "";
   });

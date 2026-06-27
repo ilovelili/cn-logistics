@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { AlertCircle, Lock, Mail, ShipWheel } from "lucide-react";
+import { AlertCircle, Lock, Mail } from "lucide-react";
+import LogoMark from "./LogoMark";
 import { t } from "../lib/i18n";
 
 interface LoginPageProps {
@@ -34,12 +35,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     <div className="flex min-h-screen items-center justify-center bg-[#f5f2ec] p-4 dark:bg-gray-950">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/30 sm:p-8">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
-            <ShipWheel className="h-7 w-7" />
-          </div>
+          <LogoMark className="h-12 w-12 rounded-2xl" />
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-              CN Logistics
+              CN Navigator
             </h1>
             <p className="text-sm text-slate-500 dark:text-gray-400">
               {t("login.tagline")}

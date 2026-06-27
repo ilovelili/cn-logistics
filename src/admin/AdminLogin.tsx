@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Lock, Mail, AlertCircle, Package, ArrowLeft } from "lucide-react";
+import { Lock, Mail, AlertCircle, ArrowLeft } from "lucide-react";
 import { useAdminAuth } from "./useAdminAuth";
+import LogoMark from "../components/LogoMark";
 import { t } from "../lib/i18n";
 
 interface AdminLoginProps {
@@ -32,11 +33,9 @@ export default function AdminLogin({ onBack }: AdminLoginProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-            <Package className="w-8 h-8 text-white" />
-          </div>
+          <LogoMark className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            CN Logistics
+            CN Navigator
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
             {t("admin.login.title")}

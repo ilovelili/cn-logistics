@@ -1,4 +1,4 @@
-# CN Logistics
+# CN Navigator
 
 ## TODO
 

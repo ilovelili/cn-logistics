@@ -8,13 +8,13 @@ import {
   Filter,
   Plus,
   Search,
-  ShipWheel,
   X,
   XCircle,
 } from "lucide-react";
 import ShipmentJobForm from "../components/ShipmentJobForm";
 import DocumentPreviewModal from "../components/DocumentPreviewModal";
 import InstantTooltip from "../components/InstantTooltip";
+import LogoMark from "../components/LogoMark";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
 } from "../components/ShipmentJobsTable";
@@ -379,7 +379,7 @@ export default function ShipmentEntryForm({
           <ShipmentHeaderMetric
             label={t("dashboard.totalJobs")}
             value={summaryStats.totalJobs}
-            icon={<ShipWheel className="h-4 w-4" />}
+            icon={<LogoMark alt="" className="h-4 w-4 rounded" />}
             tone="blue"
             onClick={() => openMetricFilter({ kind: "all" })}
           />
@@ -531,7 +531,9 @@ export default function ShipmentEntryForm({
           />
           <AdminShipmentJobModal
             job={selectedJob}
-            documents={selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []}
+            documents={
+              selectedJob ? (documentsByJob[selectedJob.id] ?? []) : []
+            }
             adminEmail={adminEmail}
             loading={loading}
             onClose={() => setSelectedJob(null)}
@@ -575,14 +577,12 @@ function ShipmentHeaderMetric({
   onClick?: () => void;
 }) {
   const tones = {
-    blue:
-      "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200",
+    blue: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200",
     amber:
       "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
     emerald:
       "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
-    rose:
-      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200",
+    rose: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200",
   };
   const Component = onClick ? "button" : "div";
 
@@ -634,9 +634,8 @@ function AdminShipmentJobModal({
   onRefresh: () => Promise<void>;
   assignedAdminsReadOnly: boolean;
 }) {
-  const [previewDocument, setPreviewDocument] = useState<ShipmentDocument | null>(
-    null,
-  );
+  const [previewDocument, setPreviewDocument] =
+    useState<ShipmentDocument | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ShipmentDocument | null>(
     null,
   );

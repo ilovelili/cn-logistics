@@ -8,13 +8,13 @@ import {
   Filter,
   Plus,
   Search,
-  ShipWheel,
   Star,
   X,
 } from "lucide-react";
 import ShipmentJobForm from "./ShipmentJobForm";
 import ShipmentJobDetailModal from "./ShipmentJobDetailModal";
 import InstantTooltip from "./InstantTooltip";
+import LogoMark from "./LogoMark";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
 } from "./ShipmentJobsTable";
@@ -50,7 +50,10 @@ import {
 type StatusFilter = ShipmentStatus | "all";
 
 type FeedbackRatings = FeedbackRatingPayload;
-type FeedbackRatingsByTarget = Record<ShipmentFeedbackTargetRole, FeedbackRatings>;
+type FeedbackRatingsByTarget = Record<
+  ShipmentFeedbackTargetRole,
+  FeedbackRatings
+>;
 
 interface ShipmentJobsProps {
   jobs: ShipmentJob[];
@@ -312,7 +315,7 @@ export default function ShipmentJobs({
           <ShipmentSummaryCard
             label={t("dashboard.totalJobs")}
             value={loading ? "-" : summaryStats.totalJobs}
-            icon={<ShipWheel className="h-5 w-5" />}
+            icon={<LogoMark alt="" className="h-5 w-5 rounded-md" />}
             tone="blue"
             onClick={showAllJobs}
           />
@@ -508,14 +511,12 @@ function ShipmentSummaryCard({
   onClick?: () => void;
 }) {
   const tones = {
-    blue:
-      "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    blue: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
     amber:
       "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
     emerald:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
-    rose:
-      "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+    rose: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
   };
   const Component = onClick ? "button" : "div";
 
@@ -623,7 +624,7 @@ function FeedbackModal({
   const [feedbackByTarget, setFeedbackByTarget] =
     useState<FeedbackRatingsByTarget>(() =>
       getInitialFeedbackRatingsByTarget(initialFeedback),
-  );
+    );
   const [reason, setReason] = useState(initialFeedback?.[0]?.reason ?? "");
   const [pendingFeedback, setPendingFeedback] =
     useState<PendingFeedbackSubmission | null>(null);
@@ -912,10 +913,16 @@ const feedbackTargetRoleOptions: {
 ];
 
 function groupFeedbackByJob(feedback: ShipmentFeedback[]) {
-  return feedback.reduce<Record<string, ShipmentFeedback[]>>((grouped, item) => {
-    grouped[item.shipment_job_id] = [...(grouped[item.shipment_job_id] ?? []), item];
-    return grouped;
-  }, {});
+  return feedback.reduce<Record<string, ShipmentFeedback[]>>(
+    (grouped, item) => {
+      grouped[item.shipment_job_id] = [
+        ...(grouped[item.shipment_job_id] ?? []),
+        item,
+      ];
+      return grouped;
+    },
+    {},
+  );
 }
 
 function isFeedbackComplete(feedback?: ShipmentFeedback[] | null) {

@@ -682,83 +682,83 @@ export default function AdminOperatorManagement({
               className="w-full table-fixed text-left text-sm"
               style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
             >
-            <colgroup>
-              {visibleTableColumns.map((column) => (
-                <col key={column.id} style={{ width: `${column.width}px` }} />
-              ))}
-            </colgroup>
-            <thead
-              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
-            >
-              <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                {visibleTableColumns.map((column, index) =>
-                  column.sortKey ? (
-                    <OperatorSortableHeader
-                      key={column.id}
-                      label={column.label}
-                      sortKey={column.sortKey}
-                      activeSortKey={sortKey}
-                      direction={sortDirection}
-                      onSort={changeSort}
-                      className={
-                        index === 0
-                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                          : ""
-                      }
-                    />
-                  ) : (
-                    <th
-                      key={column.id}
-                      className={`py-3 pr-4 text-left font-bold ${
-                        index === 0
-                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                          : ""
-                      }`}
-                    >
-                      {column.label}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading ? (
-                <tr>
-                  <td
-                    className="py-8 text-center text-gray-500"
-                    colSpan={visibleTableColumns.length}
-                  >
-                    {t("common.loadingDocuments")}
-                  </td>
-                </tr>
-              ) : filteredOperators.length === 0 ? (
-                <tr>
-                  <td
-                    className="py-8 text-center text-gray-500"
-                    colSpan={visibleTableColumns.length}
-                  >
-                    {t("superAdmin.operators.noOperators")}
-                  </td>
-                </tr>
-              ) : (
-                paginatedOperators.map((operator) => (
-                  <tr key={operator.id}>
-                    {visibleTableColumns.map((column, index) => (
-                      <td
+              <colgroup>
+                {visibleTableColumns.map((column) => (
+                  <col key={column.id} style={{ width: `${column.width}px` }} />
+                ))}
+              </colgroup>
+              <thead
+                className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+              >
+                <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  {visibleTableColumns.map((column, index) =>
+                    column.sortKey ? (
+                      <OperatorSortableHeader
                         key={column.id}
-                        className={`py-4 pr-4 text-left ${
+                        label={column.label}
+                        sortKey={column.sortKey}
+                        activeSortKey={sortKey}
+                        direction={sortDirection}
+                        onSort={changeSort}
+                        className={
                           index === 0
-                            ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                            ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                            : ""
+                        }
+                      />
+                    ) : (
+                      <th
+                        key={column.id}
+                        className={`py-3 pr-4 text-left font-bold ${
+                          index === 0
+                            ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
                             : ""
                         }`}
                       >
-                        {column.render(operator)}
-                      </td>
-                    ))}
+                        {column.label}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {loading ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("common.loadingDocuments")}
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
+                ) : filteredOperators.length === 0 ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("superAdmin.operators.noOperators")}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedOperators.map((operator) => (
+                    <tr key={operator.id}>
+                      {visibleTableColumns.map((column, index) => (
+                        <td
+                          key={column.id}
+                          className={`py-4 pr-4 text-left ${
+                            index === 0
+                              ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                              : ""
+                          }`}
+                        >
+                          {column.render(operator)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
           <TableScrollToTopButton

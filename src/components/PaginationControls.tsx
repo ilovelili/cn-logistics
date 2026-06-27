@@ -103,7 +103,9 @@ export default function PaginationControls({
                 runWithoutViewportJump(() => onPageChange(pageItem))
               }
               className={`min-w-10 border-r px-3 py-2 text-sm font-semibold transition ${dividerClass} ${
-                pageItem === currentPage ? activeButtonClass : inactiveButtonClass
+                pageItem === currentPage
+                  ? activeButtonClass
+                  : inactiveButtonClass
               }`}
             >
               {pageItem}
@@ -136,7 +138,9 @@ export default function PaginationControls({
           <span className={`text-sm font-semibold ${mutedTextClass}`}>
             {t("jobs.pagination.pageSize")}
           </span>
-          <div className={`inline-flex overflow-hidden rounded-xl border ${groupClass}`}>
+          <div
+            className={`inline-flex overflow-hidden rounded-xl border ${groupClass}`}
+          >
             {pageSizeOptions.map((option) => (
               <button
                 key={option}
@@ -146,9 +150,7 @@ export default function PaginationControls({
                   runWithoutViewportJump(() => onPageSizeChange(option))
                 }
                 className={`min-w-10 border-r px-3 py-2 text-sm font-semibold transition last:border-r-0 ${dividerClass} ${
-                  option === pageSize
-                    ? activeButtonClass
-                    : inactiveButtonClass
+                  option === pageSize ? activeButtonClass : inactiveButtonClass
                 }`}
               >
                 {option}

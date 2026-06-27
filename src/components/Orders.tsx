@@ -182,75 +182,75 @@ export default function Orders() {
             }
           >
             <table className="w-full">
-            <thead
-              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
-            >
-              <tr>
-                <th className="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
-                  注文番号
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  顧客情報
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  配送先
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  金額
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ステータス
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  注文日
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-6 py-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
-                    <div className="font-medium text-gray-900">
-                      {order.order_number}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {order.customer_name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {order.customer_email}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {order.destination_city}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {order.destination_country}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {order.currency} {order.total_value.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}
-                    >
-                      {statusLabels[order.status] || order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(order.created_at).toLocaleDateString("ja-JP")}
-                  </td>
+              <thead
+                className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
+              >
+                <tr>
+                  <th className="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
+                    注文番号
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    顧客情報
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    配送先
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    金額
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ステータス
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    注文日
+                  </th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {paginatedOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-6 py-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
+                      <div className="font-medium text-gray-900">
+                        {order.order_number}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {order.customer_name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {order.customer_email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {order.destination_city}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {order.destination_country}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.currency} {order.total_value.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}
+                      >
+                        {statusLabels[order.status] || order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString("ja-JP")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
           <TableScrollToTopButton

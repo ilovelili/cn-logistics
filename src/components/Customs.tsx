@@ -254,109 +254,110 @@ export default function Customs() {
             }
           >
             <table className="w-full">
-            <thead
-              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
-            >
-              <tr>
-                <th className="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
-                  申告書
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  荷物情報
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  輸送ルート
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  申告価額
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  HSコード
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ステータス
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  日付
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedDeclarations.map((declaration) => (
-                <tr
-                  key={declaration.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="sticky left-0 z-10 bg-white px-6 py-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {declaration.declaration_number}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {declaration.description}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {declaration.parcel?.tracking_number}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      注文: {declaration.parcel?.order?.order_number}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {declaration.origin_country}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      → {declaration.destination_country}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {declaration.currency} {declaration.value.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 font-mono">
-                      {declaration.hs_code || "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(declaration.status)}
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(declaration.status)}`}
-                      >
-                        {statusLabels[declaration.status] || declaration.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {declaration.submitted_at && (
-                      <div>
-                        申請:{" "}
-                        {new Date(declaration.submitted_at).toLocaleDateString(
-                          "ja-JP",
-                        )}
-                      </div>
-                    )}
-                    {declaration.cleared_at && (
-                      <div className="text-green-600">
-                        完了:{" "}
-                        {new Date(declaration.cleared_at).toLocaleDateString(
-                          "ja-JP",
-                        )}
-                      </div>
-                    )}
-                  </td>
+              <thead
+                className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} border-b border-gray-200 bg-gray-50`}
+              >
+                <tr>
+                  <th className="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
+                    申告書
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    荷物情報
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    輸送ルート
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    申告価額
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    HSコード
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ステータス
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    日付
+                  </th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {paginatedDeclarations.map((declaration) => (
+                  <tr
+                    key={declaration.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="sticky left-0 z-10 bg-white px-6 py-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {declaration.declaration_number}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {declaration.description}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {declaration.parcel?.tracking_number}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        注文: {declaration.parcel?.order?.order_number}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {declaration.origin_country}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        → {declaration.destination_country}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {declaration.currency} {declaration.value.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-mono">
+                        {declaration.hs_code || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(declaration.status)}
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(declaration.status)}`}
+                        >
+                          {statusLabels[declaration.status] ||
+                            declaration.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {declaration.submitted_at && (
+                        <div>
+                          申請:{" "}
+                          {new Date(
+                            declaration.submitted_at,
+                          ).toLocaleDateString("ja-JP")}
+                        </div>
+                      )}
+                      {declaration.cleared_at && (
+                        <div className="text-green-600">
+                          完了:{" "}
+                          {new Date(declaration.cleared_at).toLocaleDateString(
+                            "ja-JP",
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
           <TableScrollToTopButton

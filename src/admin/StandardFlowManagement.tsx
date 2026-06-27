@@ -57,13 +57,21 @@ const flowColumns: {
 }[] = [
   { id: "flow", label: t("superAdmin.standardFlow.flow"), width: 260 },
   { id: "steps", label: t("superAdmin.standardFlow.stepCount"), width: 130 },
-  { id: "active", label: t("superAdmin.standardFlow.activeStepCount"), width: 130 },
+  {
+    id: "active",
+    label: t("superAdmin.standardFlow.activeStepCount"),
+    width: 130,
+  },
   { id: "action", label: t("admin.userRegistration.action"), width: 150 },
 ];
 
 export default function StandardFlowManagement() {
-  const [templates, setTemplates] = useState<ShipmentTrackingEventTemplate[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, ShipmentTrackingEventTemplateForm>>({});
+  const [templates, setTemplates] = useState<ShipmentTrackingEventTemplate[]>(
+    [],
+  );
+  const [drafts, setDrafts] = useState<
+    Record<string, ShipmentTrackingEventTemplateForm>
+  >({});
   const [newTemplate, setNewTemplate] = useState(emptyTemplateForm);
   const [selectedFlowName, setSelectedFlowName] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -71,10 +79,15 @@ export default function StandardFlowManagement() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ShipmentTrackingEventTemplate | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<ShipmentTrackingEventTemplate | null>(null);
   const [creating, setCreating] = useState(false);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [stickyHeaderEnabled, toggleStickyHeader] = useStickyTableHeaderPreference();
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [stickyHeaderEnabled, toggleStickyHeader] =
+    useStickyTableHeaderPreference();
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
   const {
     orderedColumns,
@@ -91,7 +104,9 @@ export default function StandardFlowManagement() {
   const columnsById = new Map(flowColumns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
     .map((column) => columnsById.get(column.id))
-    .filter((column): column is (typeof flowColumns)[number] => Boolean(column));
+    .filter((column): column is (typeof flowColumns)[number] =>
+      Boolean(column),
+    );
   const orderedColumnConfigs = orderedColumns.map((column) => ({
     id: column.id,
     label: column.label,
@@ -127,7 +142,10 @@ export default function StandardFlowManagement() {
     () =>
       [...templates].sort(
         (first, second) =>
-          getTemplateFlowName(first).localeCompare(getTemplateFlowName(second), "ja") ||
+          getTemplateFlowName(first).localeCompare(
+            getTemplateFlowName(second),
+            "ja",
+          ) ||
           first.sort_order - second.sort_order ||
           first.created_at.localeCompare(second.created_at),
       ),
@@ -136,13 +154,21 @@ export default function StandardFlowManagement() {
 
   const flowOptions = useMemo(
     () =>
-      [...new Set([defaultFlowName, ...templates.map((template) => getTemplateFlowName(template))])]
+      [
+        ...new Set([
+          defaultFlowName,
+          ...templates.map((template) => getTemplateFlowName(template)),
+        ]),
+      ]
         .filter(Boolean)
         .sort((first, second) => first.localeCompare(second, "ja")),
     [templates],
   );
 
-  const flowSummaries = useMemo(() => buildFlowSummaries(sortedTemplates), [sortedTemplates]);
+  const flowSummaries = useMemo(
+    () => buildFlowSummaries(sortedTemplates),
+    [sortedTemplates],
+  );
 
   const filteredFlowSummaries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -172,7 +198,8 @@ export default function StandardFlowManagement() {
   }, [flowFilter, flowSummaries, query]);
 
   const selectedFlow = selectedFlowName
-    ? flowSummaries.find((summary) => summary.flowName === selectedFlowName) ?? null
+    ? (flowSummaries.find((summary) => summary.flowName === selectedFlowName) ??
+      null)
     : null;
 
   const updateDraft = <Key extends keyof ShipmentTrackingEventTemplateForm>(
@@ -203,9 +230,14 @@ export default function StandardFlowManagement() {
 
     setSavingId(template.id);
     try {
-      const updatedTemplate = await updateShipmentTrackingEventTemplate(template.id, draft);
+      const updatedTemplate = await updateShipmentTrackingEventTemplate(
+        template.id,
+        draft,
+      );
       setTemplates((current) =>
-        current.map((item) => (item.id === updatedTemplate.id ? updatedTemplate : item)),
+        current.map((item) =>
+          item.id === updatedTemplate.id ? updatedTemplate : item,
+        ),
       );
       setDrafts((current) => ({
         ...current,
@@ -275,7 +307,9 @@ export default function StandardFlowManagement() {
       {toast && (
         <div
           className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
-            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+            toast.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
           }`}
         >
           {toast.type === "success" ? (
@@ -345,7 +379,9 @@ export default function StandardFlowManagement() {
               onChange={(event) => setFlowFilter(event.target.value)}
               className="min-w-44 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-bold text-gray-900 outline-none transition focus:border-gray-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white"
             >
-              <option value="all">{t("superAdmin.standardFlow.allFlows")}</option>
+              <option value="all">
+                {t("superAdmin.standardFlow.allFlows")}
+              </option>
               {flowOptions.map((flowName) => (
                 <option key={flowName} value={flowName}>
                   {flowName}
@@ -383,61 +419,69 @@ export default function StandardFlowManagement() {
               className="w-full table-fixed text-left text-sm"
               style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
             >
-            <colgroup>
-              {visibleTableColumns.map((column) => (
-                <col key={column.id} style={{ width: `${column.width}px` }} />
-              ))}
-            </colgroup>
-            <thead
-              className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
-            >
-              <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                {visibleTableColumns.map((column, index) => (
-                  <th
-                    key={column.id}
-                    className={`py-3 pr-4 font-bold ${
-                      index === 0
-                        ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                        : ""
-                    } ${index === visibleTableColumns.length - 1 ? "pr-5" : ""}`}
-                  >
-                    {column.label}
-                  </th>
+              <colgroup>
+                {visibleTableColumns.map((column) => (
+                  <col key={column.id} style={{ width: `${column.width}px` }} />
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading ? (
-                <tr>
-                  <td className="py-8 text-center text-gray-500" colSpan={visibleTableColumns.length}>
-                    {t("common.loading")}
-                  </td>
+              </colgroup>
+              <thead
+                className={`${stickyHeaderEnabled ? "sticky top-0 z-20 shadow-sm" : ""} bg-white dark:bg-gray-900`}
+              >
+                <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  {visibleTableColumns.map((column, index) => (
+                    <th
+                      key={column.id}
+                      className={`py-3 pr-4 font-bold ${
+                        index === 0
+                          ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                          : ""
+                      } ${index === visibleTableColumns.length - 1 ? "pr-5" : ""}`}
+                    >
+                      {column.label}
+                    </th>
+                  ))}
                 </tr>
-              ) : filteredFlowSummaries.length === 0 ? (
-                <tr>
-                  <td className="py-8 text-center text-gray-500" colSpan={visibleTableColumns.length}>
-                    {t("superAdmin.standardFlow.noTemplates")}
-                  </td>
-                </tr>
-              ) : (
-                filteredFlowSummaries.map((flow) => (
-                  <tr key={flow.flowName}>
-                    {visibleTableColumns.map((column, index) => (
-                      <td
-                        key={column.id}
-                        className={`py-4 pr-4 align-middle ${
-                          index === 0
-                            ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
-                            : ""
-                        } ${index === visibleTableColumns.length - 1 ? "pr-5" : ""}`}
-                      >
-                        {renderFlowCell(column.id, flow, () => setSelectedFlowName(flow.flowName))}
-                      </td>
-                    ))}
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {loading ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("common.loading")}
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
+                ) : filteredFlowSummaries.length === 0 ? (
+                  <tr>
+                    <td
+                      className="py-8 text-center text-gray-500"
+                      colSpan={visibleTableColumns.length}
+                    >
+                      {t("superAdmin.standardFlow.noTemplates")}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredFlowSummaries.map((flow) => (
+                    <tr key={flow.flowName}>
+                      {visibleTableColumns.map((column, index) => (
+                        <td
+                          key={column.id}
+                          className={`py-4 pr-4 align-middle ${
+                            index === 0
+                              ? "sticky left-0 z-10 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
+                              : ""
+                          } ${index === visibleTableColumns.length - 1 ? "pr-5" : ""}`}
+                        >
+                          {renderFlowCell(column.id, flow, () =>
+                            setSelectedFlowName(flow.flowName),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
           <TableScrollToTopButton
@@ -530,7 +574,11 @@ function StandardFlowStepsModal({
   const stepForm =
     newTemplate.flow_name === flow.flowName
       ? newTemplate
-      : { ...emptyTemplateForm, flow_name: flow.flowName, sort_order: nextSortOrder };
+      : {
+          ...emptyTemplateForm,
+          flow_name: flow.flowName,
+          sort_order: nextSortOrder,
+        };
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-4">
@@ -541,7 +589,8 @@ function StandardFlowStepsModal({
               {flow.flowName}
             </h3>
             <p className="mt-1 text-sm font-bold text-gray-500 dark:text-gray-400">
-              {flow.activeCount} / {flow.totalCount} {t("superAdmin.standardFlow.active")}
+              {flow.activeCount} / {flow.totalCount}{" "}
+              {t("superAdmin.standardFlow.active")}
             </p>
           </div>
           <button
@@ -611,12 +660,24 @@ function StandardFlowStepsModal({
             </colgroup>
             <thead className="bg-white dark:bg-gray-900">
               <tr className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                <th className="px-4 py-3 font-bold">{t("superAdmin.standardFlow.status")}</th>
-                <th className="px-4 py-3 font-bold">{t("superAdmin.standardFlow.key")}</th>
-                <th className="px-4 py-3 font-bold">{t("superAdmin.standardFlow.templateText")}</th>
-                <th className="px-4 py-3 font-bold">{t("superAdmin.standardFlow.order")}</th>
-                <th className="px-4 py-3 font-bold">{t("superAdmin.standardFlow.active")}</th>
-                <th className="px-4 py-3 font-bold">{t("admin.userRegistration.action")}</th>
+                <th className="px-4 py-3 font-bold">
+                  {t("superAdmin.standardFlow.status")}
+                </th>
+                <th className="px-4 py-3 font-bold">
+                  {t("superAdmin.standardFlow.key")}
+                </th>
+                <th className="px-4 py-3 font-bold">
+                  {t("superAdmin.standardFlow.templateText")}
+                </th>
+                <th className="px-4 py-3 font-bold">
+                  {t("superAdmin.standardFlow.order")}
+                </th>
+                <th className="px-4 py-3 font-bold">
+                  {t("superAdmin.standardFlow.active")}
+                </th>
+                <th className="px-4 py-3 font-bold">
+                  {t("admin.userRegistration.action")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -631,7 +692,9 @@ function StandardFlowStepsModal({
                       <TemplateTextField
                         label={t("superAdmin.standardFlow.key")}
                         value={draft.name}
-                        onChange={(value) => onDraftChange(template.id, "name", value)}
+                        onChange={(value) =>
+                          onDraftChange(template.id, "name", value)
+                        }
                         hideLabel
                       />
                     </td>
@@ -639,7 +702,9 @@ function StandardFlowStepsModal({
                       <TemplateTextField
                         label={t("superAdmin.standardFlow.templateText")}
                         value={draft.description}
-                        onChange={(value) => onDraftChange(template.id, "description", value)}
+                        onChange={(value) =>
+                          onDraftChange(template.id, "description", value)
+                        }
                         hideLabel
                       />
                     </td>
@@ -647,7 +712,9 @@ function StandardFlowStepsModal({
                       <TemplateNumberField
                         label={t("superAdmin.standardFlow.order")}
                         value={draft.sort_order}
-                        onChange={(value) => onDraftChange(template.id, "sort_order", value)}
+                        onChange={(value) =>
+                          onDraftChange(template.id, "sort_order", value)
+                        }
                         hideLabel
                       />
                     </td>
@@ -655,7 +722,9 @@ function StandardFlowStepsModal({
                       <TemplateCheckbox
                         label={t("superAdmin.standardFlow.active")}
                         checked={draft.is_active}
-                        onChange={(checked) => onDraftChange(template.id, "is_active", checked)}
+                        onChange={(checked) =>
+                          onDraftChange(template.id, "is_active", checked)
+                        }
                         compact
                       />
                     </td>
@@ -664,18 +733,28 @@ function StandardFlowStepsModal({
                         <TableActionButton
                           variant="primary"
                           icon={<Save className="h-3.5 w-3.5" />}
-                          disabled={savingId === template.id || deletingId === template.id}
+                          disabled={
+                            savingId === template.id ||
+                            deletingId === template.id
+                          }
                           onClick={() => void onSave(template)}
                         >
-                          {savingId === template.id ? t("common.saving") : t("common.save")}
+                          {savingId === template.id
+                            ? t("common.saving")
+                            : t("common.save")}
                         </TableActionButton>
                         <TableActionButton
                           variant="danger"
                           icon={<Trash2 className="h-3.5 w-3.5" />}
-                          disabled={savingId === template.id || deletingId === template.id}
+                          disabled={
+                            savingId === template.id ||
+                            deletingId === template.id
+                          }
                           onClick={() => onDelete(template)}
                         >
-                          {deletingId === template.id ? t("common.saving") : t("common.delete")}
+                          {deletingId === template.id
+                            ? t("common.saving")
+                            : t("common.delete")}
                         </TableActionButton>
                       </div>
                     </td>
@@ -843,14 +922,13 @@ function StatusPreview({ name }: { name: string }) {
 }
 
 function buildFlowSummaries(templates: ShipmentTrackingEventTemplate[]) {
-  const templatesByFlow = templates.reduce<Record<string, ShipmentTrackingEventTemplate[]>>(
-    (groups, template) => {
-      const flowName = getTemplateFlowName(template);
-      groups[flowName] = [...(groups[flowName] ?? []), template];
-      return groups;
-    },
-    {},
-  );
+  const templatesByFlow = templates.reduce<
+    Record<string, ShipmentTrackingEventTemplate[]>
+  >((groups, template) => {
+    const flowName = getTemplateFlowName(template);
+    groups[flowName] = [...(groups[flowName] ?? []), template];
+    return groups;
+  }, {});
 
   return Object.entries(templatesByFlow)
     .map(([flowName, flowTemplates]): FlowSummary => {
@@ -864,13 +942,17 @@ function buildFlowSummaries(templates: ShipmentTrackingEventTemplate[]) {
       return {
         flowName,
         templates: sortedFlowTemplates,
-        activeCount: sortedFlowTemplates.filter((template) => template.is_active).length,
+        activeCount: sortedFlowTemplates.filter(
+          (template) => template.is_active,
+        ).length,
         totalCount: sortedFlowTemplates.length,
         firstOrder: orders[0] ?? null,
         lastOrder: orders[orders.length - 1] ?? null,
       };
     })
-    .sort((first, second) => first.flowName.localeCompare(second.flowName, "ja"));
+    .sort((first, second) =>
+      first.flowName.localeCompare(second.flowName, "ja"),
+    );
 }
 
 function templateToForm(
@@ -897,10 +979,10 @@ function isValidTemplateForm(
 ): form is ShipmentTrackingEventTemplateForm {
   return Boolean(
     form &&
-      form.flow_name.trim() &&
-      form.name.trim() &&
-      form.description.trim() &&
-      Number.isFinite(form.sort_order),
+    form.flow_name.trim() &&
+    form.name.trim() &&
+    form.description.trim() &&
+    Number.isFinite(form.sort_order),
   );
 }
 

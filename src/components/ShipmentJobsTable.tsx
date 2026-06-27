@@ -198,73 +198,77 @@ export default function ShipmentJobsTable({
       mediaQuery.removeEventListener("change", updateMobileDetailAction);
     };
   }, []);
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  }, []);
-  const requestDocument = useCallback(async (document: ShipmentDocument) => {
-    if (!requesterEmail || !canRequestDocument(document)) return;
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+      setTimeout(() => setToast(null), 4000);
+    },
+    [],
+  );
+  const requestDocument = useCallback(
+    async (document: ShipmentDocument) => {
+      if (!requesterEmail || !canRequestDocument(document)) return;
 
-    setRequestingDocumentId(document.id);
-    try {
-      await updateShipmentDocumentApproval(
-        document.id,
-        "pending",
-        requesterEmail,
-      );
-      await onRefresh?.();
-      showToast(
-        "success",
-        t("documents.batchRequested", { count: 1 }),
-      );
-    } catch {
-      showToast("error", t("documents.batchRequestFailed"));
-    } finally {
-      setRequestingDocumentId(null);
-    }
-  }, [
-    onRefresh,
-    requesterEmail,
-    showToast,
-  ]);
-  const approveDocument = useCallback(async (document: ShipmentDocument) => {
-    if (!requesterEmail || document.approval_status !== "pending") return;
+      setRequestingDocumentId(document.id);
+      try {
+        await updateShipmentDocumentApproval(
+          document.id,
+          "pending",
+          requesterEmail,
+        );
+        await onRefresh?.();
+        showToast("success", t("documents.batchRequested", { count: 1 }));
+      } catch {
+        showToast("error", t("documents.batchRequestFailed"));
+      } finally {
+        setRequestingDocumentId(null);
+      }
+    },
+    [onRefresh, requesterEmail, showToast],
+  );
+  const approveDocument = useCallback(
+    async (document: ShipmentDocument) => {
+      if (!requesterEmail || document.approval_status !== "pending") return;
 
-    setRequestingDocumentId(document.id);
-    try {
-      await updateShipmentDocumentApproval(
-        document.id,
-        "approved",
-        requesterEmail,
-      );
-      await onRefresh?.();
-      showToast("success", t("admin.documents.approved"));
-    } catch {
-      showToast("error", t("admin.documents.updateFailed"));
-    } finally {
-      setRequestingDocumentId(null);
-    }
-  }, [
-    onRefresh,
-    requesterEmail,
-    showToast,
-  ]);
-  const downloadDocument = useCallback(async (document: ShipmentDocument) => {
-    setDownloadingDocumentId(document.id);
-    try {
-      await downloadShipmentDocument(document);
-    } catch {
-      showToast("error", t("documents.downloadFailed"));
-    } finally {
-      setDownloadingDocumentId(null);
-    }
-  }, [showToast]);
+      setRequestingDocumentId(document.id);
+      try {
+        await updateShipmentDocumentApproval(
+          document.id,
+          "approved",
+          requesterEmail,
+        );
+        await onRefresh?.();
+        showToast("success", t("admin.documents.approved"));
+      } catch {
+        showToast("error", t("admin.documents.updateFailed"));
+      } finally {
+        setRequestingDocumentId(null);
+      }
+    },
+    [onRefresh, requesterEmail, showToast],
+  );
+  const downloadDocument = useCallback(
+    async (document: ShipmentDocument) => {
+      setDownloadingDocumentId(document.id);
+      try {
+        await downloadShipmentDocument(document);
+      } catch {
+        showToast("error", t("documents.downloadFailed"));
+      } finally {
+        setDownloadingDocumentId(null);
+      }
+    },
+    [showToast],
+  );
   const deleteDocument = useCallback(async () => {
     if (!deleteTarget || !requesterEmail) return;
 
     setDeletingDocumentId(deleteTarget.document.id);
     try {
-      await softDeleteShipmentDocument(deleteTarget.document.id, requesterEmail);
+      await softDeleteShipmentDocument(
+        deleteTarget.document.id,
+        requesterEmail,
+      );
       await onRefresh?.();
       showToast(
         "success",
@@ -546,17 +550,17 @@ export default function ShipmentJobsTable({
               }`}
             >
               {paginatedJobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    onClick={(event) => {
-                      if (isInteractiveTableEvent(event)) return;
-                      setExpandedDocumentJobId((currentJobId) =>
-                        currentJobId === job.id ? null : job.id,
-                      );
-                    }}
-                    onDoubleClick={(event) => {
-                      if (isInteractiveTableEvent(event)) return;
-                      onSelectJob(job);
+                <tr
+                  key={job.id}
+                  onClick={(event) => {
+                    if (isInteractiveTableEvent(event)) return;
+                    setExpandedDocumentJobId((currentJobId) =>
+                      currentJobId === job.id ? null : job.id,
+                    );
+                  }}
+                  onDoubleClick={(event) => {
+                    if (isInteractiveTableEvent(event)) return;
+                    onSelectJob(job);
                   }}
                   className={`align-top transition ${
                     selectedJobId === job.id
@@ -570,7 +574,9 @@ export default function ShipmentJobsTable({
                     <td
                       key={column.id}
                       data-tutorial-target={
-                        column.id === "documents" ? "shipment-documents" : undefined
+                        column.id === "documents"
+                          ? "shipment-documents"
+                          : undefined
                       }
                       className={`px-3 py-2 ${
                         index === 0
@@ -1320,7 +1326,9 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
 
   if (latestSortOrder > 0) {
     const stepCount =
-      latestSortOrder >= 10 ? Math.ceil(latestSortOrder / 10) : latestSortOrder + 1;
+      latestSortOrder >= 10
+        ? Math.ceil(latestSortOrder / 10)
+        : latestSortOrder + 1;
     return Math.max(1, Math.min(10, stepCount));
   }
 

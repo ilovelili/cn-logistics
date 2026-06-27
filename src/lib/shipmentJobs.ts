@@ -327,7 +327,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   assigned_admin_user_ids: [],
   progress_percent: "",
   progress_step: "",
-    progress_color_hex: "#059669",
+  progress_color_hex: "#059669",
   documents: "",
   internal_documents: "",
   document_files: [],

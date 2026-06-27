@@ -410,17 +410,16 @@ const ja = {
     "標準フローテンプレートはまだありません。",
   "superAdmin.standardFlow.noSteps":
     "この標準フローにはまだステップがありません。",
-  "superAdmin.standardFlow.searchPlaceholder":
-    "フロー名で検索...",
-  "superAdmin.standardFlow.loadFailed":
-    "標準フローの読み込みに失敗しました",
+  "superAdmin.standardFlow.searchPlaceholder": "フロー名で検索...",
+  "superAdmin.standardFlow.loadFailed": "標準フローの読み込みに失敗しました",
   "superAdmin.standardFlow.created": "フローステップを追加しました",
   "superAdmin.standardFlow.createFailed": "フローステップの追加に失敗しました",
   "superAdmin.standardFlow.updated": "標準フローを更新しました",
   "superAdmin.standardFlow.updateFailed": "標準フローの更新に失敗しました",
   "superAdmin.standardFlow.deleted": "フローステップを削除しました",
   "superAdmin.standardFlow.deleteFailed": "フローステップの削除に失敗しました",
-  "superAdmin.standardFlow.confirmDeleteTitle": "フローステップを削除しますか？",
+  "superAdmin.standardFlow.confirmDeleteTitle":
+    "フローステップを削除しますか？",
   "superAdmin.standardFlow.confirmDelete":
     "このフローステップを削除します。削除後は出荷案件の標準フロー候補として利用できません。",
   "superAdmin.standardFlow.validationFailed":
@@ -442,7 +441,7 @@ const ja = {
   "admin.login.submitting": "ログイン中...",
   "admin.login.submit": "ログイン",
   "admin.login.back": "ダッシュボードに戻る",
-  "admin.login.footer": "CN Logistics 管理システム - デモ環境",
+  "admin.login.footer": "CN Navigator 管理システム - デモ環境",
 } as const;
 
 type Messages = { [Key in keyof typeof ja]: string };
@@ -507,7 +506,8 @@ const en: Messages = {
   "common.edit": "Edit",
   "common.delete": "Delete",
   "common.deleteConfirmTitle": "Delete?",
-  "common.deleteConfirm": "This item will be deleted. This action cannot be undone.",
+  "common.deleteConfirm":
+    "This item will be deleted. This action cannot be undone.",
   "common.view": "View",
   "common.loadingJobs": "Loading shipments...",
   "common.loadingDocuments": "Loading documents...",
@@ -863,8 +863,7 @@ const en: Messages = {
     "No standard flow templates have been registered yet.",
   "superAdmin.standardFlow.noSteps":
     "No steps have been registered for this standard flow yet.",
-  "superAdmin.standardFlow.searchPlaceholder":
-    "Search flow...",
+  "superAdmin.standardFlow.searchPlaceholder": "Search flow...",
   "superAdmin.standardFlow.loadFailed": "Failed to load standard flow",
   "superAdmin.standardFlow.created": "Flow step added",
   "superAdmin.standardFlow.createFailed": "Failed to add flow step",
@@ -894,7 +893,7 @@ const en: Messages = {
   "admin.login.submitting": "Logging in...",
   "admin.login.submit": "Login",
   "admin.login.back": "Back to dashboard",
-  "admin.login.footer": "CN Logistics admin system - Demo",
+  "admin.login.footer": "CN Navigator admin system - Demo",
 };
 
 export type Locale = "ja" | "en";
