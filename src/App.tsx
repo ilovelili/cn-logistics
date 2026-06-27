@@ -288,8 +288,8 @@ function MainApp({
         )}
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between">
+          <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <InstantTooltip label={t("app.menu.toggle")} align="left">
                 {(tooltipId) => (
                   <button
@@ -302,10 +302,10 @@ function MainApp({
                   </button>
                 )}
               </InstantTooltip>
-              <div className="ml-auto flex items-center gap-3">
+              <div className="ml-0 flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto sm:gap-3">
                 {onBackToAdmin && (
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <div className="max-w-80 truncate rounded-full bg-cyan-50 px-3 py-1.5 text-sm font-bold text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-900">
+                  <div className="order-first flex w-full flex-col gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 p-2 dark:border-cyan-900 dark:bg-cyan-950/30 sm:order-none sm:w-auto sm:flex-row sm:items-center sm:border-0 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
+                    <div className="truncate rounded-full px-2 py-1 text-xs font-bold text-cyan-800 dark:text-cyan-200 sm:max-w-80 sm:bg-cyan-50 sm:px-3 sm:py-1.5 sm:text-sm sm:ring-1 sm:ring-cyan-200 sm:dark:bg-cyan-950/40 sm:dark:ring-cyan-900">
                       {t("admin.switch.currentlySwitchedAs", {
                         name:
                           switchedAccountName.trim() ||
@@ -315,7 +315,7 @@ function MainApp({
                     </div>
                     <button
                       onClick={onBackToAdmin}
-                      className="rounded-full bg-slate-950 px-3 py-1.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+                      className="rounded-xl bg-slate-950 px-3 py-2 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200 sm:rounded-full sm:py-1.5"
                     >
                       {t("admin.switch.backToAdmin")}
                     </button>
