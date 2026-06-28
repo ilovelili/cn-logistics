@@ -22,7 +22,7 @@ VALUES
     'admin@cnlogistics.co.jp',
     'admin',
     '12345',
-    'CN Logistics Admin',
+    'CN Navigator Admin',
     'sales',
     'approved',
     'super_admin@cnlogistics.co.jp',

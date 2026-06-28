@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository.
 
 ## Project Overview
 
-CN Logistics is a React + TypeScript + Vite web app for shipment management. It uses Supabase for persistence, RPC-backed business logic, and storage-backed document/avatar files.
+CN Navigator is a React + TypeScript + Vite web app for shipment management. It uses Supabase for persistence, RPC-backed business logic, and storage-backed document/avatar files.
 
 The app has three role surfaces:
 
