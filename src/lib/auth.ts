@@ -9,13 +9,16 @@ export interface AppUserProfile {
   shipper_name: string | null;
 }
 
-const SUPER_ADMIN_EMAIL = "super_admin@cnlogistics.co.jp";
+const SUPER_ADMIN_EMAILS = new Set([
+  "super_admin@cnlogistics.co.jp",
+  "route666@live.cn",
+]);
 const ADMIN_EMAIL_DOMAIN = "@cnlogistics.co.jp";
 
 export function deriveAppUserRole(email: string): AppUserRole {
   const normalizedEmail = email.trim().toLowerCase();
 
-  if (normalizedEmail === SUPER_ADMIN_EMAIL) {
+  if (SUPER_ADMIN_EMAILS.has(normalizedEmail)) {
     return "super_admin";
   }
 

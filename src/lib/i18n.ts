@@ -5,18 +5,6 @@ const ja = {
   "app.theme.dark": "ダークモードに切り替え",
   "app.error.unknownSupabase": "Supabaseで不明なエラーが発生しました",
 
-  "login.tagline": "出荷管理ポータル",
-  "login.portal": "ログイン",
-  "login.heading": "ログイン",
-  "login.invalid": "メールアドレスまたはパスワードが正しくありません",
-  "login.submit": "ログイン",
-  "login.passwordlessDescription":
-    "メールアドレスを入力すると、6桁のワンタイムコードをお送りします。パスワードは不要です。",
-  "login.emailOtp": "メールでログイン・新規登録",
-  "login.redirecting": "ログイン画面を開いています...",
-  "login.signupHint":
-    "初回ログイン時にアカウントが作成されます。cnlogistics.co.jp のメールアドレスは管理者として登録されます。",
-
   "profile.title": "プロフィール",
   "profile.email": "メール",
   "profile.avatar": "アバター",
@@ -459,18 +447,6 @@ const en: Messages = {
   "app.theme.light": "Switch to light mode",
   "app.theme.dark": "Switch to dark mode",
   "app.error.unknownSupabase": "An unknown Supabase error occurred",
-
-  "login.tagline": "Shipment management portal",
-  "login.portal": "Login",
-  "login.heading": "Login",
-  "login.invalid": "Invalid email address or password",
-  "login.submit": "Login",
-  "login.passwordlessDescription":
-    "Enter your email address and we will send you a six-digit one-time code. No password is required.",
-  "login.emailOtp": "Log in or sign up with email",
-  "login.redirecting": "Opening secure login...",
-  "login.signupHint":
-    "An account is created on first login. Email addresses at cnlogistics.co.jp are registered as administrators.",
 
   "profile.title": "Profile",
   "profile.email": "Email",

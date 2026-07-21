@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
 import DynamicTutorial from "./components/DynamicTutorial";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
-import LoginPage from "./components/LoginPage";
 import LogoMark from "./components/LogoMark";
 import ProfileButton from "./components/ProfileButton";
 import { AdminAuthProvider } from "./admin/AdminAuthContext";
@@ -411,6 +410,7 @@ function AppContent({
     logout: logoutAuth0,
     user,
   } = useAuth0();
+  const loginRedirectStarted = useRef(false);
   const [authSessionLoading, setAuthSessionLoading] = useState(true);
   const [authRole, setAuthRole] = useState<AuthRole | null>(() => {
     const savedRole = sessionStorage.getItem("app_auth_role");
@@ -464,6 +464,23 @@ function AppContent({
   const [returnAdminAccountName, setReturnAdminAccountName] = useState(() => {
     return sessionStorage.getItem("app_return_admin_account_name") ?? "";
   });
+
+  useEffect(() => {
+    if (isAuth0Loading || isAuthenticated || loginRedirectStarted.current) {
+      return;
+    }
+
+    loginRedirectStarted.current = true;
+    void loginWithRedirect({
+      authorizationParams: {
+        connection: "email",
+        prompt: "login",
+        ui_locales: "ja",
+      },
+    }).catch(() => {
+      loginRedirectStarted.current = false;
+    });
+  }, [isAuth0Loading, isAuthenticated, loginWithRedirect]);
 
   useEffect(() => {
     if (isAuth0Loading) return;
@@ -575,15 +592,6 @@ function AppContent({
       active = false;
     };
   }, [adminEmail, authEmail, authRole]);
-
-  const handleLogin = () =>
-    loginWithRedirect({
-      authorizationParams: {
-        connection: "email",
-        prompt: "login",
-        ui_locales: "ja",
-      },
-    });
 
   const handleSwitchToUser = (
     email: string,
@@ -704,20 +712,15 @@ function AppContent({
   const isSwitchedFromAdmin =
     Boolean(adminEmail) && authEmail.toLowerCase() !== adminEmail.toLowerCase();
 
-  if (isAuth0Loading || authSessionLoading) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   if (
+    isAuth0Loading ||
+    authSessionLoading ||
+    !isAuthenticated ||
     !authRole ||
     !authEmail ||
     (authRole === "admin" && !isAdminAuthenticated)
   ) {
-    return <LoginPage onLogin={handleLogin} />;
+    return null;
   }
 
   return (
