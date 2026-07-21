@@ -567,7 +567,7 @@ export default function AdminOperatorManagement({
           onSubmit={handleSubmit}
           className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
         >
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <FormField
               label={t("superAdmin.operators.email")}
               value={form.email}
@@ -590,13 +590,6 @@ export default function AdminOperatorManagement({
                   staff_roles: value,
                 })
               }
-            />
-            <FormField
-              label={t("superAdmin.operators.password")}
-              value={form.password}
-              type="password"
-              required
-              onChange={(value) => setForm({ ...form, password: value })}
             />
           </div>
           <div className="mt-4">

@@ -1,9 +1,8 @@
-import { createContext, useState, ReactNode } from "react";
-import { verifyAppLogin } from "../lib/auth";
+import { createContext, ReactNode, useCallback, useState } from "react";
 
 export interface AdminAuthContextType {
   isAdminAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  setAuthenticated: (authenticated: boolean) => void;
   logout: () => void;
 }
 
@@ -16,23 +15,24 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return sessionStorage.getItem("admin_auth") === "true";
   });
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const profile = await verifyAppLogin(email, password);
-    if (profile?.role === "admin" || profile?.role === "super_admin") {
-      setIsAdminAuthenticated(true);
+  const setAuthenticated = useCallback((authenticated: boolean) => {
+    setIsAdminAuthenticated(authenticated);
+    if (authenticated) {
       sessionStorage.setItem("admin_auth", "true");
-      return true;
+    } else {
+      sessionStorage.removeItem("admin_auth");
     }
-    return false;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setIsAdminAuthenticated(false);
     sessionStorage.removeItem("admin_auth");
-  };
+  }, []);
 
   return (
-    <AdminAuthContext.Provider value={{ isAdminAuthenticated, login, logout }}>
+    <AdminAuthContext.Provider
+      value={{ isAdminAuthenticated, setAuthenticated, logout }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );

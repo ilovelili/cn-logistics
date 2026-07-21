@@ -9,14 +9,21 @@ export interface AppUserProfile {
   shipper_name: string | null;
 }
 
-export async function verifyAppLogin(
-  email: string,
-  password: string,
-): Promise<AppUserProfile | null> {
-  const { data, error } = await supabase.rpc("verify_app_login", {
-    login_email: email,
-    login_password: password,
-  });
+const SUPER_ADMIN_EMAIL = "super_admin@cnlogistics.co.jp";
+const ADMIN_EMAIL_DOMAIN = "@cnlogistics.co.jp";
+
+export function deriveAppUserRole(email: string): AppUserRole {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail === SUPER_ADMIN_EMAIL) {
+    return "super_admin";
+  }
+
+  return normalizedEmail.endsWith(ADMIN_EMAIL_DOMAIN) ? "admin" : "normal";
+}
+
+export async function syncAuth0AppUser(): Promise<AppUserProfile | null> {
+  const { data, error } = await supabase.rpc("sync_auth0_app_user");
 
   if (error) {
     throw error;

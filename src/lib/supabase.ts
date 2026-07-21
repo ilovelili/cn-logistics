@@ -7,4 +7,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+type AccessTokenProvider = () => Promise<string | null>;
+
+let accessTokenProvider: AccessTokenProvider | null = null;
+
+export function setSupabaseAccessTokenProvider(
+  provider: AccessTokenProvider | null,
+) {
+  accessTokenProvider = provider;
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  accessToken: async () => accessTokenProvider?.() ?? null,
+});

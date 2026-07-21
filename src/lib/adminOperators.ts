@@ -50,14 +50,12 @@ export interface AdminOperatorForm {
   email: string;
   user_name: string;
   staff_roles: AdminOperatorStaffRole[];
-  password: string;
 }
 
 export const defaultAdminOperatorForm: AdminOperatorForm = {
   email: "",
   user_name: "",
   staff_roles: ["sales"],
-  password: "12345",
 };
 
 export async function fetchAdminOperators(superAdminEmail: string) {
@@ -80,7 +78,7 @@ export async function createAdminOperator(
     operator_email: form.email.trim(),
     operator_name: form.user_name.trim(),
     operator_staff_roles: form.staff_roles,
-    operator_password: form.password,
+    operator_password: "",
     super_admin_email: superAdminEmail,
   });
 
