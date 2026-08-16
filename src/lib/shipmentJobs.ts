@@ -2,9 +2,7 @@ import { supabase } from "./supabase";
 import { t } from "./i18n";
 
 export type LegacyShipmentStatus =
-  | "under_process"
-  | "customs_hold"
-  | "completed";
+  "under_process" | "customs_hold" | "completed";
 export type StandardFlowShipmentStatus =
   | "pickup"
   | "warehouse_in"
@@ -21,10 +19,7 @@ export type TradeMode = "export" | "import" | "triangle";
 export type TransportMode = "air" | "lcl" | "fcl";
 export type DocumentScope = "customer" | "internal";
 export type DocumentApprovalStatus =
-  | "not_requested"
-  | "pending"
-  | "approved"
-  | "rejected";
+  "not_requested" | "pending" | "approved" | "rejected";
 
 export interface ShipmentJob {
   id: string;

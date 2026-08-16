@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "presentation": {
+    "id": "1O0_k0LQIeCbdV9wrDsiy2LseZf9hHTHvFN_s6oE4qbg",
+    "title": "CN Logistics Japan｜追跡システム市場性・収益機会レポート 2026",
+    "revisionId": "OoptYpu-0CyOOw",
+    "slideCount": 13
+  },
+  "snapshotSha256": "711ec307438e8788142fbf9f121ea82eed4c3b15c8cbb27083bc387009afeef1",
+  "summary": {
+    "totalIssues": 1,
+    "reportedIssues": 1,
+    "truncated": false,
+    "bySeverity": {
+      "warning": 1
+    },
+    "byCode": {
+      "TEXT_BELOW_NARRATIVE_TARGET": 1
+    }
+  },
+  "issues": [
+    {
+      "id": "TEXT_BELOW_NARRATIVE_TARGET:p13:p13_i14:shape:all",
+      "code": "TEXT_BELOW_NARRATIVE_TARGET",
+      "severity": "warning",
+      "slideId": "p13",
+      "slideIndex": 12,
+      "objectId": "p13_i14",
+      "surface": "shape",
+      "message": "Narrative text explicitly renders at 8.3 pt, below the 12 pt target.",
+      "remediation": "Preserve the template size when possible; otherwise shorten the copy or choose a denser exemplar instead of shrinking further.",
+      "evidence": {
+        "minimumFontSizePt": 8.3,
+        "autofitScale": 1,
+        "textPreview": "https://www.mlit.go.jp/seisakutokatsu/freight/seisakutokatsu_freight_mn1_000034.html"
+      }
+    }
+  ]
+}

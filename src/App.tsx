@@ -7,7 +7,7 @@ import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LogoMark from "./components/LogoMark";
 import ProfileButton from "./components/ProfileButton";
-import { AdminAuthProvider } from "./admin/AdminAuthContext";
+import { AdminAuthProvider } from "./admin/AdminAuthProvider";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminPanel from "./admin/AdminPanel";
 import {

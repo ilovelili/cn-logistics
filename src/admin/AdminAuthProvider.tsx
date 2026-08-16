@@ -1,14 +1,5 @@
-import { createContext, ReactNode, useCallback, useState } from "react";
-
-export interface AdminAuthContextType {
-  isAdminAuthenticated: boolean;
-  setAuthenticated: (authenticated: boolean) => void;
-  logout: () => void;
-}
-
-export const AdminAuthContext = createContext<AdminAuthContextType | null>(
-  null,
-);
+import { ReactNode, useCallback, useState } from "react";
+import { AdminAuthContext } from "./adminAuthContext";
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {

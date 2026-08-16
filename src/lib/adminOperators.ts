@@ -14,10 +14,7 @@ export interface AdminOperator {
 }
 
 export type AdminOperatorStaffRole =
-  | "sales"
-  | "customer_service"
-  | "operations"
-  | "other";
+  "sales" | "customer_service" | "operations" | "other";
 
 export const adminOperatorStaffRoleOptions: {
   value: AdminOperatorStaffRole;

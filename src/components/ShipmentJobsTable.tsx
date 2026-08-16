@@ -76,10 +76,7 @@ export type ShipmentJobsTableSortKey =
   | "bl_awb_date";
 
 type ShipmentJobsTableColumnId =
-  | ShipmentJobsTableSortKey
-  | "documents"
-  | "internal_documents"
-  | "action";
+  ShipmentJobsTableSortKey | "documents" | "internal_documents" | "action";
 
 interface ShipmentJobsTableColumn {
   id: ShipmentJobsTableColumnId;

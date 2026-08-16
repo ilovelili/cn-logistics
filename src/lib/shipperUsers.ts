@@ -19,9 +19,7 @@ export interface ShipperUserContact {
 }
 
 export type ShipperUserApprovalStatus =
-  | "to_be_approved"
-  | "approved"
-  | "rejected";
+  "to_be_approved" | "approved" | "rejected";
 
 export interface ShipperUser {
   id: string;

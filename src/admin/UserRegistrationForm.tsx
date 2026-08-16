@@ -71,12 +71,7 @@ interface UserRegistrationFormProps {
 }
 
 type SortKey =
-  | "id"
-  | "shipper_name"
-  | "email"
-  | "budget"
-  | "approval_status"
-  | "created_at";
+  "id" | "shipper_name" | "email" | "budget" | "approval_status" | "created_at";
 type SortDirection = "asc" | "desc";
 type UserColumnId = SortKey | "contact" | "admins" | "action";
 export type UserAction = "approve" | "reject" | "delete";

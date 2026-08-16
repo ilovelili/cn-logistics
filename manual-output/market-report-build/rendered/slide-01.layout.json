@@ -1,0 +1,340 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/a5wgln",
+    "id": "a5wgln",
+    "slide": 1,
+    "layoutId": "c04badf7-792d-49cc-9c88-2d78cee142b5",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "07ce11cd-a705-4e56-9c0b-914055f562bb",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": ["Hiragino Sans"]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "c04badf7-792d-49cc-9c88-2d78cee142b5",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "07ce11cd-a705-4e56-9c0b-914055f562bb",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "07ce11cd-a705-4e56-9c0b-914055f562bb",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8vytkr6d",
+      "id": "1",
+      "bbox": [42, 36, 500, 42],
+      "geometry": "rect",
+      "text": "CN LOGISTICS JAPAN",
+      "textPreview": "CN LOGISTICS JAPAN",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 22,
+        "typeface": "Hiragino Sans",
+        "color": "#1677D2",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CN LOGISTICS JAPAN"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CN LOGISTICS JAPAN",
+          "resolvedTextStyle": {
+            "fontSize": 22,
+            "typeface": "Hiragino Sans",
+            "color": "#1677D2",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "CN LOGISTICS JAPAN",
+              "fontSize": 22,
+              "typeface": "Hiragino Sans",
+              "color": "#1677D2",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7upcrmps",
+      "id": "2",
+      "bbox": [42, 175, 1030, 250],
+      "geometry": "rect",
+      "text": "追跡システムは\nどこまで売上をつくれるか",
+      "textPreview": "追跡システムは | どこまで売上をつくれるか",
+      "resolvedFontSize": 62,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 62,
+        "typeface": "Hiragino Sans",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "追跡システムは"
+          },
+          {
+            "index": 2,
+            "text": "どこまで売上をつくれるか"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "追跡システムは",
+          "resolvedTextStyle": {
+            "fontSize": 62,
+            "typeface": "Hiragino Sans",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "追跡システムは",
+              "fontSize": 62,
+              "typeface": "Hiragino Sans",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "どこまで売上をつくれるか",
+          "resolvedTextStyle": {
+            "fontSize": 62,
+            "typeface": "Hiragino Sans",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "どこまで売上をつくれるか",
+              "fontSize": 62,
+              "typeface": "Hiragino Sans",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6tgbiho7",
+      "id": "3",
+      "bbox": [42, 500, 900, 80],
+      "geometry": "rect",
+      "text": "物流可視化・書類ワークフローの市場性と3年間の収益シナリオ",
+      "textPreview": "物流可視化・書類ワークフローの市場性と3年間の収益シナリオ",
+      "resolvedFontSize": 26,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 26,
+        "typeface": "Hiragino Sans",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "物流可視化・書類ワークフローの市場性と3年間の収益シナリオ"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "物流可視化・書類ワークフローの市場性と3年間の収益シナリオ",
+          "resolvedTextStyle": {
+            "fontSize": 26,
+            "typeface": "Hiragino Sans",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "物流可視化・書類ワークフローの市場性と3年間の収益シナリオ",
+              "fontSize": 26,
+              "typeface": "Hiragino Sans",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h0ruxw7u",
+      "id": "4",
+      "bbox": [42, 620, 650, 28],
+      "geometry": "rect",
+      "text": "2026年8月｜公開情報に基づく事業仮説",
+      "textPreview": "2026年8月｜公開情報に基づく事業仮説",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Hiragino Sans",
+        "color": "#555B66",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2026年8月｜公開情報に基づく事業仮説"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2026年8月｜公開情報に基づく事業仮説",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Hiragino Sans",
+            "color": "#555B66",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2026年8月｜公開情報に基づく事業仮説",
+              "fontSize": 15,
+              "typeface": "Hiragino Sans",
+              "color": "#555B66",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

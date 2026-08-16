@@ -1,0 +1,280 @@
+{"kind":"deck","id":"pr/94e455","name":"Deck"}
+{"kind":"layout","layoutId":"07ce11cd-a705-4e56-9c0b-914055f562bb","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"c04badf7-792d-49cc-9c88-2d78cee142b5","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/a5wgln","slide":1,"title":"CN LOGISTICS JAPAN","textShapes":4}
+{"kind":"textbox","id":"sh/8vytkr6d","slide":1,"text":"CN LOGISTICS JAPAN","textPreview":"CN LOGISTICS JAPAN","textChars":18,"textLines":1,"bbox":[42,36,500,42]}
+{"kind":"textbox","id":"sh/7upcrmps","slide":1,"text":"追跡システムは\nどこまで売上をつくれるか","textPreview":"追跡システムは | どこまで売上をつくれるか","textChars":20,"textLines":2,"bbox":[42,175,1030,250]}
+{"kind":"textbox","id":"sh/6tgbiho7","slide":1,"text":"物流可視化・書類ワークフローの市場性と3年間の収益シナリオ","textPreview":"物流可視化・書類ワークフローの市場性と3年間の収益シナリオ","textChars":29,"textLines":1,"bbox":[42,500,900,80]}
+{"kind":"textbox","id":"sh/h0ruxw7u","slide":1,"text":"2026年8月｜公開情報に基づく事業仮説","textPreview":"2026年8月｜公開情報に基づく事業仮説","textChars":20,"textLines":1,"bbox":[42,620,650,28]}
+{"kind":"notes","id":"nt/a5wgln","slide":1,"text":"[Sources]\n- https://www.cnlogistics.co.jp/index.html\n- https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0424/2026042402454.pdf"}
+{"kind":"slide","id":"sl/2dsmcj","slide":2,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":13}
+{"kind":"textbox","id":"sh/j2lw7i5k","slide":2,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/k3uxgn65","slide":2,"text":"結論：追跡は「機能」より、契約を強くする営業基盤になる","textPreview":"結論：追跡は「機能」より、契約を強くする営業基盤になる","textChars":27,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/54ne98nq","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/65wfidob","slide":2,"bbox":[42,200,368,330]}
+{"kind":"textbox","id":"sh/765wbi5g","slide":2,"text":"需要","textPreview":"需要","textChars":2,"textLines":1,"bbox":[70,226,310,42]}
+{"kind":"textbox","id":"sh/s7exkn61","slide":2,"text":"ECと越境取引は増加が続く。荷主は輸送状況と書類を同じ場所で確認したい。","textPreview":"ECと越境取引は増加が続く。荷主は輸送状況と書類を同じ場所で確認したい。","textChars":36,"textLines":1,"bbox":[70,292,310,164]}
+{"kind":"textbox","id":"sh/t8nedsnm","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[70,486,80,32]}
+{"kind":"shape","id":"sh/u9wfmxo7","slide":2,"bbox":[445,200,368,330]}
+{"kind":"textbox","id":"sh/fa5wf25s","slide":2,"text":"収益","textPreview":"収益","textChars":2,"textLines":1,"bbox":[473,226,310,42]}
+{"kind":"textbox","id":"sh/3eporeh0","slide":2,"text":"月額利用料だけでなく、物流契約の継続・追加受注・運用工数削減まで含めて評価する。","textPreview":"月額利用料だけでなく、物流契約の継続・追加受注・運用工数削減まで含めて評価する。","textChars":40,"textLines":1,"bbox":[473,292,310,164]}
+{"kind":"textbox","id":"sh/idgny90f","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[473,486,80,32]}
+{"kind":"shape","id":"sh/5gr6toz6","slide":2,"bbox":[848,200,368,330]}
+{"kind":"textbox","id":"sh/4fi50jil","slide":2,"text":"判断","textPreview":"判断","textChars":2,"textLines":1,"bbox":[876,226,310,42]}
+{"kind":"textbox","id":"sh/vaponuh4","slide":2,"text":"3年目の直接売上は0.32〜1.70億円の仮説。まず10社で価格と利用率を検証する。","textPreview":"3年目の直接売上は0.32〜1.70億円の仮説。まず10社で価格と利用率を検証する。","textChars":42,"textLines":1,"bbox":[876,292,310,164]}
+{"kind":"textbox","id":"sh/u9gnup0j","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[876,486,80,32]}
+{"kind":"textbox","id":"sh/hc76p4zu","slide":2,"text":"売上試算はCN Logistics Japanの実績値ではなく、料金・導入社数・出荷量を置いた事業仮説。","textPreview":"売上試算はCN Logistics Japanの実績値ではなく、料金・導入社数・出荷量を置いた事業仮説。","textChars":52,"textLines":1,"bbox":[42,608,1100,32]}
+{"kind":"notes","id":"nt/2dsmcj","slide":2,"text":"[Sources]\n- https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html\n- https://www.cnlogistics.co.jp/index.html\n\n[Method]\n市場統計と公開サービス情報を基にした経営向け要約。収益数値は後段の仮定モデル。 "}
+{"kind":"slide","id":"sl/764yds","slide":3,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":13}
+{"kind":"textbox","id":"sh/nylo3ep4","slide":3,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/ozepcj6p","slide":3,"text":"市場は拡大。ただし勝負は「荷物の数」ではなく、情報の扱いやすさ","textPreview":"市場は拡大。ただし勝負は「荷物の数」ではなく、情報の扱いやすさ","textChars":31,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/90n65o7a","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/e9c769on","slide":3,"text":"26.1兆円","textPreview":"26.1兆円","textChars":6,"textLines":1,"bbox":[42,192,365,82]}
+{"kind":"shape","id":"sh/zalozep8","slide":3,"bbox":[42,286,350,0]}
+{"kind":"textbox","id":"sh/0bup8j6t","slide":3,"text":"国内BtoC-EC市場","textPreview":"国内BtoC-EC市場","textChars":11,"textLines":1,"bbox":[42,310,350,58]}
+{"kind":"textbox","id":"sh/1w361o7e","slide":3,"text":"2024年、前年比+5.1%","textPreview":"2024年、前年比+5.1%","textChars":14,"textLines":1,"bbox":[42,390,350,44]}
+{"kind":"textbox","id":"sh/y5w7itor","slide":3,"text":"50.3億個","textPreview":"50.3億個","textChars":6,"textLines":1,"bbox":[445,192,365,82]}
+{"kind":"shape","id":"sh/j6p8bypc","slide":3,"bbox":[445,286,350,0]}
+{"kind":"textbox","id":"sh/vap4vmto","slide":3,"text":"国内宅配便取扱個数","textPreview":"国内宅配便取扱個数","textChars":9,"textLines":1,"bbox":[445,310,350,58]}
+{"kind":"textbox","id":"sh/u9g3mhc3","slide":3,"text":"2024年度、前年比+0.5%","textPreview":"2024年度、前年比+0.5%","textChars":15,"textLines":1,"bbox":[445,390,350,44]}
+{"kind":"textbox","id":"sh/hw7mxwbe","slide":3,"text":"2.64兆円","textPreview":"2.64兆円","textChars":6,"textLines":1,"bbox":[848,192,365,82]}
+{"kind":"shape","id":"sh/wbyloru9","slide":3,"bbox":[848,286,350,0]}
+{"kind":"textbox","id":"sh/jyp4zmtk","slide":3,"text":"中国消費者の日本向け越境EC購入","textPreview":"中国消費者の日本向け越境EC購入","textChars":16,"textLines":1,"bbox":[848,310,350,58]}
+{"kind":"textbox","id":"sh/ixgnq1cz","slide":3,"text":"2024年、前年比+8.5%","textPreview":"2024年、前年比+8.5%","textChars":14,"textLines":1,"bbox":[848,390,350,44]}
+{"kind":"shape","id":"sh/507m1wbq","slide":3,"bbox":[42,500,1170,92]}
+{"kind":"textbox","id":"sh/4zy5sru5","slide":3,"text":"取扱量が伸びるほど、問い合わせ・書類確認・例外対応も増える。追跡画面は、その増加を人員増だけで受け止めないための仕組みになる。","textPreview":"取扱量が伸びるほど、問い合わせ・書類確認・例外対応も増える。追跡画面は、その増加を人員増だけで受け止めないための仕組みになる。","textChars":63,"textLines":1,"bbox":[70,526,1110,48]}
+{"kind":"notes","id":"nt/764yds","slide":3,"text":"[Sources]\n- https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html\n- https://www.mlit.go.jp/report/press/jidosha04_hh_000341.html\n\n[Method]\n金額・個数は各省公表値。2.64兆円は中国消費者が日本事業者から購入した越境EC額（2024年）。"}
+{"kind":"slide","id":"sl/0ynnzd","slide":4,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":13}
+{"kind":"textbox","id":"sh/1kri5svi","slide":4,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/ehgzudc7","slide":4,"text":"法対応と人手不足で、荷主との情報共有は「あると便利」ではなくなる","textPreview":"法対応と人手不足で、荷主との情報共有は「あると便利」ではなくなる","textChars":32,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/fip03ids","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/o7i107u9","slide":4,"text":"2024","textPreview":"2024","textChars":4,"textLines":1,"bbox":[58,215,150,48]}
+{"kind":"textbox","id":"sh/p8ri9svu","slide":4,"text":"時間外労働規制\n輸送力不足への対応","textPreview":"時間外労働規制 | 輸送力不足への対応","textChars":17,"textLines":2,"bbox":[58,275,265,95]}
+{"kind":"shape","id":"sh/2l0jyxc3","slide":4,"bbox":[180,240,780,0]}
+{"kind":"textbox","id":"sh/nm9072do","slide":4,"text":"2025","textPreview":"2025","textChars":4,"textLines":1,"bbox":[415,215,150,48]}
+{"kind":"textbox","id":"sh/cb2147u5","slide":4,"text":"荷主・物流事業者に\n物流効率化の努力義務","textPreview":"荷主・物流事業者に | 物流効率化の努力義務","textChars":20,"textLines":2,"bbox":[415,275,300,95]}
+{"kind":"textbox","id":"sh/xcbidcvq","slide":4,"text":"2026","textPreview":"2026","textChars":4,"textLines":1,"bbox":[820,215,150,48]}
+{"kind":"textbox","id":"sh/d0r2horu","slide":4,"text":"一定規模以上は\n中長期計画・定期報告","textPreview":"一定規模以上は | 中長期計画・定期報告","textChars":18,"textLines":2,"bbox":[820,275,310,95]}
+{"kind":"shape","id":"sh/szi1oja9","slide":4,"bbox":[42,475,570,128]}
+{"kind":"textbox","id":"sh/ry9kfe9o","slide":4,"text":"記録が残る","textPreview":"記録が残る","textChars":5,"textLines":1,"bbox":[70,500,220,32]}
+{"kind":"textbox","id":"sh/qx0jm9s3","slide":4,"text":"進捗・書類・承認履歴が、顧客説明と社内確認の共通記録になる。","textPreview":"進捗・書類・承認履歴が、顧客説明と社内確認の共通記録になる。","textChars":30,"textLines":1,"bbox":[70,540,500,50]}
+{"kind":"shape","id":"sh/14r2lorq","slide":4,"bbox":[642,475,570,128]}
+{"kind":"textbox","id":"sh/03i1sja5","slide":4,"text":"例外を早く見つける","textPreview":"例外を早く見つける","textChars":9,"textLines":1,"bbox":[670,500,250,32]}
+{"kind":"textbox","id":"sh/f29kje9k","slide":4,"text":"遅延や書類不足を一覧化し、担当者が追うべき案件を絞れる。","textPreview":"遅延や書類不足を一覧化し、担当者が追うべき案件を絞れる。","textChars":28,"textLines":1,"bbox":[670,540,500,50]}
+{"kind":"notes","id":"nt/0ynnzd","slide":4,"text":"[Sources]\n- https://www.mlit.go.jp/seisakutokatsu/freight/seisakutokatsu_freight_mn1_000034.html\n- https://www.mlit.go.jp/hakusyo/mlit/r06/hakusho/r07/html/n1112000.html\n\n[Method]\n国交省は、対策を講じない場合の輸送力不足を2024年度約14%、2030年度約34%とした。一方、2024年度分は官民対策で概ね解消したと説明している。"}
+{"kind":"slide","id":"sl/awm1ja","slide":5,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":19}
+{"kind":"textbox","id":"sh/7uhg3axk","slide":5,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/8vqxwfy5","slide":5,"text":"顧客が困るのは「今どこか」より、次に何をすべきか分からない時","textPreview":"顧客が困るのは「今どこか」より、次に何をすべきか分からない時","textChars":30,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/9wjy50fq","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/uxszy5gv","slide":5,"bbox":[88,300,1050,0]}
+{"kind":"shape","id":"sh/vy1g7axg","slide":5,"bbox":[60,260,36,36]}
+{"kind":"textbox","id":"sh/wzah0fy1","slide":5,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[60,266,36,22]}
+{"kind":"textbox","id":"sh/hkjy9kfm","slide":5,"text":"集荷","textPreview":"集荷","textChars":2,"textLines":1,"bbox":[60,330,180,36]}
+{"kind":"textbox","id":"sh/ilsz2pg7","slide":5,"text":"受付済みか","textPreview":"受付済みか","textChars":5,"textLines":1,"bbox":[60,375,180,52]}
+{"kind":"shape","id":"sh/jm1gbuxs","slide":5,"bbox":[295,260,36,36]}
+{"kind":"textbox","id":"sh/rq58f25o","slide":5,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[295,266,36,22]}
+{"kind":"textbox","id":"sh/6pwr6x43","slide":5,"text":"輸送","textPreview":"輸送","textChars":2,"textLines":1,"bbox":[295,330,180,36]}
+{"kind":"textbox","id":"sh/tsnqhcnu","slide":5,"text":"遅れはあるか","textPreview":"遅れはあるか","textChars":6,"textLines":1,"bbox":[295,375,180,52]}
+{"kind":"shape","id":"sh/sre987m9","slide":5,"bbox":[530,260,36,36]}
+{"kind":"textbox","id":"sh/jm58bi5s","slide":5,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[530,266,36,22]}
+{"kind":"textbox","id":"sh/i1cr2xo7","slide":5,"text":"通関","textPreview":"通関","textChars":2,"textLines":1,"bbox":[530,330,180,36]}
+{"kind":"textbox","id":"sh/5onqdsni","slide":5,"text":"追加書類は何か","textPreview":"追加書類は何か","textChars":7,"textLines":1,"bbox":[530,375,180,52]}
+{"kind":"shape","id":"sh/4ne94n6d","slide":5,"bbox":[765,260,36,36]}
+{"kind":"textbox","id":"sh/3ipsnm5w","slide":5,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[765,266,36,22]}
+{"kind":"textbox","id":"sh/2hgreh4b","slide":5,"text":"配送","textPreview":"配送","textChars":2,"textLines":1,"bbox":[765,330,180,36]}
+{"kind":"textbox","id":"sh/ydkbmloj","slide":5,"text":"いつ届くか","textPreview":"いつ届くか","textChars":5,"textLines":1,"bbox":[765,375,180,52]}
+{"kind":"shape","id":"sh/zetcfqp4","slide":5,"bbox":[1000,260,36,36]}
+{"kind":"textbox","id":"sh/0f2tov6p","slide":5,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[1000,266,36,22]}
+{"kind":"textbox","id":"sh/lgbuh07a","slide":5,"text":"完了","textPreview":"完了","textChars":2,"textLines":1,"bbox":[1000,330,180,36]}
+{"kind":"textbox","id":"sh/mhkbq5ov","slide":5,"text":"証憑はどこか","textPreview":"証憑はどこか","textChars":6,"textLines":1,"bbox":[1000,375,180,52]}
+{"kind":"shape","id":"sh/nitcjqpg","slide":5,"bbox":[42,510,1170,92]}
+{"kind":"textbox","id":"sh/8j2tsv6l","slide":5,"text":"追跡・書類・承認を別々に探す状態では、問い合わせが減らない。案件単位で「状況・不足・次の行動」を並べることが価値になる。","textPreview":"追跡・書類・承認を別々に探す状態では、問い合わせが減らない。案件単位で「状況・不足・次の行動」を並べることが価値になる。","textChars":60,"textLines":1,"bbox":[70,535,1110,48]}
+{"kind":"notes","id":"nt/awm1ja","slide":5,"text":"[Sources]\n- https://www.cnlogistics.co.jp/index.html\n\n[Method]\nCN Logistics Japanが掲げる国際輸送・通関・配送・3PLのワンストップ提供を、顧客接点の業務フローに置き換えた整理。"}
+{"kind":"slide","id":"sl/tk71c5","slide":6,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":18}
+{"kind":"textbox","id":"sh/ps3itkfa","slide":6,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/2psjy5gj","slide":6,"text":"追跡システムが生む機会は、売上・継続・生産性の3層にある","textPreview":"追跡システムが生む機会は、売上・継続・生産性の3層にある","textChars":28,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/3ql0rax4","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/cvu14zel","slide":6,"text":"価値の層","textPreview":"価値の層","textChars":4,"textLines":1,"bbox":[55,170,230,30]}
+{"kind":"textbox","id":"sh/dw3ix4f6","slide":6,"text":"顧客に見えるもの","textPreview":"顧客に見えるもの","textChars":8,"textLines":1,"bbox":[320,170,410,30]}
+{"kind":"textbox","id":"sh/qtcj2pgv","slide":6,"text":"収益へのつながり","textPreview":"収益へのつながり","textChars":8,"textLines":1,"bbox":[800,170,380,30]}
+{"kind":"shape","id":"sh/bul0vuxg","slide":6,"bbox":[42,210,1170,0]}
+{"kind":"shape","id":"sh/szahsvyh","slide":6,"bbox":[42,220,1170,82]}
+{"kind":"textbox","id":"sh/t0jil0f2","slide":6,"text":"直接売上","textPreview":"直接売上","textChars":4,"textLines":1,"bbox":[55,230,220,34]}
+{"kind":"textbox","id":"sh/lc3qpwnu","slide":6,"text":"有料プラン／書類ワークフロー","textPreview":"有料プラン／書類ワークフロー","textChars":14,"textLines":1,"bbox":[320,230,420,42]}
+{"kind":"textbox","id":"sh/kbupwr69","slide":6,"text":"月額基本料＋利用量課金","textPreview":"月額基本料＋利用量課金","textChars":11,"textLines":1,"bbox":[800,230,380,42]}
+{"kind":"shape","id":"sh/zal8nmp4","slide":6,"bbox":[42,299,1170,0]}
+{"kind":"textbox","id":"sh/y9c7uhoj","slide":6,"text":"物流売上","textPreview":"物流売上","textChars":4,"textLines":1,"bbox":[55,325,220,34]}
+{"kind":"textbox","id":"sh/9gnqtwn6","slide":6,"text":"新規荷主の受注／追加レーン","textPreview":"新規荷主の受注／追加レーン","textChars":13,"textLines":1,"bbox":[320,325,420,42]}
+{"kind":"textbox","id":"sh/8fe90r6l","slide":6,"text":"提案時の差別化と運用品質","textPreview":"提案時の差別化と運用品質","textChars":12,"textLines":1,"bbox":[800,325,380,42]}
+{"kind":"shape","id":"sh/7e58rm50","slide":6,"bbox":[42,394,1170,0]}
+{"kind":"textbox","id":"sh/mdc7yhof","slide":6,"text":"継続率","textPreview":"継続率","textChars":3,"textLines":1,"bbox":[55,420,220,34]}
+{"kind":"textbox","id":"sh/h4nqxgn2","slide":6,"text":"問い合わせ減／説明品質の平準化","textPreview":"問い合わせ減／説明品質の平準化","textChars":15,"textLines":1,"bbox":[320,420,420,42]}
+{"kind":"textbox","id":"sh/w3e94b6h","slide":6,"text":"解約防止・契約拡大","textPreview":"解約防止・契約拡大","textChars":9,"textLines":1,"bbox":[800,420,380,42]}
+{"kind":"shape","id":"sh/gnmt0fet","slide":6,"bbox":[42,489,1170,0]}
+{"kind":"textbox","id":"sh/hovatkve","slide":6,"text":"粗利改善","textPreview":"粗利改善","textChars":4,"textLines":1,"bbox":[55,515,220,34]}
+{"kind":"textbox","id":"sh/ul4by5wn","slide":6,"text":"確認作業・メール往復の削減","textPreview":"確認作業・メール往復の削減","textChars":13,"textLines":1,"bbox":[320,515,420,42]}
+{"kind":"textbox","id":"sh/fmdsrad8","slide":6,"text":"1件当たり対応時間の短縮","textPreview":"1件当たり対応時間の短縮","textChars":12,"textLines":1,"bbox":[800,515,380,42]}
+{"kind":"shape","id":"sh/4b6t4fep","slide":6,"bbox":[42,584,1170,0]}
+{"kind":"notes","id":"nt/tk71c5","slide":6,"text":"[Sources]\n- https://www.cnlogistics.co.jp/index.html\n- https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0424/2026042402454.pdf\n\n[Method]\n公開情報で確認できるサービス領域と、一般的なSaaS・物流事業の収益構造を接続した機会仮説。"}
+{"kind":"slide","id":"sl/aq0s2m","slide":7,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":16}
+{"kind":"textbox","id":"sh/8fm58bql","slide":7,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/nedof6p0","slide":7,"text":"市場規模は大きいが、狙うべき市場はCNの既存商流から絞る","textPreview":"市場規模は大きいが、狙うべき市場はCNの既存商流から絞る","textChars":28,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/md4n618f","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/lcv6dw7u","slide":7,"bbox":[42,170,1120,105]}
+{"kind":"textbox","id":"sh/0bm54bqp","slide":7,"text":"TAM","textPreview":"TAM","textChars":3,"textLines":1,"bbox":[64,188,90,28]}
+{"kind":"textbox","id":"sh/zqdob6p4","slide":7,"text":"国内EC・宅配に関わる情報需要","textPreview":"国内EC・宅配に関わる情報需要","textChars":15,"textLines":1,"bbox":[162,184,390,34]}
+{"kind":"textbox","id":"sh/ep4n218j","slide":7,"text":"26.1兆円／50.3億個","textPreview":"26.1兆円／50.3億個","textChars":13,"textLines":1,"bbox":[592,184,360,34]}
+{"kind":"textbox","id":"sh/dob69w7y","slide":7,"text":"市場の追い風","textPreview":"市場の追い風","textChars":6,"textLines":1,"bbox":[592,225,360,25]}
+{"kind":"shape","id":"sh/cn250rqd","slide":7,"bbox":[137,315,930,105]}
+{"kind":"textbox","id":"sh/2d0japs3","slide":7,"text":"SAM","textPreview":"SAM","textChars":3,"textLines":1,"bbox":[159,333,90,28]}
+{"kind":"textbox","id":"sh/3e9k3u9o","slide":7,"text":"国際輸送・3PL・越境ECの荷主","textPreview":"国際輸送・3PL・越境ECの荷主","textChars":16,"textLines":1,"bbox":[257,329,390,34]}
+{"kind":"textbox","id":"sh/ofi1cfa9","slide":7,"text":"公開統計だけでは算定不可","textPreview":"公開統計だけでは算定不可","textChars":12,"textLines":1,"bbox":[687,329,360,34]}
+{"kind":"textbox","id":"sh/pgr25kru","slide":7,"text":"顧客台帳で確定","textPreview":"顧客台帳で確定","textChars":7,"textLines":1,"bbox":[687,370,360,25]}
+{"kind":"shape","id":"sh/u9gj65s7","slide":7,"bbox":[232,460,740,105]}
+{"kind":"textbox","id":"sh/fap0za9s","slide":7,"text":"SOM","textPreview":"SOM","textChars":3,"textLines":1,"bbox":[254,478,90,28]}
+{"kind":"textbox","id":"sh/gby18fad","slide":7,"text":"3年で有料50社・12万件","textPreview":"3年で有料50社・12万件","textChars":13,"textLines":1,"bbox":[352,474,390,34]}
+{"kind":"textbox","id":"sh/1c7i1kri","slide":7,"text":"直接売上0.86億円／年","textPreview":"直接売上0.86億円／年","textChars":12,"textLines":1,"bbox":[782,474,360,34]}
+{"kind":"textbox","id":"sh/6lwj25sv","slide":7,"text":"基準シナリオ","textPreview":"基準シナリオ","textChars":6,"textLines":1,"bbox":[782,515,360,25]}
+{"kind":"textbox","id":"sh/7mp0vatg","slide":7,"text":"TAMは追跡ソフトの売上ではなく、需要の母数。SAMは既存顧客数・見込み顧客数・年間出荷件数がないと精度が出ない。","textPreview":"TAMは追跡ソフトの売上ではなく、需要の母数。SAMは既存顧客数・見込み顧客数・年間出荷件数がないと精度が出ない。","textChars":57,"textLines":1,"bbox":[42,630,1120,30]}
+{"kind":"notes","id":"nt/aq0s2m","slide":7,"text":"[Sources]\n- https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html\n- https://www.mlit.go.jp/report/press/jidosha04_hh_000341.html\n\n[Method]\nTAM/SAM/SOMの境界を明示。SOMは公開市場統計からの推計ではなく、後段のボトムアップ仮定。"}
+{"kind":"slide","id":"sl/t61lvg","slide":8,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":14}
+{"kind":"textbox","id":"sh/mdgnulg7","slide":8,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/9g765gzy","slide":8,"text":"収益は「月額基本料＋利用量課金」で小さく始め、物流受注で伸ばす","textPreview":"収益は「月額基本料＋利用量課金」で小さく始め、物流受注で伸ばす","textChars":31,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/8fy5wbyd","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/vi9o7qh4","slide":8,"bbox":[42,190,368,300]}
+{"kind":"textbox","id":"sh/ahgnylgj","slide":8,"text":"月額基本料","textPreview":"月額基本料","textChars":5,"textLines":1,"bbox":[68,218,310,32]}
+{"kind":"textbox","id":"sh/xkr690zu","slide":8,"text":"5〜20万円／社","textPreview":"5〜20万円／社","textChars":8,"textLines":1,"bbox":[68,282,310,52]}
+{"kind":"textbox","id":"sh/wjip0vyp","slide":8,"text":"権限・通知・レポート","textPreview":"権限・通知・レポート","textChars":10,"textLines":1,"bbox":[68,360,310,72]}
+{"kind":"shape","id":"sh/rm5ovmhk","slide":8,"bbox":[445,190,368,300]}
+{"kind":"textbox","id":"sh/qlwnmhgf","slide":8,"text":"利用量課金","textPreview":"利用量課金","textChars":5,"textLines":1,"bbox":[471,218,310,32]}
+{"kind":"textbox","id":"sh/8faps7qt","slide":8,"text":"80〜150円／件","textPreview":"80〜150円／件","textChars":9,"textLines":1,"bbox":[471,282,310,52]}
+{"kind":"textbox","id":"sh/tgj6lc7e","slide":8,"text":"書類申請・承認・保管","textPreview":"書類申請・承認・保管","textChars":10,"textLines":1,"bbox":[471,360,310,72]}
+{"kind":"shape","id":"sh/6ts7qx83","slide":8,"bbox":[848,190,368,300]}
+{"kind":"textbox","id":"sh/7e1oj2p8","slide":8,"text":"物流クロスセル","textPreview":"物流クロスセル","textChars":7,"textLines":1,"bbox":[874,218,310,32]}
+{"kind":"textbox","id":"sh/gjapw7q5","slide":8,"text":"別管理","textPreview":"別管理","textChars":3,"textLines":1,"bbox":[874,282,310,52]}
+{"kind":"textbox","id":"sh/hk36pc7q","slide":8,"text":"追加レーン・3PL・通関","textPreview":"追加レーン・3PL・通関","textChars":12,"textLines":1,"bbox":[874,360,310,72]}
+{"kind":"textbox","id":"sh/uhs7uh8z","slide":8,"text":"基準ケースの式","textPreview":"基準ケースの式","textChars":7,"textLines":1,"bbox":[42,540,260,30]}
+{"kind":"textbox","id":"sh/fi1onmpk","slide":8,"text":"50社 × 12万円 × 12か月 ＋ 12万件 × 120円 ＝ 8,640万円／年","textPreview":"50社 × 12万円 × 12か月 ＋ 12万件 × 120円 ＝ 8,640万円／年","textChars":43,"textLines":1,"bbox":[42,575,1100,52]}
+{"kind":"notes","id":"nt/t61lvg","slide":8,"text":"[Sources]\n\n[Method]\n料金・社数・利用件数はすべて仮定。営業ヒアリングと実測ログで更新するための初期モデル。"}
+{"kind":"slide","id":"sl/yyyktt","slide":9,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":10}
+{"kind":"textbox","id":"sh/wna58nqd","slide":9,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/bmhofi98","slide":9,"text":"3年目の直接売上は0.32〜1.70億円。差を決めるのは有料化率","textPreview":"3年目の直接売上は0.32〜1.70億円。差を決めるのは有料化率","textChars":32,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/a18nmx8n","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/ozq5knqh","slide":9,"bbox":[760,190,440,96]}
+{"kind":"textbox","id":"sh/nyhobi9w","slide":9,"text":"保守","textPreview":"保守","textChars":2,"textLines":1,"bbox":[785,208,90,25]}
+{"kind":"textbox","id":"sh/2x8nid8b","slide":9,"text":"25社｜8万円/月｜6万件×140円","textPreview":"25社｜8万円/月｜6万件×140円","textChars":18,"textLines":1,"bbox":[880,206,290,48]}
+{"kind":"shape","id":"sh/1wz698rq","slide":9,"bbox":[760,315,440,96]}
+{"kind":"textbox","id":"sh/0v65g3ql","slide":9,"text":"基準","textPreview":"基準","textChars":2,"textLines":1,"bbox":[785,333,90,25]}
+{"kind":"textbox","id":"sh/65s7mtgj","slide":9,"text":"50社｜12万円/月｜12万件×120円","textPreview":"50社｜12万円/月｜12万件×120円","textChars":20,"textLines":1,"bbox":[880,331,290,48]}
+{"kind":"shape","id":"sh/761ovyh4","slide":9,"bbox":[760,440,440,96]}
+{"kind":"textbox","id":"sh/s7apo3yp","slide":9,"text":"強気","textPreview":"強気","textChars":2,"textLines":1,"bbox":[785,458,90,25]}
+{"kind":"textbox","id":"sh/t8jqx8za","slide":9,"text":"80社｜15万円/月｜22万件×120円","textPreview":"80社｜15万円/月｜22万件×120円","textChars":20,"textLines":1,"bbox":[880,456,290,48]}
+{"kind":"textbox","id":"sh/i187itgn","slide":9,"text":"※物流受注の増加、解約防止、工数削減は含めない","textPreview":"※物流受注の増加、解約防止、工数削減は含めない","textChars":23,"textLines":1,"bbox":[760,590,430,26]}
+{"kind":"chart","id":"ch/tcfyp0bm","slide":9,"name":"","chartType":"bar","bbox":[55,160,650,450]}
+{"kind":"notes","id":"nt/yyyktt","slide":9,"text":"[Sources]\n\n[Method]\n年額＝有料社数×月額×12＋年間課金件数×単価。直接売上だけを算定し、間接効果は除外。"}
+{"kind":"slide","id":"sl/kqc8y0","slide":10,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":24}
+{"kind":"textbox","id":"sh/kzat0jqd","slide":10,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/jy1s7e9s","slide":10,"text":"売上を最も動かすのは単価より、有料社数と日常利用への定着","textPreview":"売上を最も動かすのは単価より、有料社数と日常利用への定着","textChars":28,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/ixsby987","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/xwja5orm","slide":10,"text":"変数","textPreview":"変数","textChars":2,"textLines":1,"bbox":[55,165,210,28]}
+{"kind":"textbox","id":"sh/wva9wjq1","slide":10,"text":"基準値","textPreview":"基準値","textChars":3,"textLines":1,"bbox":[300,165,150,28]}
+{"kind":"textbox","id":"sh/va1s3e9g","slide":10,"text":"感度","textPreview":"感度","textChars":2,"textLines":1,"bbox":[500,165,150,28]}
+{"kind":"textbox","id":"sh/a98ru98v","slide":10,"text":"打ち手","textPreview":"打ち手","textChars":3,"textLines":1,"bbox":[720,165,430,28]}
+{"kind":"shape","id":"sh/hs3ah87q","slide":10,"bbox":[42,205,1170,0]}
+{"kind":"textbox","id":"sh/grut83ql","slide":10,"text":"有料社数","textPreview":"有料社数","textChars":4,"textLines":1,"bbox":[55,232,220,32]}
+{"kind":"textbox","id":"sh/y5k36hcr","slide":10,"text":"50社","textPreview":"50社","textChars":3,"textLines":1,"bbox":[300,232,170,32]}
+{"kind":"textbox","id":"sh/z6t4fmtc","slide":10,"text":"最優先","textPreview":"最優先","textChars":3,"textLines":1,"bbox":[500,232,170,32]}
+{"kind":"textbox","id":"sh/k72l8rux","slide":10,"text":"営業対象と更新率を週次管理","textPreview":"営業対象と更新率を週次管理","textChars":13,"textLines":1,"bbox":[720,232,430,40]}
+{"kind":"shape","id":"sh/l8bmhwbi","slide":10,"bbox":[42,297,1170,0]}
+{"kind":"textbox","id":"sh/a1032hcf","slide":10,"text":"月額単価","textPreview":"月額単価","textChars":4,"textLines":1,"bbox":[55,326,220,32]}
+{"kind":"textbox","id":"sh/b294bmd0","slide":10,"text":"12万円/月","textPreview":"12万円/月","textChars":6,"textLines":1,"bbox":[300,326,170,32]}
+{"kind":"textbox","id":"sh/c3il47ul","slide":10,"text":"次点","textPreview":"次点","textChars":2,"textLines":1,"bbox":[500,326,170,32]}
+{"kind":"textbox","id":"sh/x4rmdcb6","slide":10,"text":"権限・レポート・APIで段階化","textPreview":"権限・レポート・APIで段階化","textChars":15,"textLines":1,"bbox":[720,326,430,40]}
+{"kind":"shape","id":"sh/ux4ne1cz","slide":10,"bbox":[42,391,1170,0]}
+{"kind":"textbox","id":"sh/vyd4n6tk","slide":10,"text":"年間課金件数","textPreview":"年間課金件数","textChars":6,"textLines":1,"bbox":[55,420,220,32]}
+{"kind":"textbox","id":"sh/ri50fytw","slide":10,"text":"12万件","textPreview":"12万件","textChars":4,"textLines":1,"bbox":[300,420,170,32]}
+{"kind":"textbox","id":"sh/qhwj6tsb","slide":10,"text":"定着指標","textPreview":"定着指標","textChars":4,"textLines":1,"bbox":[500,420,170,32]}
+{"kind":"textbox","id":"sh/dknih8b2","slide":10,"text":"書類承認を追跡画面に集約","textPreview":"書類承認を追跡画面に集約","textChars":12,"textLines":1,"bbox":[720,420,430,40]}
+{"kind":"shape","id":"sh/sje183ah","slide":10,"bbox":[42,485,1170,0]}
+{"kind":"textbox","id":"sh/f6pkji9s","slide":10,"text":"件数単価","textPreview":"件数単価","textChars":4,"textLines":1,"bbox":[55,514,220,32]}
+{"kind":"textbox","id":"sh/e5gjads7","slide":10,"text":"120円/件","textPreview":"120円/件","textChars":6,"textLines":1,"bbox":[300,514,170,32]}
+{"kind":"textbox","id":"sh/187258ry","slide":10,"text":"補助","textPreview":"補助","textChars":2,"textLines":1,"bbox":[500,514,170,32]}
+{"kind":"textbox","id":"sh/07y1cnad","slide":10,"text":"価格より請求の分かりやすさ","textPreview":"価格より請求の分かりやすさ","textChars":13,"textLines":1,"bbox":[720,514,430,40]}
+{"kind":"shape","id":"sh/napk7i94","slide":10,"bbox":[42,579,1170,0]}
+{"kind":"shape","id":"sh/29gjedsj","slide":10,"bbox":[42,615,1170,45]}
+{"kind":"textbox","id":"sh/kfih4nqh","slide":10,"text":"最初の価格テストは3プランで十分。料金表を細かくする前に、毎週使われる業務を1つ作る。","textPreview":"最初の価格テストは3プランで十分。料金表を細かくする前に、毎週使われる業務を1つ作る。","textChars":43,"textLines":1,"bbox":[60,625,1120,26]}
+{"kind":"notes","id":"nt/kqc8y0","slide":10,"text":"[Sources]\n\n[Method]\n一変数感度の定性的整理。厳密な弾力性は価格テスト後に更新する。"}
+{"kind":"slide","id":"sl/dukv6o","slide":11,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":13}
+{"kind":"textbox","id":"sh/1cnexwjy","slide":11,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/e9cvmhkn","slide":11,"text":"90日で売れるかを確かめ、12か月で物流提案の標準装備にする","textPreview":"90日で売れるかを確かめ、12か月で物流提案の標準装備にする","textChars":30,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/fa5wvm1s","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"shape","id":"sh/s7udk72h","slide":11,"bbox":[70,320,1070,0]}
+{"kind":"shape","id":"sh/d83etcj2","slide":11,"bbox":[70,303,28,28]}
+{"kind":"textbox","id":"sh/q5cvixkb","slide":11,"text":"0〜30日","textPreview":"0〜30日","textChars":5,"textLines":1,"bbox":[70,230,170,32]}
+{"kind":"textbox","id":"sh/r6lwr21w","slide":11,"text":"設計","textPreview":"設計","textChars":2,"textLines":1,"bbox":[70,355,300,38]}
+{"kind":"textbox","id":"sh/c3yxwb2l","slide":11,"text":"既存顧客10社へ聞く\n問い合わせ・書類業務を計測","textPreview":"既存顧客10社へ聞く | 問い合わせ・書類業務を計測","textChars":24,"textLines":2,"bbox":[70,410,310,92]}
+{"kind":"shape","id":"sh/x47e5gj6","slide":11,"bbox":[460,303,28,28]}
+{"kind":"textbox","id":"sh/h0ryho7m","slide":11,"text":"31〜90日","textPreview":"31〜90日","textChars":6,"textLines":1,"bbox":[460,230,170,32]}
+{"kind":"textbox","id":"sh/wzixojq1","slide":11,"text":"有料実証","textPreview":"有料実証","textChars":4,"textLines":1,"bbox":[460,355,300,38]}
+{"kind":"textbox","id":"sh/vypgfepg","slide":11,"text":"3〜5社で価格テスト\n利用率と削減時間を確認","textPreview":"3〜5社で価格テスト | 利用率と削減時間を確認","textChars":22,"textLines":2,"bbox":[460,410,310,92]}
+{"kind":"shape","id":"sh/uxgfm98v","slide":11,"bbox":[850,303,28,28]}
+{"kind":"textbox","id":"sh/9w7yd47q","slide":11,"text":"4〜12か月","textPreview":"4〜12か月","textChars":6,"textLines":1,"bbox":[850,230,170,32]}
+{"kind":"textbox","id":"sh/8vyxkzq5","slide":11,"text":"標準化","textPreview":"標準化","textChars":3,"textLines":1,"bbox":[850,355,300,38]}
+{"kind":"textbox","id":"sh/7upgbu9k","slide":11,"text":"営業資料と見積に組み込む\n3プランで提供","textPreview":"営業資料と見積に組み込む | 3プランで提供","textChars":20,"textLines":2,"bbox":[850,410,310,92]}
+{"kind":"shape","id":"sh/mtgfi98z","slide":11,"bbox":[42,565,1170,74]}
+{"kind":"textbox","id":"sh/tsbyp87u","slide":11,"text":"次の投資判断：有料化率30%以上、週次利用率60%以上、問い合わせ時間20%以上削減のうち2つを達成。","textPreview":"次の投資判断：有料化率30%以上、週次利用率60%以上、問い合わせ時間20%以上削減のうち2つを達成。","textChars":51,"textLines":1,"bbox":[68,587,1110,34]}
+{"kind":"notes","id":"nt/dukv6o","slide":11,"text":"[Sources]\n\n[Method]\n閾値は初期の意思決定基準。実証開始前に計測方法と母数を固定する。"}
+{"kind":"slide","id":"sl/l90yo3","slide":12,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":19}
+{"kind":"textbox","id":"sh/8zmh0zuh","slide":12,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/7ydgrudw","slide":12,"text":"作る判断ではなく、売れる条件を先に確かめる","textPreview":"作る判断ではなく、売れる条件を先に確かめる","textChars":21,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/6x4zypcb","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/hofyxoby","slide":12,"text":"リスク","textPreview":"リスク","textChars":3,"textLines":1,"bbox":[55,165,230,28]}
+{"kind":"textbox","id":"sh/gn6h4jud","slide":12,"text":"起こり方","textPreview":"起こり方","textChars":4,"textLines":1,"bbox":[330,165,380,28]}
+{"kind":"textbox","id":"sh/vmxgveds","slide":12,"text":"先に打つ手","textPreview":"先に打つ手","textChars":5,"textLines":1,"bbox":[790,165,380,28]}
+{"kind":"shape","id":"sh/uloz29c7","slide":12,"bbox":[42,205,1170,0]}
+{"kind":"textbox","id":"sh/xsbylkvu","slide":12,"text":"データ連携","textPreview":"データ連携","textChars":5,"textLines":1,"bbox":[55,230,220,32]}
+{"kind":"textbox","id":"sh/wr2xsfu9","slide":12,"text":"運送会社・海外拠点で更新粒度が違う","textPreview":"運送会社・海外拠点で更新粒度が違う","textChars":17,"textLines":1,"bbox":[330,230,390,42]}
+{"kind":"textbox","id":"sh/qto3ql0n","slide":12,"text":"例外ステータスと手動補正を設計","textPreview":"例外ステータスと手動補正を設計","textChars":15,"textLines":1,"bbox":[790,230,370,42]}
+{"kind":"shape","id":"sh/rexkzqh8","slide":12,"bbox":[42,291,1170,0]}
+{"kind":"textbox","id":"sh/sf6lsvit","slide":12,"text":"情報管理","textPreview":"情報管理","textChars":4,"textLines":1,"bbox":[55,316,220,32]}
+{"kind":"textbox","id":"sh/dgf210ze","slide":12,"text":"顧客書類と社内書類の境界","textPreview":"顧客書類と社内書類の境界","textChars":12,"textLines":1,"bbox":[330,316,390,42]}
+{"kind":"textbox","id":"sh/eho3u5gz","slide":12,"text":"権限・監査ログ・期限管理を必須化","textPreview":"権限・監査ログ・期限管理を必須化","textChars":16,"textLines":1,"bbox":[790,316,370,42]}
+{"kind":"shape","id":"sh/fixk3ahk","slide":12,"bbox":[42,377,1170,0]}
+{"kind":"textbox","id":"sh/0j6lwvyp","slide":12,"text":"無料化圧力","textPreview":"無料化圧力","textChars":5,"textLines":1,"bbox":[55,402,220,32]}
+{"kind":"textbox","id":"sh/1kf2p0za","slide":12,"text":"追跡は無料と思われやすい","textPreview":"追跡は無料と思われやすい","textChars":12,"textLines":1,"bbox":[330,402,390,42]}
+{"kind":"textbox","id":"sh/2l83y5gv","slide":12,"text":"書類承認・通知・分析を有料価値にする","textPreview":"書類承認・通知・分析を有料価値にする","textChars":18,"textLines":1,"bbox":[790,402,370,42]}
+{"kind":"shape","id":"sh/nmh4rahg","slide":12,"bbox":[42,463,1170,0]}
+{"kind":"textbox","id":"sh/zqhkfaxo","slide":12,"text":"営業定着","textPreview":"営業定着","textChars":4,"textLines":1,"bbox":[55,488,220,32]}
+{"kind":"textbox","id":"sh/yp8jm5w3","slide":12,"text":"機能説明だけでは売れない","textPreview":"機能説明だけでは売れない","textChars":12,"textLines":1,"bbox":[330,488,390,42]}
+{"kind":"textbox","id":"sh/lcj2hkfe","slide":12,"text":"物流提案の運用改善シナリオで示す","textPreview":"物流提案の運用改善シナリオで示す","textChars":16,"textLines":1,"bbox":[790,488,370,42]}
+{"kind":"shape","id":"sh/krq1ofe9","slide":12,"bbox":[42,549,1170,0]}
+{"kind":"shape","id":"sh/bmhkbaxc","slide":12,"bbox":[42,600,1170,58]}
+{"kind":"textbox","id":"sh/al8ji5wr","slide":12,"text":"推奨：追加開発の前に、既存顧客10社への需要・価格ヒアリングを実施する。","textPreview":"推奨：追加開発の前に、既存顧客10社への需要・価格ヒアリングを実施する。","textChars":36,"textLines":1,"bbox":[68,616,1110,30]}
+{"kind":"notes","id":"nt/l90yo3","slide":12,"text":"[Sources]\n- https://www.cnlogistics.co.jp/index.html\n\n[Method]\n情報管理上、顧客向け書類と社内書類の権限分離を前提とする。"}
+{"kind":"slide","id":"sl/0l8y85","slide":13,"title":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textShapes":19}
+{"kind":"textbox","id":"sh/6xkjutkb","slide":13,"text":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textPreview":"CN LOGISTICS JAPAN｜MARKET REPORT 2026","textChars":37,"textLines":1,"bbox":[42,28,650,22]}
+{"kind":"textbox","id":"sh/t0b25832","slide":13,"text":"主な出典と試算上の注意","textPreview":"主な出典と試算上の注意","textChars":11,"textLines":1,"bbox":[42,56,1140,74]}
+{"kind":"textbox","id":"sh/sz2lw32h","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1180,666,56,18]}
+{"kind":"textbox","id":"sh/f2dk7ils","slide":13,"text":"経済産業省","textPreview":"経済産業省","textChars":5,"textLines":1,"bbox":[50,160,230,28]}
+{"kind":"textbox","id":"sh/e1k3ydkn","slide":13,"text":"令和6年度 電子商取引に関する市場調査（2024年実績）","textPreview":"令和6年度 電子商取引に関する市場調査（2024年実績）","textChars":28,"textLines":1,"bbox":[300,160,520,36]}
+{"kind":"textbox","id":"sh/1ov29s3y","slide":13,"text":"https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html","textPreview":"https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html","textChars":65,"textLines":1,"bbox":[840,160,360,42]}
+{"kind":"shape","id":"sh/gnml0n2d","slide":13,"bbox":[42,217,1170,0]}
+{"kind":"textbox","id":"sh/3qdkbil4","slide":13,"text":"国土交通省","textPreview":"国土交通省","textChars":5,"textLines":1,"bbox":[50,242,230,28]}
+{"kind":"textbox","id":"sh/2p432xkj","slide":13,"text":"令和6年度 宅配便・メール便取扱実績","textPreview":"令和6年度 宅配便・メール便取扱実績","textChars":18,"textLines":1,"bbox":[300,242,520,36]}
+{"kind":"textbox","id":"sh/8rqpcj2h","slide":13,"text":"https://www.mlit.go.jp/report/press/jidosha04_hh_000341.html","textPreview":"https://www.mlit.go.jp/report/press/jidosha04_hh_000341.html","textChars":60,"textLines":1,"bbox":[840,242,360,42]}
+{"kind":"shape","id":"sh/9szqloj2","slide":13,"bbox":[42,299,1170,0]}
+{"kind":"textbox","id":"sh/m587a9kb","slide":13,"text":"国土交通省","textPreview":"国土交通省","textChars":5,"textLines":1,"bbox":[50,324,230,28]}
+{"kind":"textbox","id":"sh/76h8je1w","slide":13,"text":"物流効率化法／荷主・物流事業者向け情報","textPreview":"物流効率化法／荷主・物流事業者向け情報","textChars":19,"textLines":1,"bbox":[300,324,520,36]}
+{"kind":"textbox","id":"sh/wvq9g32d","slide":13,"text":"https://www.mlit.go.jp/seisakutokatsu/freight/seisakutokatsu_freight_mn1_000034.html","textPreview":"https://www.mlit.go.jp/seisakutokatsu/freight/seisakutokatsu_freight_mn1_000034.html","textChars":84,"textLines":1,"bbox":[840,324,360,42]}
+{"kind":"shape","id":"sh/hwzqp8jy","slide":13,"bbox":[42,381,1170,0]}
+{"kind":"textbox","id":"sh/ut87etkn","slide":13,"text":"CN Logistics Japan","textPreview":"CN Logistics Japan","textChars":18,"textLines":1,"bbox":[50,406,230,28]}
+{"kind":"textbox","id":"sh/vuh8ny18","slide":13,"text":"公式サイト：国際輸送・3PL・越境EC・会社概要","textPreview":"公式サイト：国際輸送・3PL・越境EC・会社概要","textChars":24,"textLines":1,"bbox":[300,406,520,36]}
+{"kind":"textbox","id":"sh/4za9k32p","slide":13,"text":"https://www.cnlogistics.co.jp/index.html","textPreview":"https://www.cnlogistics.co.jp/index.html","textChars":40,"textLines":1,"bbox":[840,406,360,42]}
+{"kind":"shape","id":"sh/50jqd8ja","slide":13,"bbox":[42,463,1170,0]}
+{"kind":"textbox","id":"sh/dgfqx8be","slide":13,"text":"CN Logistics International","textPreview":"CN Logistics International","textChars":26,"textLines":1,"bbox":[50,488,230,28]}
+{"kind":"textbox","id":"sh/sf6p43ut","slide":13,"text":"Annual Report 2025","textPreview":"Annual Report 2025","textChars":18,"textLines":1,"bbox":[300,488,520,36]}
+{"kind":"textbox","id":"sh/rex8vyt8","slide":13,"text":"https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0424/2026042402454.pdf","textPreview":"https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0424/2026042402454.pdf","textChars":77,"textLines":1,"bbox":[840,488,360,42]}
+{"kind":"shape","id":"sh/qdo72tcn","slide":13,"bbox":[42,545,1170,0]}
+{"kind":"shape","id":"sh/1kzq18ba","slide":13,"bbox":[42,590,1170,66]}
+{"kind":"textbox","id":"sh/0jqp8nap","slide":13,"text":"売上シナリオは公開情報から確認できない顧客数・料金・出荷件数を仮定したもの。投資判断前に実績データで更新する。","textPreview":"売上シナリオは公開情報から確認できない顧客数・料金・出荷件数を仮定したもの。投資判断前に実績データで更新する。","textChars":55,"textLines":1,"bbox":[66,608,1110,34]}
+{"kind":"notes","id":"nt/0l8y85","slide":13,"text":"[Sources]\n- https://www.meti.go.jp/press/2025/08/20250826005/20250826005.html\n- https://www.mlit.go.jp/report/press/jidosha04_hh_000341.html\n- https://www.mlit.go.jp/seisakutokatsu/freight/seisakutokatsu_freight_mn1_000034.html\n- https://www.mlit.go.jp/hakusyo/mlit/r06/hakusho/r07/html/n1112000.html\n- https://www.cnlogistics.co.jp/index.html\n- https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0424/2026042402454.pdf\n\n[Method]\n調査日：2026年8月1日。公開情報の数値と仮定値を区別して記載。"}
