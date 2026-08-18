@@ -1,5 +1,5 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
-import { withSupabase } from "@supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 type ProvisionableRole = "admin" | "normal";
 
@@ -52,6 +52,33 @@ type ProvisioningRpc = {
 };
 
 let cachedManagementToken: { token: string; expiresAt: number } | null = null;
+
+const allowedOrigins = new Set([
+  "https://navigator.cnlogistics.co.jp",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+const baseCorsHeaders = {
+  "access-control-allow-headers":
+    "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-methods": "POST, OPTIONS",
+};
+
+function corsHeaders(request: Request) {
+  const origin = request.headers.get("origin")?.trim();
+  return origin && allowedOrigins.has(origin)
+    ? {
+        ...baseCorsHeaders,
+        "access-control-allow-origin": origin,
+        vary: "origin",
+      }
+    : baseCorsHeaders;
+}
+
+function jsonResponse(request: Request, body: unknown, status = 200) {
+  return Response.json(body, { status, headers: corsHeaders(request) });
+}
 
 function requiredEnv(name: string) {
   const value = Deno.env.get(name)?.trim();
@@ -155,7 +182,9 @@ async function findPasswordlessUser({
   connection: string;
 }) {
   const response = await fetch(
-    `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(email)}`,
+    `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(
+      email,
+    )}`,
     {
       headers: { authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(10_000),
@@ -215,15 +244,45 @@ async function provisionUser({
 }
 
 export default {
-  fetch: withSupabase({ auth: "user" }, async (request, context) => {
+  async fetch(request: Request) {
+    if (request.method === "OPTIONS") {
+      const headers = corsHeaders(request);
+      if (!("access-control-allow-origin" in headers)) {
+        return new Response(null, { status: 403, headers });
+      }
+      return new Response(null, { status: 204, headers });
+    }
+
+    const authorization = request.headers.get("authorization")?.trim();
+    if (!authorization?.startsWith("Bearer ")) {
+      return jsonResponse(
+        request,
+        { error: "Authentication is required" },
+        401,
+      );
+    }
+
+    // The caller supplies an Auth0 token. Forward it to PostgREST so the
+    // configured Supabase third-party Auth integration validates the token and
+    // the database functions can authorize the corresponding app user.
+    const supabase = createClient(
+      requiredEnv("SUPABASE_URL"),
+      requiredEnv("SUPABASE_ANON_KEY"),
+      {
+        global: { headers: { Authorization: authorization } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      },
+    );
+
     try {
-      const { data, error } = await context.supabase.rpc("sync_auth0_app_user");
+      const { data, error } = await supabase.rpc("sync_auth0_app_user");
       const requester = (data?.[0] ?? null) as AppUserProfile | null;
 
       if (error || !requester) {
-        return Response.json(
+        return jsonResponse(
+          request,
           { error: "The signed-in user is not provisioned" },
-          { status: 403 },
+          403,
         );
       }
 
@@ -231,8 +290,8 @@ export default {
         (await request.json()) as ProvisioningRequest,
       );
       assertCanProvision(requester.role, users);
-      const provisioningRpc = context.supabase.rpc.bind(
-        context.supabase,
+      const provisioningRpc = supabase.rpc.bind(
+        supabase,
       ) as unknown as ProvisioningRpc;
 
       const { data: preparedUsers, error: prepareError } =
@@ -288,16 +347,17 @@ export default {
       }
 
       if (failures.length > 0) {
-        return Response.json(
+        return jsonResponse(
+          request,
           {
             error: "One or more Auth0 users could not be provisioned",
             failures,
           },
-          { status: 502 },
+          502,
         );
       }
 
-      return Response.json({ users: results });
+      return jsonResponse(request, { users: results });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "User provisioning failed";
@@ -310,7 +370,7 @@ export default {
           ? 400
           : 502;
 
-      return Response.json({ error: message }, { status });
+      return jsonResponse(request, { error: message }, status);
     }
-  }),
+  },
 };

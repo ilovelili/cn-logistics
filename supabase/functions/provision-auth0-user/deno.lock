@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@supabase/functions-js@2.112.3": "2.112.3",
-    "npm:@supabase/server@1.4.1": "1.4.1_@supabase+supabase-js@2.112.3",
+    "npm:@supabase/supabase-js@2.112.3": "2.112.3",
     "npm:openai@^4.52.5": "4.104.0"
   },
   "jsr": {
@@ -40,13 +40,6 @@
       "dependencies": [
         "@supabase/phoenix",
         "tslib"
-      ]
-    },
-    "@supabase/server@1.4.1_@supabase+supabase-js@2.112.3": {
-      "integrity": "sha512-Fyzpi+Srfn+flN3PwueObhSmwhXFaTkrnk3iD+ttNBEz6gD0VmaOqTe7tCxTSodm1zncWSxsyPQxATL7V+SfIw==",
-      "dependencies": [
-        "@supabase/supabase-js",
-        "jose"
       ]
     },
     "@supabase/storage-js@2.112.3": {
@@ -214,9 +207,6 @@
     "iceberg-js@0.8.1": {
       "integrity": "sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA=="
     },
-    "jose@6.2.9": {
-      "integrity": "sha512-XrchZOFZUl/T3vTwRe8XK+cJrGtMF4th1ARnDfwbBXFKThGhlsxEE4Zu03AD/bjJSt/9jT/mxrOCkJWOg77aPA=="
-    },
     "math-intrinsics@1.1.0": {
       "integrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
     },
@@ -281,7 +271,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@supabase/functions-js@2.112.3",
-      "npm:@supabase/server@1.4.1"
+      "npm:@supabase/supabase-js@2.112.3"
     ]
   }
 }

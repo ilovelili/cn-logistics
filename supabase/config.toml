@@ -1,7 +1,10 @@
 
 [functions.provision-auth0-user]
 enabled = true
-verify_jwt = true
+# Auth0 issues the caller JWT, so the Supabase gateway cannot verify it as a
+# Supabase Auth token. The function forwards the Auth0 bearer token to PostgREST,
+# where Supabase third-party Auth validates it before any provisioning occurs.
+verify_jwt = false
 import_map = "./functions/provision-auth0-user/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
