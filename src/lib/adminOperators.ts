@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 import type { ShipperUserAdminAssignment } from "./shipperUsers";
 import type { TranslationKey } from "./i18n";
+import { provisionAuth0Users } from "./auth0Provisioning";
+import type { Auth0ProvisioningStatus } from "./auth0Provisioning";
 
 export interface AdminOperator {
   id: string;
@@ -11,6 +13,7 @@ export interface AdminOperator {
   assigned_shipper_users?: AssignedShipperUser[];
   created_at: string;
   updated_at: string;
+  auth0_provisioning_status: Auth0ProvisioningStatus;
 }
 
 export type AdminOperatorStaffRole =
@@ -38,6 +41,7 @@ export interface AssignedShipperUser {
   contact_person: string | null;
   notes: string | null;
   approval_status: string;
+  auth0_provisioning_status: Auth0ProvisioningStatus;
   admin_assignments?: ShipperUserAdminAssignment[];
   created_at: string;
   updated_at: string;
@@ -82,6 +86,17 @@ export async function createAdminOperator(
   if (error) {
     throw error;
   }
+
+  try {
+    await provisionAuth0Users([{ email: form.email, role: "admin" }]);
+    return { auth0Provisioned: true };
+  } catch {
+    return { auth0Provisioned: false };
+  }
+}
+
+export async function retryAdminOperatorAuth0Provisioning(email: string) {
+  await provisionAuth0Users([{ email, role: "admin" }]);
 }
 
 export async function updateAdminOperator({

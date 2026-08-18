@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Edit3, Plus, Save, Search, Trash2, X, XCircle } from "lucide-react";
+import {
+  Edit3,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react";
 import {
   AdminOperator,
   AdminOperatorStaffRole,
@@ -9,6 +18,7 @@ import {
   defaultAdminOperatorForm,
   deleteAdminOperator,
   fetchAdminOperators,
+  retryAdminOperatorAuth0Provisioning,
   updateAdminOperator,
 } from "../lib/adminOperators";
 import {
@@ -96,6 +106,7 @@ export default function AdminOperatorManagement({
   const [saving, setSaving] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [provisioningId, setProvisioningId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminOperator | null>(null);
   const [editTarget, setEditTarget] = useState<AdminOperator | null>(null);
   const [editForm, setEditForm] = useState<{
@@ -120,10 +131,13 @@ export default function AdminOperatorManagement({
     message: string;
   } | null>(null);
 
-  const showToast = (type: "success" | "error", message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+      setTimeout(() => setToast(null), 4000);
+    },
+    [],
+  );
 
   const loadOperators = useCallback(async () => {
     setLoading(true);
@@ -134,7 +148,7 @@ export default function AdminOperatorManagement({
     } finally {
       setLoading(false);
     }
-  }, [superAdminEmail]);
+  }, [showToast, superAdminEmail]);
 
   useEffect(() => {
     void loadOperators();
@@ -246,7 +260,10 @@ export default function AdminOperatorManagement({
 
     setSaving(true);
     try {
-      await createAdminOperator(form, superAdminEmail);
+      const { auth0Provisioned } = await createAdminOperator(
+        form,
+        superAdminEmail,
+      );
       const updatedOperators = await fetchAdminOperators(superAdminEmail);
       const createdOperator = updatedOperators.find(
         (operator) =>
@@ -280,13 +297,37 @@ export default function AdminOperatorManagement({
       setShowForm(false);
       await loadShipperUsers();
       await loadOperators();
-      showToast("success", t("superAdmin.operators.created"));
+      showToast(
+        auth0Provisioned ? "success" : "error",
+        t(
+          auth0Provisioned
+            ? "superAdmin.operators.created"
+            : "auth.provisioning.pending",
+        ),
+      );
     } catch (error) {
       showToast("error", getOperatorCreateErrorMessage(error));
     } finally {
       setSaving(false);
     }
   };
+
+  const handleRetryProvisioning = useCallback(
+    async (operator: AdminOperator) => {
+      setProvisioningId(operator.id);
+      try {
+        await retryAdminOperatorAuth0Provisioning(operator.email);
+        await loadOperators();
+        showToast("success", t("auth.provisioning.succeeded"));
+      } catch {
+        await loadOperators();
+        showToast("error", t("auth.provisioning.failed"));
+      } finally {
+        setProvisioningId(null);
+      }
+    },
+    [loadOperators, showToast],
+  );
 
   const syncOperatorShipperAssignments = async (
     operatorId: string,
@@ -439,6 +480,22 @@ export default function AdminOperatorManagement({
         width: 210,
         render: (operator) => (
           <div className="flex items-center gap-2">
+            {operator.auth0_provisioning_status !== "provisioned" && (
+              <TableActionButton
+                variant="warning"
+                icon={
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${
+                      provisioningId === operator.id ? "animate-spin" : ""
+                    }`}
+                  />
+                }
+                disabled={provisioningId === operator.id}
+                onClick={() => void handleRetryProvisioning(operator)}
+              >
+                {t("auth.provisioning.retry")}
+              </TableActionButton>
+            )}
             <TableActionButton
               variant="success"
               icon={<Edit3 className="h-3.5 w-3.5" />}
@@ -458,7 +515,7 @@ export default function AdminOperatorManagement({
         ),
       },
     ],
-    [deletingId],
+    [deletingId, handleRetryProvisioning, provisioningId],
   );
 
   const {
@@ -857,6 +914,7 @@ function toShipperUser(shipperUser: AssignedShipperUser): ShipperUser {
       shipperUser.approval_status === "to_be_approved"
         ? shipperUser.approval_status
         : "to_be_approved",
+    auth0_provisioning_status: shipperUser.auth0_provisioning_status,
     created_by: null,
     created_at: shipperUser.created_at,
     updated_at: shipperUser.updated_at,

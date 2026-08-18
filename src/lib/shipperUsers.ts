@@ -1,4 +1,6 @@
 import { supabase } from "./supabase";
+import { provisionAuth0Users } from "./auth0Provisioning";
+import type { Auth0ProvisioningStatus } from "./auth0Provisioning";
 
 export interface ShipperUserForm {
   email: string;
@@ -36,6 +38,7 @@ export interface ShipperUser {
   created_at: string;
   updated_at: string;
   admin_assignments?: ShipperUserAdminAssignment[];
+  auth0_provisioning_status: Auth0ProvisioningStatus;
 }
 
 export interface ShipperUserAdminAssignment {
@@ -64,18 +67,20 @@ export async function createShipperUser(
   form: ShipperUserForm,
   createdBy: string,
 ) {
+  const contacts = form.contacts
+    .map((contact) => ({
+      email: contact.email.trim(),
+      contact_person: contact.contact_person.trim(),
+    }))
+    .filter((contact) => contact.email && contact.contact_person);
+
   const { error } = await supabase.rpc("create_registered_normal_user", {
     user_shipper_name: form.shipper_name.trim(),
     user_zipcode: form.zipcode.trim(),
     user_shipper_address: form.shipper_address.trim(),
     user_telephone: form.telephone.trim(),
     user_budget: Number(form.budget || 0),
-    user_contacts: form.contacts
-      .map((contact) => ({
-        email: contact.email.trim(),
-        contact_person: contact.contact_person.trim(),
-      }))
-      .filter((contact) => contact.email && contact.contact_person),
+    user_contacts: contacts,
     user_notes: form.notes.trim(),
     admin_email: createdBy,
   });
@@ -83,6 +88,19 @@ export async function createShipperUser(
   if (error) {
     throw error;
   }
+
+  try {
+    await provisionAuth0Users(
+      contacts.map((contact) => ({ email: contact.email, role: "normal" })),
+    );
+    return { auth0Provisioned: true };
+  } catch {
+    return { auth0Provisioned: false };
+  }
+}
+
+export async function retryShipperUserAuth0Provisioning(email: string) {
+  await provisionAuth0Users([{ email, role: "normal" }]);
 }
 
 export async function fetchShipperUsersByAdmin(createdBy: string) {

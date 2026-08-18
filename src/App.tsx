@@ -10,12 +10,7 @@ import ProfileButton from "./components/ProfileButton";
 import { AdminAuthProvider } from "./admin/AdminAuthProvider";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminPanel from "./admin/AdminPanel";
-import {
-  AppUserRole,
-  deriveAppUserRole,
-  fetchAppUserProfile,
-  syncAuth0AppUser,
-} from "./lib/auth";
+import { AppUserRole, fetchAppUserProfile, syncAuth0AppUser } from "./lib/auth";
 import { t } from "./lib/i18n";
 import {
   fetchShipmentDocuments,
@@ -30,6 +25,16 @@ import {
 type View = "jobs";
 type JobsStatusFilter = ShipmentStatus | "all";
 type AuthRole = "user" | "admin";
+type AuthFailure = "denied" | "unavailable";
+
+function isAuthAccessDeniedError(error: unknown) {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "42501"
+  );
+}
 
 function useDarkMode() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -412,6 +417,7 @@ function AppContent({
   } = useAuth0();
   const loginRedirectStarted = useRef(false);
   const [authSessionLoading, setAuthSessionLoading] = useState(true);
+  const [authFailure, setAuthFailure] = useState<AuthFailure | null>(null);
   const [authRole, setAuthRole] = useState<AuthRole | null>(() => {
     const savedRole = sessionStorage.getItem("app_auth_role");
     const savedEmail = sessionStorage.getItem("app_auth_email");
@@ -496,19 +502,30 @@ function AppContent({
 
     const initializeAuth0Session = async () => {
       const email = auth0Email.trim().toLowerCase();
-      const role = deriveAppUserRole(email);
-      let profile = null;
+      let profile;
 
       try {
         profile = await syncAuth0AppUser();
-      } catch {
-        // The verified Auth0 identity still determines the role. Data calls will
-        // surface a localized Supabase error if provisioning is unavailable.
+      } catch (error) {
+        if (!active) return;
+        setAdminAuthenticated(false);
+        setAuthFailure(
+          isAuthAccessDeniedError(error) ? "denied" : "unavailable",
+        );
+        setAuthSessionLoading(false);
+        return;
       }
 
       if (!active) return;
+      if (!profile) {
+        setAdminAuthenticated(false);
+        setAuthFailure("denied");
+        setAuthSessionLoading(false);
+        return;
+      }
 
-      const shipperName = profile?.shipper_name ?? "";
+      const role = profile.role;
+      const shipperName = profile.shipper_name ?? "";
       const admin = role === "admin" || role === "super_admin";
 
       setAuthRole(admin ? "admin" : "user");
@@ -522,6 +539,7 @@ function AppContent({
       setReturnAdminProfileRole("admin");
       setReturnAdminAccountName("");
       setAdminAuthenticated(admin);
+      setAuthFailure(null);
 
       sessionStorage.setItem("app_auth_role", admin ? "admin" : "user");
       sessionStorage.setItem("app_auth_email", email);
@@ -684,6 +702,7 @@ function AppContent({
   const handleLogout = () => {
     logoutAdmin();
     setAdminAuthenticated(false);
+    setAuthFailure(null);
     setAuthRole(null);
     setAuthEmail("");
     setProfileRole("normal");
@@ -711,6 +730,38 @@ function AppContent({
 
   const isSwitchedFromAdmin =
     Boolean(adminEmail) && authEmail.toLowerCase() !== adminEmail.toLowerCase();
+
+  if (!isAuth0Loading && isAuthenticated && authFailure) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6 dark:bg-gray-950">
+        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <LogoMark className="mx-auto mb-5 h-12 w-12 rounded-xl" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            {t(
+              authFailure === "denied"
+                ? "auth.accessDenied.title"
+                : "auth.unavailable.title",
+            )}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+            {t(
+              authFailure === "denied"
+                ? "auth.accessDenied.message"
+                : "auth.unavailable.message",
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+          >
+            <LogOut className="h-4 w-4" />
+            {t("common.logout")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (
     isAuth0Loading ||

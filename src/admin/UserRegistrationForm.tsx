@@ -9,6 +9,7 @@ import {
 import {
   CheckCircle,
   Plus,
+  RefreshCw,
   Save,
   Search,
   Trash2,
@@ -28,6 +29,7 @@ import {
   ShipperUserApprovalStatus,
   deleteShipperUser,
   fetchShipperUsersByAdmin,
+  retryShipperUserAuth0Provisioning,
   updateShipperUserApprovalStatus,
   updateShipperUserAdminAssignments,
   updateShipperContacts,
@@ -127,6 +129,7 @@ export default function UserRegistrationForm({
   const scrollHint = useHorizontalScrollHint(tableScrollRef);
   const [selectedUser, setSelectedUser] = useState<ShipperUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [provisioningId, setProvisioningId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{
     user: ShipperUserRow;
     action: UserAction;
@@ -172,10 +175,13 @@ export default function UserRegistrationForm({
     }));
   };
 
-  const showToast = (type: "success" | "error", message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+      setTimeout(() => setToast(null), 4000);
+    },
+    [],
+  );
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -187,7 +193,7 @@ export default function UserRegistrationForm({
     } finally {
       setUsersLoading(false);
     }
-  }, [adminEmail]);
+  }, [adminEmail, showToast]);
 
   useEffect(() => {
     void loadUsers();
@@ -228,7 +234,7 @@ export default function UserRegistrationForm({
       const createdContactEmails = form.contacts
         .map((contact) => contact.email.trim().toLowerCase())
         .filter(Boolean);
-      await createShipperUser(form, adminEmail);
+      const { auth0Provisioned } = await createShipperUser(form, adminEmail);
       let updatedUsers = await fetchShipperUsersByAdmin(adminEmail);
 
       if (isSuperAdmin && selectedCreateAdminIds.length > 0) {
@@ -257,13 +263,37 @@ export default function UserRegistrationForm({
       setSelectedCreateAdminIds([]);
       setShowCreateForm(false);
       setUsers(updatedUsers);
-      showToast("success", t("admin.userRegistration.created"));
+      showToast(
+        auth0Provisioned ? "success" : "error",
+        t(
+          auth0Provisioned
+            ? "admin.userRegistration.created"
+            : "auth.provisioning.pending",
+        ),
+      );
     } catch {
       showToast("error", t("admin.userRegistration.createFailed"));
     } finally {
       setLoading(false);
     }
   };
+
+  const handleRetryProvisioning = useCallback(
+    async (user: ShipperUser) => {
+      setProvisioningId(user.id);
+      try {
+        await retryShipperUserAuth0Provisioning(user.email);
+        await loadUsers();
+        showToast("success", t("auth.provisioning.succeeded"));
+      } catch {
+        await loadUsers();
+        showToast("error", t("auth.provisioning.failed"));
+      } finally {
+        setProvisioningId(null);
+      }
+    },
+    [loadUsers, showToast],
+  );
 
   const toggleCreateForm = () => {
     setShowCreateForm((currentValue) => {
@@ -523,6 +553,21 @@ export default function UserRegistrationForm({
                 >
                   {contactUser.email}
                 </div>
+                {contactUser.auth0_provisioning_status !== "provisioned" && (
+                  <button
+                    type="button"
+                    disabled={provisioningId === contactUser.id}
+                    onClick={() => void handleRetryProvisioning(contactUser)}
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-blue-400"
+                  >
+                    <RefreshCw
+                      className={`h-3 w-3 ${
+                        provisioningId === contactUser.id ? "animate-spin" : ""
+                      }`}
+                    />
+                    {t("auth.provisioning.retry")}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -604,7 +649,7 @@ export default function UserRegistrationForm({
     }
 
     return userColumns;
-  }, [actionLoadingId, isSuperAdmin]);
+  }, [actionLoadingId, handleRetryProvisioning, isSuperAdmin, provisioningId]);
 
   const {
     orderedColumns,

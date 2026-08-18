@@ -4,6 +4,18 @@ const ja = {
   "app.theme.light": "ライトモードに切り替え",
   "app.theme.dark": "ダークモードに切り替え",
   "app.error.unknownSupabase": "Supabaseで不明なエラーが発生しました",
+  "auth.accessDenied.title": "アカウントが登録されていません",
+  "auth.accessDenied.message":
+    "このメールアドレスはCN Navigatorの利用者として登録されていません。管理者へお問い合わせください。",
+  "auth.unavailable.title": "アカウントを確認できません",
+  "auth.unavailable.message":
+    "一時的な通信エラーによりアカウント情報を確認できませんでした。しばらくしてから再度お試しください。",
+  "auth.provisioning.retry": "Auth0登録を再試行",
+  "auth.provisioning.succeeded": "Auth0へのユーザー登録が完了しました",
+  "auth.provisioning.failed":
+    "Auth0へのユーザー登録に失敗しました。時間をおいて再度お試しください。",
+  "auth.provisioning.pending":
+    "ユーザー情報は保存されましたが、Auth0への登録は未完了です。一覧から再試行してください。",
 
   "profile.title": "プロフィール",
   "profile.email": "メール",
@@ -447,6 +459,18 @@ const en: Messages = {
   "app.theme.light": "Switch to light mode",
   "app.theme.dark": "Switch to dark mode",
   "app.error.unknownSupabase": "An unknown Supabase error occurred",
+  "auth.accessDenied.title": "Account not provisioned",
+  "auth.accessDenied.message":
+    "This email address has not been registered for CN Navigator. Contact an administrator for access.",
+  "auth.unavailable.title": "Unable to verify account",
+  "auth.unavailable.message":
+    "A temporary service or network error prevented account verification. Please try again shortly.",
+  "auth.provisioning.retry": "Retry Auth0",
+  "auth.provisioning.succeeded": "The Auth0 user was provisioned",
+  "auth.provisioning.failed":
+    "Auth0 provisioning failed. Please try again shortly.",
+  "auth.provisioning.pending":
+    "The user was saved, but Auth0 provisioning is incomplete. Retry from the list.",
 
   "profile.title": "Profile",
   "profile.email": "Email",
