@@ -3,6 +3,7 @@ import {
   FilePlus2,
   ListChecks,
   LogOut,
+  Mail,
   Menu,
   Moon,
   Star,
@@ -15,6 +16,7 @@ import ShipmentEntryForm, { ShipmentEntryCriteria } from "./ShipmentEntryForm";
 import UserRegistrationForm from "./UserRegistrationForm";
 import AdminOperatorManagement from "./AdminOperatorManagement";
 import FeedbackReviewPanel from "./FeedbackReviewPanel";
+import EmailTemplateManagement from "./EmailTemplateManagement";
 import StandardFlowManagement from "./StandardFlowManagement";
 import ProfileButton from "../components/ProfileButton";
 import DynamicTutorial from "../components/DynamicTutorial";
@@ -32,7 +34,8 @@ type AdminView =
   | "userRegistration"
   | "adminOperators"
   | "standardFlow"
-  | "feedbackReview";
+  | "feedbackReview"
+  | "emailTemplates";
 
 interface AdminPanelProps {
   darkMode: boolean;
@@ -169,6 +172,11 @@ export default function AdminPanel({
             id: "feedbackReview" as AdminView,
             label: t("superAdmin.nav.feedback"),
             icon: Star,
+          },
+          {
+            id: "emailTemplates" as AdminView,
+            label: t("superAdmin.nav.emailTemplates"),
+            icon: Mail,
           },
         ]
       : []),
@@ -468,6 +476,9 @@ export default function AdminPanel({
               jobs={jobs}
               documents={documents}
             />
+          )}
+          {view === "emailTemplates" && isSuperAdmin && (
+            <EmailTemplateManagement />
           )}
         </main>
       </div>

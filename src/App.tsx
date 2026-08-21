@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
+import { Bell, LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
+import NotificationsPage from "./components/NotificationsPage";
 import DynamicTutorial from "./components/DynamicTutorial";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
@@ -13,6 +14,11 @@ import AdminPanel from "./admin/AdminPanel";
 import { AppUserRole, fetchAppUserProfile, syncAuth0AppUser } from "./lib/auth";
 import { t } from "./lib/i18n";
 import {
+  fetchShipmentNotifications,
+  markShipmentNotificationRead,
+  ShipmentNotification,
+} from "./lib/notifications";
+import {
   fetchShipmentDocuments,
   fetchShipmentJobs,
   ShipmentDocument,
@@ -22,7 +28,7 @@ import {
   TransportMode,
 } from "./lib/shipmentJobs";
 
-type View = "jobs";
+type View = "jobs" | "notifications";
 type JobsStatusFilter = ShipmentStatus | "all";
 type AuthRole = "user" | "admin";
 type AuthFailure = "denied" | "unavailable";
@@ -99,7 +105,25 @@ function MainApp({
   >("all");
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<ShipmentNotification[]>(
+    [],
+  );
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(
+    null,
+  );
+  const [markingNotificationId, setMarkingNotificationId] = useState<
+    string | null
+  >(null);
   const { isAdminAuthenticated } = useAdminAuth();
+  const unreadNotificationCount = useMemo(
+    () =>
+      notifications.reduce(
+        (count, notification) => count + (notification.read_at ? 0 : 1),
+        0,
+      ),
+    [notifications],
+  );
   const visibleJobs = useMemo(() => {
     if (profileRole !== "normal") {
       return jobs;
@@ -149,6 +173,66 @@ function MainApp({
   useEffect(() => {
     void loadJobs();
   }, [loadJobs]);
+
+  const loadNotifications = useCallback(async () => {
+    if (profileRole !== "normal") {
+      setNotifications([]);
+      setNotificationsError(null);
+      return;
+    }
+
+    setNotificationsLoading(true);
+    try {
+      setNotifications(await fetchShipmentNotifications(profileEmail));
+      setNotificationsError(null);
+    } catch (error) {
+      setNotifications([]);
+      const message =
+        error instanceof Error ? error.message : t("app.error.unknownSupabase");
+      setNotificationsError(`${t("notifications.loadFailed")}: ${message}`);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [profileEmail, profileRole]);
+
+  useEffect(() => {
+    void loadNotifications();
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    setCurrentView("jobs");
+  }, [profileEmail]);
+
+  const handleNotificationClick = useCallback(
+    async (notification: ShipmentNotification) => {
+      if (notification.read_at || markingNotificationId) return;
+
+      setMarkingNotificationId(notification.id);
+      try {
+        const readAt = await markShipmentNotificationRead(
+          profileEmail,
+          notification.id,
+        );
+        setNotifications((current) =>
+          current.map((item) =>
+            item.id === notification.id ? { ...item, read_at: readAt } : item,
+          ),
+        );
+        setNotificationsError(null);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : t("app.error.unknownSupabase");
+        setNotificationsError(
+          `${t("notifications.markReadFailed")}: ${message}`,
+        );
+      } finally {
+        setMarkingNotificationId(null);
+      }
+    },
+    [markingNotificationId, profileEmail],
+  );
 
   if (showAdminMode) {
     return (
@@ -200,6 +284,16 @@ function MainApp({
             onStatusFilterChange={setJobsStatusFilter}
             onTradeFilterChange={setJobsTradeFilter}
             onTransportFilterChange={setJobsTransportFilter}
+          />
+        );
+      case "notifications":
+        return (
+          <NotificationsPage
+            notifications={notifications}
+            loading={notificationsLoading}
+            error={notificationsError}
+            markingId={markingNotificationId}
+            onNotificationClick={handleNotificationClick}
           />
         );
       default:
@@ -339,6 +433,46 @@ function MainApp({
                     day: "numeric",
                   })}
                 </div>
+                {profileRole === "normal" && (
+                  <InstantTooltip
+                    label={
+                      unreadNotificationCount > 0
+                        ? t("notifications.unreadCount", {
+                            count: unreadNotificationCount,
+                          })
+                        : t("notifications.open")
+                    }
+                  >
+                    {(tooltipId) => (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentView("notifications")}
+                        className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                          currentView === "notifications"
+                            ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                        }`}
+                        aria-label={
+                          unreadNotificationCount > 0
+                            ? t("notifications.unreadCount", {
+                                count: unreadNotificationCount,
+                              })
+                            : t("notifications.open")
+                        }
+                        aria-describedby={tooltipId}
+                      >
+                        <Bell className="h-5 w-5" />
+                        {unreadNotificationCount > 0 && (
+                          <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white ring-2 ring-white dark:ring-gray-900">
+                            {unreadNotificationCount > 99
+                              ? "99+"
+                              : unreadNotificationCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </InstantTooltip>
+                )}
                 <InstantTooltip
                   label={darkMode ? t("app.theme.light") : t("app.theme.dark")}
                 >

@@ -471,26 +471,21 @@ export default function UserRegistrationForm({
   const handleDeleteUser = async (user: ShipperUserRow) => {
     setActionLoadingId(user.id);
     try {
-      await Promise.all(
+      const deletionResults = await Promise.allSettled(
         user.contact_users.map((contactUser) =>
           deleteShipperUser({
-            superAdminEmail: adminEmail,
             userId: contactUser.id,
           }),
         ),
       );
-      const deletedUserIds = new Set(
-        user.contact_users.map((contactUser) => contactUser.id),
-      );
-      setUsers((currentUsers) =>
-        currentUsers.filter(
-          (currentUser) => !deletedUserIds.has(currentUser.id),
-        ),
-      );
-      setSelectedUser((currentUser) =>
-        currentUser && deletedUserIds.has(currentUser.id) ? null : currentUser,
-      );
-      showToast("success", t("admin.userRegistration.deleted"));
+      await loadUsers();
+      setSelectedUser(null);
+
+      if (deletionResults.some((result) => result.status === "rejected")) {
+        showToast("error", t("admin.userRegistration.deleteFailed"));
+      } else {
+        showToast("success", t("admin.userRegistration.deleted"));
+      }
     } catch {
       showToast("error", t("admin.userRegistration.deleteFailed"));
     } finally {
@@ -1222,9 +1217,17 @@ export function UserDetailModal({
     setError("");
 
     try {
-      const updatedUsers = await updateShipperContacts(user.id, form);
+      const { users: updatedUsers, auth0Provisioned } =
+        await updateShipperContacts(user.id, form);
       onSaved(updatedUsers);
-      onNotify?.("success", t("admin.userRegistration.updated"));
+      onNotify?.(
+        auth0Provisioned ? "success" : "error",
+        t(
+          auth0Provisioned
+            ? "admin.userRegistration.updated"
+            : "auth.provisioning.pending",
+        ),
+      );
       onClose();
     } catch {
       setError(t("admin.userRegistration.updateFailed"));

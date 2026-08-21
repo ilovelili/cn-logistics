@@ -4,11 +4,19 @@ import { createClient } from "@supabase/supabase-js";
 type ProvisionableRole = "admin" | "normal";
 
 interface ProvisioningRequest {
+  action?: "provision";
   users?: Array<{
     email?: string;
     role?: ProvisionableRole;
   }>;
 }
+
+interface DeletionRequest {
+  action: "delete";
+  user_id?: string;
+}
+
+type UserLifecycleRequest = ProvisioningRequest | DeletionRequest;
 
 interface AppUserProfile {
   email: string;
@@ -34,7 +42,14 @@ interface PreparedUser {
   role: ProvisionableRole;
 }
 
-type ProvisioningRpc = {
+interface PreparedDeletion {
+  id: string;
+  email: string;
+  role: ProvisionableRole;
+  auth0_user_id: string | null;
+}
+
+type UserLifecycleRpc = {
   (
     name: "begin_auth0_user_provisioning",
     args: {
@@ -48,6 +63,14 @@ type ProvisioningRpc = {
       provisioned_auth0_user_id: string | null;
       provisioning_error: string | null;
     },
+  ): PromiseLike<{ data: null; error: unknown }>;
+  (
+    name: "begin_auth0_user_deletion",
+    args: { target_user_id: string },
+  ): PromiseLike<{ data: PreparedDeletion[] | null; error: unknown }>;
+  (
+    name: "finish_auth0_user_deletion",
+    args: { target_user_id: string; deletion_error: string | null },
   ): PromiseLike<{ data: null; error: unknown }>;
 };
 
@@ -170,7 +193,7 @@ async function getManagementToken(domain: string) {
   return tokenResponse.access_token;
 }
 
-async function findPasswordlessUser({
+async function findPasswordlessUsers({
   domain,
   token,
   email,
@@ -196,7 +219,7 @@ async function findPasswordlessUser({
   }
 
   const users = (await response.json()) as Auth0User[];
-  return users.find((user) =>
+  return users.filter((user) =>
     user.identities?.some((identity) => identity.connection === connection),
   );
 }
@@ -212,7 +235,7 @@ async function provisionUser({
   connection: string;
   email: string;
 }) {
-  const existingUser = await findPasswordlessUser({
+  const [existingUser] = await findPasswordlessUsers({
     domain,
     token,
     email,
@@ -241,6 +264,52 @@ async function provisionUser({
 
   const createdUser = (await response.json()) as Auth0User;
   return { email, userId: createdUser.user_id, created: true };
+}
+
+async function deleteUser({
+  domain,
+  token,
+  connection,
+  email,
+  storedUserId,
+}: {
+  domain: string;
+  token: string;
+  connection: string;
+  email: string;
+  storedUserId: string | null;
+}) {
+  const userIds = new Set<string>();
+  if (storedUserId) {
+    userIds.add(storedUserId);
+  }
+
+  const matchingUsers = await findPasswordlessUsers({
+    domain,
+    token,
+    email,
+    connection,
+  });
+  for (const user of matchingUsers) {
+    userIds.add(user.user_id);
+  }
+
+  for (const userId of userIds) {
+    const response = await fetch(
+      `https://${domain}/api/v2/users/${encodeURIComponent(userId)}`,
+      {
+        method: "DELETE",
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+
+    if (!response.ok && response.status !== 404) {
+      throw new Error("Auth0 user deletion failed");
+    }
+  }
+
+  return { email, deletedUserCount: userIds.size };
 }
 
 export default {
@@ -286,18 +355,88 @@ export default {
         );
       }
 
-      const users = normalizeUsers(
-        (await request.json()) as ProvisioningRequest,
-      );
-      assertCanProvision(requester.role, users);
-      const provisioningRpc = supabase.rpc.bind(
+      const body = (await request.json()) as UserLifecycleRequest;
+      const lifecycleRpc = supabase.rpc.bind(
         supabase,
-      ) as unknown as ProvisioningRpc;
+      ) as unknown as UserLifecycleRpc;
 
-      const { data: preparedUsers, error: prepareError } =
-        await provisioningRpc("begin_auth0_user_provisioning", {
+      if (body.action === "delete") {
+        const targetUserId = body.user_id?.trim() ?? "";
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            targetUserId,
+          )
+        ) {
+          return jsonResponse(
+            request,
+            { error: "A valid user ID is required" },
+            400,
+          );
+        }
+
+        const { data: preparedDeletions, error: prepareError } =
+          await lifecycleRpc("begin_auth0_user_deletion", {
+            target_user_id: targetUserId,
+          });
+        const preparedDeletion = preparedDeletions?.[0];
+
+        if (prepareError || !preparedDeletion) {
+          return jsonResponse(
+            request,
+            { error: "The application user cannot be deleted" },
+            403,
+          );
+        }
+
+        try {
+          const domain = normalizeAuth0Domain(requiredEnv("AUTH0_DOMAIN"));
+          const connection =
+            Deno.env.get("AUTH0_USER_CONNECTION")?.trim() || "email";
+          const token = await getManagementToken(domain);
+          const result = await deleteUser({
+            domain,
+            token,
+            connection,
+            email: preparedDeletion.email,
+            storedUserId: preparedDeletion.auth0_user_id,
+          });
+          const { error: completionError } = await lifecycleRpc(
+            "finish_auth0_user_deletion",
+            { target_user_id: targetUserId, deletion_error: null },
+          );
+          if (completionError) {
+            throw new Error("Auth0 deletion status could not be saved");
+          }
+          return jsonResponse(request, { user: result });
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Auth0 user deletion failed";
+          await lifecycleRpc("finish_auth0_user_deletion", {
+            target_user_id: targetUserId,
+            deletion_error: message,
+          });
+          return jsonResponse(
+            request,
+            {
+              error:
+                "Auth0 user deletion failed; application access is disabled",
+            },
+            502,
+          );
+        }
+      }
+
+      const users = normalizeUsers(body);
+      assertCanProvision(requester.role, users);
+
+      const { data: preparedUsers, error: prepareError } = await lifecycleRpc(
+        "begin_auth0_user_provisioning",
+        {
           requested_users: users,
-        });
+        },
+      );
 
       if (prepareError) {
         throw new Error(
@@ -320,7 +459,7 @@ export default {
             connection,
             email: user.email,
           });
-          const { error: completionError } = await provisioningRpc(
+          const { error: completionError } = await lifecycleRpc(
             "finish_auth0_user_provisioning",
             {
               provisioned_email: user.email,
@@ -337,7 +476,7 @@ export default {
             error instanceof Error
               ? error.message
               : "Auth0 provisioning failed";
-          await provisioningRpc("finish_auth0_user_provisioning", {
+          await lifecycleRpc("finish_auth0_user_provisioning", {
             provisioned_email: user.email,
             provisioned_auth0_user_id: null,
             provisioning_error: message,

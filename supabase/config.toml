@@ -3,7 +3,7 @@
 enabled = true
 # Auth0 issues the caller JWT, so the Supabase gateway cannot verify it as a
 # Supabase Auth token. The function forwards the Auth0 bearer token to PostgREST,
-# where Supabase third-party Auth validates it before any provisioning occurs.
+# where Supabase third-party Auth validates it before any user lifecycle action.
 verify_jwt = false
 import_map = "./functions/provision-auth0-user/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
@@ -12,3 +12,14 @@ entrypoint = "./functions/provision-auth0-user/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/provision-auth0-user/*.html" ]
+
+[functions.send-shipment-notification-email]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-shipment-notification-email/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/send-shipment-notification-email/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/send-shipment-notification-email/*.html" ]

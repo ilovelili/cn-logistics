@@ -27,3 +27,13 @@ export async function provisionAuth0Users(users: Auth0ProvisioningUser[]) {
     throw error;
   }
 }
+
+export async function deleteAuth0User(userId: string) {
+  const { error } = await supabase.functions.invoke("provision-auth0-user", {
+    body: { action: "delete", user_id: userId },
+  });
+
+  if (error) {
+    throw error;
+  }
+}

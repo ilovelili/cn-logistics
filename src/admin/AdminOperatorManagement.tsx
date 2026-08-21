@@ -402,7 +402,6 @@ export default function AdminOperatorManagement({
     setDeletingId(deleteTarget.id);
     try {
       await deleteAdminOperator({
-        superAdminEmail,
         operatorId: deleteTarget.id,
       });
       setOperators((currentOperators) =>

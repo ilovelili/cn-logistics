@@ -61,46 +61,46 @@ Do not print, commit, or copy `.env` values into logs, docs, screenshots, or gen
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 Start the dev server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Build:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Typecheck:
 
 ```bash
-npm run typecheck
+pnpm typecheck
 ```
 
 Lint:
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 Format:
 
 ```bash
-npm run format
+pnpm format
 ```
 
 Format check:
 
 ```bash
-npm run format:check
+pnpm format:check
 ```
 
-There is no dedicated test script currently. For risky changes, run at least `npm run typecheck`, `npm run lint`, and `npm run build`.
+There is no dedicated test script currently. For risky changes, run at least `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
 
 ## Architecture Notes
 
@@ -171,9 +171,9 @@ There is no dedicated test script currently. For risky changes, run at least `np
 
 Before finishing substantial changes:
 
-- Run `npm run typecheck`.
-- Run `npm run lint`.
-- Run `npm run build`.
+- Run `pnpm typecheck`.
+- Run `pnpm lint`.
+- Run `pnpm build`.
 - Manually verify affected role(s): super admin, admin, normal user.
 - Check both Japanese and English strings if translation keys changed.
 - For document/download changes, verify customer/internal visibility and approval states.

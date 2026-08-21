@@ -1,5 +1,6 @@
 const ja = {
   "app.nav.jobs": "出荷案件",
+  "app.nav.notifications": "お知らせ",
   "app.menu.toggle": "メニューを切り替え",
   "app.theme.light": "ライトモードに切り替え",
   "app.theme.dark": "ダークモードに切り替え",
@@ -28,6 +29,26 @@ const ja = {
   "profile.updated": "プロフィールを更新しました",
   "profile.loadFailed": "プロフィールの読み込みに失敗しました",
   "profile.uploadFailed": "アバターの更新に失敗しました",
+
+  "notifications.title": "お知らせ",
+  "notifications.description": "船積みスケジュールの更新を確認できます。",
+  "notifications.tabsLabel": "お知らせの表示切り替え",
+  "notifications.open": "お知らせを開く",
+  "notifications.unreadCount": "未読のお知らせが{count}件あります",
+  "notifications.unread": "未読",
+  "notifications.all": "すべて",
+  "notifications.loading": "お知らせを読み込み中...",
+  "notifications.loadFailed": "お知らせの読み込みに失敗しました",
+  "notifications.markReadFailed": "お知らせを既読にできませんでした",
+  "notifications.noUnread": "未読のお知らせはありません",
+  "notifications.noNotifications": "お知らせはまだありません",
+  "notifications.statusUpdated": "船積みスケジュールが更新されました",
+  "notifications.statusChanged": "{previous} から {current} に更新されました。",
+  "notifications.awbBl": "AWB/BL番号",
+  "notifications.origin": "積地（POL）",
+  "notifications.destination": "向け地／揚地（POD）",
+  "notifications.previousStatus": "更新前ステータス",
+  "notifications.currentStatus": "現在のステータス",
 
   "common.status": "ステータス",
   "common.shipperName": "荷主名",
@@ -349,18 +370,20 @@ const ja = {
   "admin.userRegistration.rejected": "荷主を却下しました",
   "admin.userRegistration.approvalFailed": "承認状態の更新に失敗しました",
   "admin.userRegistration.deleted": "荷主を削除しました",
-  "admin.userRegistration.deleteFailed": "荷主削除に失敗しました",
+  "admin.userRegistration.deleteFailed":
+    "削除を完了できませんでした。ユーザーが停止状態になっている場合は、もう一度削除をお試しください。",
   "admin.userRegistration.confirmTitle": "{action}しますか？",
   "admin.userRegistration.confirmApprove":
     "この荷主を承認すると、登録メールアドレスでログインできるようになります。",
   "admin.userRegistration.confirmReject":
     "この荷主を却下すると、承認待ち状態に戻せなくなります。",
   "admin.userRegistration.confirmDelete":
-    "この荷主を削除します。この操作は取り消せません。",
+    "この荷主をアプリとAuth0から削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
   "superAdmin.nav.standardFlow": "標準フロー管理",
   "superAdmin.nav.feedback": "評価一覧",
+  "superAdmin.nav.emailTemplates": "メールテンプレート",
   "superAdmin.switch.selectAccount": "アカウントに切替",
   "superAdmin.switch.adminOperators": "管理者",
   "superAdmin.switch.normalUsers": "荷主ユーザー",
@@ -390,10 +413,11 @@ const ja = {
   "superAdmin.operators.updated": "管理者を更新しました",
   "superAdmin.operators.updateFailed": "管理者の更新に失敗しました",
   "superAdmin.operators.deleted": "管理者を削除しました",
-  "superAdmin.operators.deleteFailed": "管理者削除に失敗しました",
+  "superAdmin.operators.deleteFailed":
+    "削除を完了できませんでした。ユーザーが停止状態になっている場合は、もう一度削除をお試しください。",
   "superAdmin.operators.confirmDeleteTitle": "管理者を削除しますか？",
   "superAdmin.operators.confirmDelete":
-    "この管理者を削除します。削除後はログインや切替先として利用できません。",
+    "この管理者をアプリとAuth0から削除します。削除後はログインや切替先として利用できません。",
   "superAdmin.standardFlow.title": "出荷標準フロー管理",
   "superAdmin.standardFlow.description":
     "出荷案件で使う標準フローの追跡テンプレートを編集できます。",
@@ -438,6 +462,49 @@ const ja = {
   "superAdmin.feedback.noFeedback": "評価はまだありません。",
   "superAdmin.feedback.searchPlaceholder":
     "インボイス#、CN担当、評価者、理由で検索...",
+  "superAdmin.emailTemplates.title": "メールテンプレート管理",
+  "superAdmin.emailTemplates.description":
+    "出荷ステータス更新時に送信するメールの件名と本文を編集できます。",
+  "superAdmin.emailTemplates.list": "テンプレート一覧",
+  "superAdmin.emailTemplates.empty": "メールテンプレートがありません。",
+  "superAdmin.emailTemplates.subject": "件名",
+  "superAdmin.emailTemplates.plainText": "テキスト本文",
+  "superAdmin.emailTemplates.html": "HTML本文",
+  "superAdmin.emailTemplates.variables": "利用可能な差し込み項目",
+  "superAdmin.emailTemplates.variablesDescription":
+    "以下の項目は送信時に案件情報へ置き換わります。二重波括弧を含めて入力してください。",
+  "superAdmin.emailTemplates.lastUpdated": "最終更新：{date}",
+  "superAdmin.emailTemplates.discard": "変更を破棄",
+  "superAdmin.emailTemplates.loadFailed":
+    "メールテンプレートの読み込みに失敗しました",
+  "superAdmin.emailTemplates.updated": "メールテンプレートを更新しました",
+  "superAdmin.emailTemplates.updateFailed":
+    "メールテンプレートの更新に失敗しました",
+  "superAdmin.emailTemplates.validationFailed":
+    "件名（1行）、テキスト本文、HTML本文を入力してください",
+  "superAdmin.emailTemplates.failedEmails.title": "送信失敗メール",
+  "superAdmin.emailTemplates.failedEmails.description":
+    "自動再試行を5回使い切ったメールです。手動再試行すると、新たに最大5回の送信を開始します。",
+  "superAdmin.emailTemplates.failedEmails.loadFailed":
+    "送信失敗メールの読み込みに失敗しました",
+  "superAdmin.emailTemplates.failedEmails.refresh": "更新",
+  "superAdmin.emailTemplates.failedEmails.empty":
+    "対応が必要な送信失敗メールはありません。",
+  "superAdmin.emailTemplates.failedEmails.recipient": "宛先",
+  "superAdmin.emailTemplates.failedEmails.shipment": "出荷案件",
+  "superAdmin.emailTemplates.failedEmails.attempts": "試行回数",
+  "superAdmin.emailTemplates.failedEmails.error": "最終エラー",
+  "superAdmin.emailTemplates.failedEmails.lastAttempt": "最終試行",
+  "superAdmin.emailTemplates.failedEmails.action": "操作",
+  "superAdmin.emailTemplates.failedEmails.unknownError": "不明な送信エラー",
+  "superAdmin.emailTemplates.failedEmails.retry": "再試行",
+  "superAdmin.emailTemplates.failedEmails.retrying": "再試行中...",
+  "superAdmin.emailTemplates.failedEmails.confirmRetry":
+    "{email} へのメール送信を再試行しますか？新たに最大5回の送信を開始します。",
+  "superAdmin.emailTemplates.failedEmails.retryStarted":
+    "メールの再試行を開始しました",
+  "superAdmin.emailTemplates.failedEmails.retryFailed":
+    "メールの再試行を開始できませんでした",
 
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",
@@ -455,6 +522,7 @@ type Messages = { [Key in keyof typeof ja]: string };
 const en: Messages = {
   ...ja,
   "app.nav.jobs": "Shipments",
+  "app.nav.notifications": "Notifications",
   "app.menu.toggle": "Toggle menu",
   "app.theme.light": "Switch to light mode",
   "app.theme.dark": "Switch to dark mode",
@@ -483,6 +551,26 @@ const en: Messages = {
   "profile.updated": "Profile updated",
   "profile.loadFailed": "Failed to load profile",
   "profile.uploadFailed": "Failed to update avatar",
+
+  "notifications.title": "Notifications",
+  "notifications.description": "Review updates to your shipping schedule.",
+  "notifications.tabsLabel": "Notification view",
+  "notifications.open": "Open notifications",
+  "notifications.unreadCount": "You have {count} unread notifications",
+  "notifications.unread": "Unread",
+  "notifications.all": "All messages",
+  "notifications.loading": "Loading notifications...",
+  "notifications.loadFailed": "Failed to load notifications",
+  "notifications.markReadFailed": "Failed to mark the notification as read",
+  "notifications.noUnread": "You're all caught up",
+  "notifications.noNotifications": "No notifications yet",
+  "notifications.statusUpdated": "Shipping schedule updated",
+  "notifications.statusChanged": "Status changed from {previous} to {current}.",
+  "notifications.awbBl": "AWB/BL No.",
+  "notifications.origin": "Origin (POL)",
+  "notifications.destination": "Destination (POD)",
+  "notifications.previousStatus": "Previous status",
+  "notifications.currentStatus": "Current status",
 
   "common.status": "Status",
   "common.shipperName": "Shipper",
@@ -810,16 +898,18 @@ const en: Messages = {
   "admin.userRegistration.rejected": "Rejected",
   "admin.userRegistration.approvalFailed": "Failed to update approval status",
   "admin.userRegistration.deleted": "Shipper deleted",
-  "admin.userRegistration.deleteFailed": "Failed to delete shipper",
+  "admin.userRegistration.deleteFailed":
+    "Deletion could not be completed. If the user is now disabled, retry deletion to finish Auth0 cleanup.",
   "admin.userRegistration.confirmTitle": "{action}?",
   "admin.userRegistration.confirmApprove": "Approve this shipper registration.",
   "admin.userRegistration.confirmReject": "Reject this shipper registration.",
   "admin.userRegistration.confirmDelete":
-    "This shipper will be deleted and will no longer be able to log in.",
+    "This shipper will be permanently removed from Auth0 and disabled in the application.",
 
   "superAdmin.nav.adminOperators": "Admin registration",
   "superAdmin.nav.standardFlow": "Standard flow mgmt",
   "superAdmin.nav.feedback": "Feedback",
+  "superAdmin.nav.emailTemplates": "Email templates",
   "superAdmin.switch.selectAccount": "Switch account",
   "superAdmin.switch.adminOperators": "Admins",
   "superAdmin.switch.normalUsers": "Shipper users",
@@ -849,10 +939,11 @@ const en: Messages = {
   "superAdmin.operators.updated": "Admin updated",
   "superAdmin.operators.updateFailed": "Failed to update admin",
   "superAdmin.operators.deleted": "Admin deleted",
-  "superAdmin.operators.deleteFailed": "Failed to delete admin",
+  "superAdmin.operators.deleteFailed":
+    "Deletion could not be completed. If the user is now disabled, retry deletion to finish Auth0 cleanup.",
   "superAdmin.operators.confirmDeleteTitle": "Delete admin?",
   "superAdmin.operators.confirmDelete":
-    "This admin will be deleted and can no longer log in or be switched to.",
+    "This admin will be permanently removed from Auth0 and can no longer log in or be switched to.",
   "superAdmin.standardFlow.title": "Shipment standard flow management",
   "superAdmin.standardFlow.description":
     "Edit the tracking templates used by shipment standard flow.",
@@ -896,6 +987,48 @@ const en: Messages = {
   "superAdmin.feedback.noFeedback": "No feedback yet.",
   "superAdmin.feedback.searchPlaceholder":
     "Search invoice #, CN contact, submitter, reason...",
+  "superAdmin.emailTemplates.title": "Email template management",
+  "superAdmin.emailTemplates.description":
+    "Edit the subject and message bodies sent when a shipment status changes.",
+  "superAdmin.emailTemplates.list": "Templates",
+  "superAdmin.emailTemplates.empty": "No email templates are available.",
+  "superAdmin.emailTemplates.subject": "Subject",
+  "superAdmin.emailTemplates.plainText": "Plain-text body",
+  "superAdmin.emailTemplates.html": "HTML body",
+  "superAdmin.emailTemplates.variables": "Available variables",
+  "superAdmin.emailTemplates.variablesDescription":
+    "These variables are replaced with shipment data when the email is sent. Include the double braces.",
+  "superAdmin.emailTemplates.lastUpdated": "Last updated: {date}",
+  "superAdmin.emailTemplates.discard": "Discard changes",
+  "superAdmin.emailTemplates.loadFailed": "Failed to load email templates",
+  "superAdmin.emailTemplates.updated": "Email template updated",
+  "superAdmin.emailTemplates.updateFailed":
+    "Failed to update the email template",
+  "superAdmin.emailTemplates.validationFailed":
+    "Enter a single-line subject, plain-text body, and HTML body",
+  "superAdmin.emailTemplates.failedEmails.title": "Failed email deliveries",
+  "superAdmin.emailTemplates.failedEmails.description":
+    "These emails exhausted all five automatic attempts. A manual retry starts a fresh cycle of up to five attempts.",
+  "superAdmin.emailTemplates.failedEmails.loadFailed":
+    "Failed to load failed email deliveries",
+  "superAdmin.emailTemplates.failedEmails.refresh": "Refresh",
+  "superAdmin.emailTemplates.failedEmails.empty":
+    "No failed email deliveries need attention.",
+  "superAdmin.emailTemplates.failedEmails.recipient": "Recipient",
+  "superAdmin.emailTemplates.failedEmails.shipment": "Shipment",
+  "superAdmin.emailTemplates.failedEmails.attempts": "Attempts",
+  "superAdmin.emailTemplates.failedEmails.error": "Last error",
+  "superAdmin.emailTemplates.failedEmails.lastAttempt": "Last attempt",
+  "superAdmin.emailTemplates.failedEmails.action": "Action",
+  "superAdmin.emailTemplates.failedEmails.unknownError":
+    "Unknown delivery error",
+  "superAdmin.emailTemplates.failedEmails.retry": "Retry",
+  "superAdmin.emailTemplates.failedEmails.retrying": "Retrying...",
+  "superAdmin.emailTemplates.failedEmails.confirmRetry":
+    "Retry the email to {email}? This starts a fresh cycle of up to five attempts.",
+  "superAdmin.emailTemplates.failedEmails.retryStarted": "Email retry started",
+  "superAdmin.emailTemplates.failedEmails.retryFailed":
+    "Failed to start the email retry",
 
   "admin.login.title": "Admin portal",
   "admin.login.heading": "Login",

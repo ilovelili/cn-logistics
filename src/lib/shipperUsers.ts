@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { provisionAuth0Users } from "./auth0Provisioning";
+import { deleteAuth0User, provisionAuth0Users } from "./auth0Provisioning";
 import type { Auth0ProvisioningStatus } from "./auth0Provisioning";
 
 export interface ShipperUserForm {
@@ -161,7 +161,21 @@ export async function updateShipperContacts(id: string, form: ShipperUserForm) {
     throw error;
   }
 
-  return (data ?? []) as ShipperUser[];
+  const updatedUsers = (data ?? []) as ShipperUser[];
+  try {
+    await provisionAuth0Users(
+      updatedUsers.map((user) => ({ email: user.email, role: "normal" })),
+    );
+    return {
+      users: updatedUsers.map((user) => ({
+        ...user,
+        auth0_provisioning_status: "provisioned" as const,
+      })),
+      auth0Provisioned: true,
+    };
+  } catch {
+    return { users: updatedUsers, auth0Provisioned: false };
+  }
 }
 
 export async function updateShipperUserApprovalStatus({
@@ -194,21 +208,8 @@ export async function updateShipperUserApprovalStatus({
   return updatedUser;
 }
 
-export async function deleteShipperUser({
-  superAdminEmail,
-  userId,
-}: {
-  superAdminEmail: string;
-  userId: string;
-}) {
-  const { error } = await supabase.rpc("delete_normal_user", {
-    super_admin_email: superAdminEmail,
-    target_user_id: userId,
-  });
-
-  if (error) {
-    throw error;
-  }
+export async function deleteShipperUser({ userId }: { userId: string }) {
+  await deleteAuth0User(userId);
 }
 
 export async function updateShipperUserAdminAssignments({
