@@ -1,25 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   CheckCircle2,
+  Code2,
+  Eye,
   Mail,
   RefreshCw,
-  RotateCcw,
   Save,
   XCircle,
 } from "lucide-react";
 import {
   EmailTemplate,
   EmailTemplateForm,
-  FailedShipmentEmailDelivery,
   fetchEmailTemplates,
-  fetchFailedShipmentEmailDeliveries,
-  retryFailedShipmentEmailDelivery,
   shipmentEmailTemplateVariables,
   updateEmailTemplate,
 } from "../lib/emailTemplates";
 import { getLocale, t } from "../lib/i18n";
-import { statusLabels } from "../lib/shipmentJobs";
 
 const emptyForm: EmailTemplateForm = {
   subject_template: "",
@@ -31,15 +27,9 @@ export default function EmailTemplateManagement() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [form, setForm] = useState<EmailTemplateForm>(emptyForm);
+  const [htmlTab, setHtmlTab] = useState<"source" | "preview">("source");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [failedDeliveries, setFailedDeliveries] = useState<
-    FailedShipmentEmailDelivery[]
-  >([]);
-  const [failedDeliveriesLoading, setFailedDeliveriesLoading] = useState(true);
-  const [retryingDeliveryId, setRetryingDeliveryId] = useState<string | null>(
-    null,
-  );
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -93,23 +83,8 @@ export default function EmailTemplateManagement() {
     }
   }, [selectTemplate, selectedKey, showToast]);
 
-  const loadFailedDeliveries = useCallback(async () => {
-    setFailedDeliveriesLoading(true);
-    try {
-      setFailedDeliveries(await fetchFailedShipmentEmailDeliveries());
-    } catch {
-      showToast(
-        "error",
-        t("superAdmin.emailTemplates.failedEmails.loadFailed"),
-      );
-    } finally {
-      setFailedDeliveriesLoading(false);
-    }
-  }, [showToast]);
-
   useEffect(() => {
     void loadTemplates();
-    void loadFailedDeliveries();
     // The selected key is intentionally excluded so local edits do not reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -150,34 +125,6 @@ export default function EmailTemplateManagement() {
       showToast("error", t("superAdmin.emailTemplates.updateFailed"));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleRetry = async (delivery: FailedShipmentEmailDelivery) => {
-    const confirmed = window.confirm(
-      t("superAdmin.emailTemplates.failedEmails.confirmRetry", {
-        email: delivery.recipient_email,
-      }),
-    );
-    if (!confirmed) return;
-
-    setRetryingDeliveryId(delivery.id);
-    try {
-      await retryFailedShipmentEmailDelivery(delivery.id);
-      setFailedDeliveries((current) =>
-        current.filter((item) => item.id !== delivery.id),
-      );
-      showToast(
-        "success",
-        t("superAdmin.emailTemplates.failedEmails.retryStarted"),
-      );
-    } catch {
-      showToast(
-        "error",
-        t("superAdmin.emailTemplates.failedEmails.retryFailed"),
-      );
-    } finally {
-      setRetryingDeliveryId(null);
     }
   };
 
@@ -330,147 +277,106 @@ export default function EmailTemplateManagement() {
                 rows={18}
                 maxLength={50000}
               />
-              <TemplateField
-                label={t("superAdmin.emailTemplates.html")}
+              <HtmlTemplateField
                 value={form.html_template}
                 onChange={(value) => updateField("html_template", value)}
-                multiline
-                rows={24}
-                maxLength={200000}
-                monospace
+                activeTab={htmlTab}
+                onTabChange={setHtmlTab}
               />
             </div>
           )}
         </section>
       </div>
+    </div>
+  );
+}
 
-      <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 border-b border-gray-200 p-6 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="rounded-2xl bg-red-50 p-3 text-red-700 dark:bg-red-950 dark:text-red-300">
-              <AlertTriangle className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-black text-gray-900 dark:text-white">
-                  {t("superAdmin.emailTemplates.failedEmails.title")}
-                </h2>
-                {!failedDeliveriesLoading && (
-                  <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-black text-red-700 dark:bg-red-950 dark:text-red-300">
-                    {failedDeliveries.length}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-                {t("superAdmin.emailTemplates.failedEmails.description")}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => void loadFailedDeliveries()}
-            disabled={failedDeliveriesLoading || retryingDeliveryId !== null}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${failedDeliveriesLoading ? "animate-spin" : ""}`}
-            />
-            {t("superAdmin.emailTemplates.failedEmails.refresh")}
-          </button>
+function HtmlTemplateField({
+  value,
+  onChange,
+  activeTab,
+  onTabChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  activeTab: "source" | "preview";
+  onTabChange: (tab: "source" | "preview") => void;
+}) {
+  return (
+    <div>
+      <div
+        role="tablist"
+        aria-label={t("superAdmin.emailTemplates.html")}
+        className="flex w-fit rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-950"
+      >
+        <button
+          type="button"
+          role="tab"
+          id="html-source-tab"
+          aria-selected={activeTab === "source"}
+          aria-controls="html-source-panel"
+          onClick={() => onTabChange("source")}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition ${
+            activeTab === "source"
+              ? "bg-white text-gray-950 shadow-sm dark:bg-gray-800 dark:text-white"
+              : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          <Code2 className="h-4 w-4" />
+          {t("superAdmin.emailTemplates.html")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="html-preview-tab"
+          aria-selected={activeTab === "preview"}
+          aria-controls="html-preview-panel"
+          onClick={() => onTabChange("preview")}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition ${
+            activeTab === "preview"
+              ? "bg-white text-gray-950 shadow-sm dark:bg-gray-800 dark:text-white"
+              : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          <Eye className="h-4 w-4" />
+          {t("superAdmin.emailTemplates.htmlPreview")}
+        </button>
+      </div>
+
+      {activeTab === "source" ? (
+        <div
+          role="tabpanel"
+          id="html-source-panel"
+          aria-labelledby="html-source-tab"
+        >
+          <textarea
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            rows={24}
+            maxLength={200000}
+            aria-label={t("superAdmin.emailTemplates.html")}
+            className="mt-2 w-full resize-y rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:border-cyan-700"
+          />
+          <span className="mt-1 block text-right text-xs text-gray-400">
+            {value.length.toLocaleString()} / {Number(200000).toLocaleString()}
+          </span>
         </div>
-
-        {failedDeliveriesLoading ? (
-          <p className="p-8 text-center text-sm text-gray-500">
-            {t("common.loading")}
-          </p>
-        ) : failedDeliveries.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-12 text-center">
-            <span className="rounded-full bg-emerald-50 p-4 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
-              <CheckCircle2 className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-bold text-gray-700 dark:text-gray-300">
-              {t("superAdmin.emailTemplates.failedEmails.empty")}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-sm dark:divide-gray-800">
-              <thead className="bg-gray-50 text-xs font-black uppercase tracking-wide text-gray-500 dark:bg-gray-950 dark:text-gray-400">
-                <tr>
-                  <th className="px-5 py-3">
-                    {t("superAdmin.emailTemplates.failedEmails.recipient")}
-                  </th>
-                  <th className="px-5 py-3">
-                    {t("superAdmin.emailTemplates.failedEmails.shipment")}
-                  </th>
-                  <th className="px-5 py-3">
-                    {t("superAdmin.emailTemplates.failedEmails.attempts")}
-                  </th>
-                  <th className="px-5 py-3">
-                    {t("superAdmin.emailTemplates.failedEmails.error")}
-                  </th>
-                  <th className="px-5 py-3">
-                    {t("superAdmin.emailTemplates.failedEmails.lastAttempt")}
-                  </th>
-                  <th className="px-5 py-3 text-right">
-                    {t("superAdmin.emailTemplates.failedEmails.action")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {failedDeliveries.map((delivery) => (
-                  <tr key={delivery.id} className="align-top">
-                    <td className="whitespace-nowrap px-5 py-4 font-bold text-gray-900 dark:text-white">
-                      {delivery.recipient_email}
-                    </td>
-                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                      <p className="font-bold text-gray-900 dark:text-white">
-                        {delivery.awb_bl_number || "-"}
-                      </p>
-                      <p className="mt-1 whitespace-nowrap text-xs">
-                        {formatStatus(delivery.previous_status)} →{" "}
-                        {formatStatus(delivery.current_status)}
-                      </p>
-                      <p className="mt-1 whitespace-nowrap text-xs text-gray-400">
-                        {delivery.origin || "-"} → {delivery.destination || "-"}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 font-bold text-red-700 dark:text-red-300">
-                      {delivery.attempts}
-                    </td>
-                    <td className="max-w-sm px-5 py-4 text-xs text-red-700 dark:text-red-300">
-                      <p className="break-words">
-                        {delivery.last_error ||
-                          t(
-                            "superAdmin.emailTemplates.failedEmails.unknownError",
-                          )}
-                      </p>
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-500 dark:text-gray-400">
-                      {formatDate(delivery.updated_at)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void handleRetry(delivery)}
-                        disabled={retryingDeliveryId !== null}
-                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-red-600 px-3 py-2 text-xs font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <RotateCcw
-                          className={`h-3.5 w-3.5 ${retryingDeliveryId === delivery.id ? "animate-spin" : ""}`}
-                        />
-                        {retryingDeliveryId === delivery.id
-                          ? t("superAdmin.emailTemplates.failedEmails.retrying")
-                          : t("superAdmin.emailTemplates.failedEmails.retry")}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      ) : (
+        <div
+          role="tabpanel"
+          id="html-preview-panel"
+          aria-labelledby="html-preview-tab"
+          className="mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800"
+        >
+          <iframe
+            title={t("superAdmin.emailTemplates.htmlPreviewTitle")}
+            srcDoc={value}
+            sandbox=""
+            referrerPolicy="no-referrer"
+            className="h-[680px] w-full bg-white"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -537,8 +443,4 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function formatStatus(value: string) {
-  return statusLabels[value as keyof typeof statusLabels] ?? value;
 }

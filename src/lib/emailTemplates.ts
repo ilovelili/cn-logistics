@@ -15,20 +15,6 @@ export interface EmailTemplateForm {
   html_template: string;
 }
 
-export interface FailedShipmentEmailDelivery {
-  id: string;
-  recipient_email: string;
-  previous_status: string;
-  current_status: string;
-  awb_bl_number: string | null;
-  origin: string | null;
-  destination: string | null;
-  attempts: number;
-  last_error: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export const shipmentEmailTemplateVariables = [
   "awb_bl_number",
   "origin",
@@ -78,31 +64,4 @@ export async function updateEmailTemplate(
   }
 
   return updatedTemplate;
-}
-
-export async function fetchFailedShipmentEmailDeliveries(): Promise<
-  FailedShipmentEmailDelivery[]
-> {
-  const { data, error } = await supabase.rpc(
-    "list_failed_shipment_emails_for_super_admin",
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as FailedShipmentEmailDelivery[];
-}
-
-export async function retryFailedShipmentEmailDelivery(
-  deliveryId: string,
-): Promise<void> {
-  const { error } = await supabase.rpc(
-    "retry_failed_shipment_email_for_super_admin",
-    { target_delivery_id: deliveryId },
-  );
-
-  if (error) {
-    throw error;
-  }
 }

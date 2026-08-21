@@ -50,6 +50,25 @@ const ja = {
   "notifications.previousStatus": "更新前ステータス",
   "notifications.currentStatus": "現在のステータス",
 
+  "appFeedback.open": "フィードバック",
+  "appFeedback.close": "フィードバックを閉じる",
+  "appFeedback.title": "ご意見・ご要望",
+  "appFeedback.description":
+    "CN Navigatorをより良くするためにお聞かせください。",
+  "appFeedback.feedbackTitle": "件名",
+  "appFeedback.titlePlaceholder": "フィードバックの概要",
+  "appFeedback.message": "内容",
+  "appFeedback.messagePlaceholder":
+    "お気づきの点やご要望を詳しくご記入ください",
+  "appFeedback.page": "対象ページ（任意）",
+  "appFeedback.pagePlaceholder": "ページを選択しない",
+  "appFeedback.submit": "送信する",
+  "appFeedback.submitting": "送信中...",
+  "appFeedback.submitFailed": "フィードバックを送信できませんでした",
+  "appFeedback.thankYou": "ありがとうございます",
+  "appFeedback.submitted": "フィードバックを受け付けました。",
+  "appFeedback.done": "閉じる",
+
   "common.status": "ステータス",
   "common.shipperName": "荷主名",
   "common.trade": "取引",
@@ -470,6 +489,8 @@ const ja = {
   "superAdmin.emailTemplates.subject": "件名",
   "superAdmin.emailTemplates.plainText": "テキスト本文",
   "superAdmin.emailTemplates.html": "HTML本文",
+  "superAdmin.emailTemplates.htmlPreview": "プレビュー",
+  "superAdmin.emailTemplates.htmlPreviewTitle": "HTMLメールプレビュー",
   "superAdmin.emailTemplates.variables": "利用可能な差し込み項目",
   "superAdmin.emailTemplates.variablesDescription":
     "以下の項目は送信時に案件情報へ置き換わります。二重波括弧を含めて入力してください。",
@@ -482,30 +503,6 @@ const ja = {
     "メールテンプレートの更新に失敗しました",
   "superAdmin.emailTemplates.validationFailed":
     "件名（1行）、テキスト本文、HTML本文を入力してください",
-  "superAdmin.emailTemplates.failedEmails.title": "送信失敗メール",
-  "superAdmin.emailTemplates.failedEmails.description":
-    "自動再試行を5回使い切ったメールです。手動再試行すると、新たに最大5回の送信を開始します。",
-  "superAdmin.emailTemplates.failedEmails.loadFailed":
-    "送信失敗メールの読み込みに失敗しました",
-  "superAdmin.emailTemplates.failedEmails.refresh": "更新",
-  "superAdmin.emailTemplates.failedEmails.empty":
-    "対応が必要な送信失敗メールはありません。",
-  "superAdmin.emailTemplates.failedEmails.recipient": "宛先",
-  "superAdmin.emailTemplates.failedEmails.shipment": "出荷案件",
-  "superAdmin.emailTemplates.failedEmails.attempts": "試行回数",
-  "superAdmin.emailTemplates.failedEmails.error": "最終エラー",
-  "superAdmin.emailTemplates.failedEmails.lastAttempt": "最終試行",
-  "superAdmin.emailTemplates.failedEmails.action": "操作",
-  "superAdmin.emailTemplates.failedEmails.unknownError": "不明な送信エラー",
-  "superAdmin.emailTemplates.failedEmails.retry": "再試行",
-  "superAdmin.emailTemplates.failedEmails.retrying": "再試行中...",
-  "superAdmin.emailTemplates.failedEmails.confirmRetry":
-    "{email} へのメール送信を再試行しますか？新たに最大5回の送信を開始します。",
-  "superAdmin.emailTemplates.failedEmails.retryStarted":
-    "メールの再試行を開始しました",
-  "superAdmin.emailTemplates.failedEmails.retryFailed":
-    "メールの再試行を開始できませんでした",
-
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",
   "admin.login.username": "メール",
@@ -571,6 +568,24 @@ const en: Messages = {
   "notifications.destination": "Destination (POD)",
   "notifications.previousStatus": "Previous status",
   "notifications.currentStatus": "Current status",
+
+  "appFeedback.open": "Feedback",
+  "appFeedback.close": "Close feedback",
+  "appFeedback.title": "Share feedback",
+  "appFeedback.description": "Help us make CN Navigator better.",
+  "appFeedback.feedbackTitle": "Feedback title",
+  "appFeedback.titlePlaceholder": "Briefly summarize your feedback",
+  "appFeedback.message": "Message",
+  "appFeedback.messagePlaceholder":
+    "Tell us what you noticed or would like to improve",
+  "appFeedback.page": "Page (optional)",
+  "appFeedback.pagePlaceholder": "Do not select a page",
+  "appFeedback.submit": "Send feedback",
+  "appFeedback.submitting": "Sending...",
+  "appFeedback.submitFailed": "Feedback could not be sent",
+  "appFeedback.thankYou": "Thank you",
+  "appFeedback.submitted": "Your feedback has been received.",
+  "appFeedback.done": "Close",
 
   "common.status": "Status",
   "common.shipperName": "Shipper",
@@ -995,6 +1010,8 @@ const en: Messages = {
   "superAdmin.emailTemplates.subject": "Subject",
   "superAdmin.emailTemplates.plainText": "Plain-text body",
   "superAdmin.emailTemplates.html": "HTML body",
+  "superAdmin.emailTemplates.htmlPreview": "Preview",
+  "superAdmin.emailTemplates.htmlPreviewTitle": "HTML email preview",
   "superAdmin.emailTemplates.variables": "Available variables",
   "superAdmin.emailTemplates.variablesDescription":
     "These variables are replaced with shipment data when the email is sent. Include the double braces.",
@@ -1006,30 +1023,6 @@ const en: Messages = {
     "Failed to update the email template",
   "superAdmin.emailTemplates.validationFailed":
     "Enter a single-line subject, plain-text body, and HTML body",
-  "superAdmin.emailTemplates.failedEmails.title": "Failed email deliveries",
-  "superAdmin.emailTemplates.failedEmails.description":
-    "These emails exhausted all five automatic attempts. A manual retry starts a fresh cycle of up to five attempts.",
-  "superAdmin.emailTemplates.failedEmails.loadFailed":
-    "Failed to load failed email deliveries",
-  "superAdmin.emailTemplates.failedEmails.refresh": "Refresh",
-  "superAdmin.emailTemplates.failedEmails.empty":
-    "No failed email deliveries need attention.",
-  "superAdmin.emailTemplates.failedEmails.recipient": "Recipient",
-  "superAdmin.emailTemplates.failedEmails.shipment": "Shipment",
-  "superAdmin.emailTemplates.failedEmails.attempts": "Attempts",
-  "superAdmin.emailTemplates.failedEmails.error": "Last error",
-  "superAdmin.emailTemplates.failedEmails.lastAttempt": "Last attempt",
-  "superAdmin.emailTemplates.failedEmails.action": "Action",
-  "superAdmin.emailTemplates.failedEmails.unknownError":
-    "Unknown delivery error",
-  "superAdmin.emailTemplates.failedEmails.retry": "Retry",
-  "superAdmin.emailTemplates.failedEmails.retrying": "Retrying...",
-  "superAdmin.emailTemplates.failedEmails.confirmRetry":
-    "Retry the email to {email}? This starts a fresh cycle of up to five attempts.",
-  "superAdmin.emailTemplates.failedEmails.retryStarted": "Email retry started",
-  "superAdmin.emailTemplates.failedEmails.retryFailed":
-    "Failed to start the email retry",
-
   "admin.login.title": "Admin portal",
   "admin.login.heading": "Login",
   "admin.login.username": "Email",

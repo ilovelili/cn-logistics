@@ -4,6 +4,7 @@ import { Bell, LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
 import NotificationsPage from "./components/NotificationsPage";
 import DynamicTutorial from "./components/DynamicTutorial";
+import FeedbackWidget from "./components/FeedbackWidget";
 import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LogoMark from "./components/LogoMark";
@@ -909,18 +910,21 @@ function AppContent({
   }
 
   return (
-    <MainApp
-      darkMode={darkMode}
-      onToggleDark={onToggleDark}
-      profileEmail={authEmail}
-      profileRole={profileRole}
-      profileShipperName={profileShipperName}
-      switchedAccountName={switchedAccountName}
-      initialAdminMode={authRole === "admin"}
-      onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}
-      onBackToAdmin={isSwitchedFromAdmin ? handleBackToAdmin : undefined}
-      onLogout={handleLogout}
-    />
+    <>
+      <MainApp
+        darkMode={darkMode}
+        onToggleDark={onToggleDark}
+        profileEmail={authEmail}
+        profileRole={profileRole}
+        profileShipperName={profileShipperName}
+        switchedAccountName={switchedAccountName}
+        initialAdminMode={authRole === "admin"}
+        onSwitchToUser={authRole === "admin" ? handleSwitchToUser : undefined}
+        onBackToAdmin={isSwitchedFromAdmin ? handleBackToAdmin : undefined}
+        onLogout={handleLogout}
+      />
+      <FeedbackWidget profileRole={profileRole} />
+    </>
   );
 }
 
