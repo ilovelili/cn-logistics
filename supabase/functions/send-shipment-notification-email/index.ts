@@ -27,6 +27,7 @@ type EmailTemplateClient = Pick<SupabaseClient, "from">;
 
 const senderAddress = "no-reply@navigator.cnlogistics.co.jp";
 const smtpHost = "email-smtp.ap-northeast-1.amazonaws.com";
+const configurationSetName = "cn-navigator";
 const templateKey = "shipment_status_update";
 const statusLabels: Record<string, { ja: string; en: string }> = {
   under_process: { ja: "処理中", en: "Under process" },
@@ -127,6 +128,9 @@ Deno.serve(async (request) => {
       subject: message.subject,
       text: message.text,
       html: message.html,
+      headers: {
+        "X-SES-CONFIGURATION-SET": configurationSetName,
+      },
     });
 
     const { error: completeError } = await supabase.rpc(
