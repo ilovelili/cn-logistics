@@ -148,7 +148,7 @@ export interface ShipmentJobForm {
 interface UploadedShipmentDocument {
   name: string;
   storagePath: string;
-  fileUrl: string;
+  fileUrl: null;
 }
 
 export const standardFlowStatusOptions: {
@@ -627,21 +627,43 @@ export async function fetchShipmentDocuments(
     throw error;
   }
 
-  return (data ?? []) as ShipmentDocument[];
+  return Promise.all(
+    ((data ?? []) as ShipmentDocument[]).map(async (document) => {
+      if (!document.storage_path) return document;
+
+      const { data: signedUrl, error: signedUrlError } = await supabase.storage
+        .from("shipment-documents")
+        .createSignedUrl(document.storage_path, 60 * 15);
+
+      return {
+        ...document,
+        file_url: signedUrlError ? null : signedUrl.signedUrl,
+      };
+    }),
+  );
 }
 
-export async function createShipmentJob(form: ShipmentJobForm) {
+export async function createShipmentJob(
+  form: ShipmentJobForm,
+  requesterEmail: string,
+) {
   const jobId = crypto.randomUUID();
-  const { error } = await supabase
-    .from("shipment_jobs")
-    .insert({ id: jobId, ...formToPayload(form) });
+  const [documentsPayload, eventsPayload] = await Promise.all([
+    buildShipmentDocumentsPayload(jobId, form),
+    Promise.resolve(buildShipmentTrackingEventsPayload(jobId, form)),
+  ]);
+  const { error } = await supabase.rpc("save_accessible_shipment_job", {
+    requester_email: requesterEmail,
+    target_job_id: jobId,
+    job_payload: formToPayload(form),
+    documents_payload: documentsPayload,
+    events_payload: eventsPayload,
+    create_new: true,
+  });
 
   if (error) {
     throw error;
   }
-
-  await replaceShipmentDocuments(jobId, form);
-  await replaceShipmentTrackingEvents(jobId, form);
 }
 
 export async function updateShipmentJob(
@@ -649,18 +671,22 @@ export async function updateShipmentJob(
   form: ShipmentJobForm,
   requesterEmail: string,
 ) {
-  const { error } = await supabase.rpc("update_accessible_shipment_job", {
+  const [documentsPayload, eventsPayload] = await Promise.all([
+    buildShipmentDocumentsPayload(id, form, requesterEmail),
+    Promise.resolve(buildShipmentTrackingEventsPayload(id, form)),
+  ]);
+  const { error } = await supabase.rpc("save_accessible_shipment_job", {
     requester_email: requesterEmail,
     target_job_id: id,
     job_payload: formToPayload(form),
+    documents_payload: documentsPayload,
+    events_payload: eventsPayload,
+    create_new: false,
   });
 
   if (error) {
     throw error;
   }
-
-  await replaceShipmentDocuments(id, form, requesterEmail);
-  await replaceShipmentTrackingEvents(id, form, requesterEmail);
 }
 
 export async function updateShipmentDocumentApproval(
@@ -795,7 +821,10 @@ export function isCustomerDocumentDownloadApprovalExpired(
 }
 
 export function isShipmentDocumentPreviewable(document: ShipmentDocument) {
-  return Boolean(document.file_url) || isCustomerDocumentDownloadable(document);
+  return (
+    Boolean(document.file_url) &&
+    (document.scope === "internal" || isCustomerDocumentDownloadable(document))
+  );
 }
 
 export interface ShipmentStatusPeriod {
@@ -923,7 +952,10 @@ export async function downloadShipmentDocument(
     throw new Error("Document download is not approved.");
   }
 
-  const fileUrl = document.file_url || "/sample-document.pdf";
+  const fileUrl = document.file_url;
+  if (!fileUrl) {
+    throw new Error("Document file is unavailable.");
+  }
   const fileName = getDownloadFileName(document);
   const response = await fetch(fileUrl);
 
@@ -1056,7 +1088,7 @@ function startOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-async function replaceShipmentDocuments(
+async function buildShipmentDocumentsPayload(
   jobId: string,
   form: ShipmentJobForm,
   requesterEmail?: string,
@@ -1099,32 +1131,7 @@ async function replaceShipmentDocuments(
     ),
   ];
 
-  if (requesterEmail) {
-    const { error } = await supabase.rpc(
-      "replace_accessible_shipment_documents",
-      {
-        requester_email: requesterEmail,
-        target_job_id: jobId,
-        documents_payload: nextDocuments,
-      },
-    );
-
-    if (error) {
-      throw error;
-    }
-
-    return;
-  }
-
-  const { error: upsertError } = await supabase
-    .from("shipment_documents")
-    .upsert(nextDocuments, {
-      onConflict: "shipment_job_id,scope,name",
-    });
-
-  if (upsertError) {
-    throw upsertError;
-  }
+  return nextDocuments;
 }
 
 async function fetchDocumentsForJob(
@@ -1161,7 +1168,9 @@ function buildDocumentPayload(
     scope,
     name,
     storage_path: uploaded?.storagePath ?? existing?.storage_path ?? null,
-    file_url: uploaded?.fileUrl ?? existing?.file_url ?? null,
+    file_url:
+      uploaded?.fileUrl ??
+      (existing?.storage_path ? null : (existing?.file_url ?? null)),
     approval_status:
       existing?.approval_status ??
       (scope === "internal" ? "approved" : "not_requested"),
@@ -1177,12 +1186,11 @@ function documentKey(scope: DocumentScope, name: string) {
   return `${scope}:${name}`;
 }
 
-async function replaceShipmentTrackingEvents(
+function buildShipmentTrackingEventsPayload(
   jobId: string,
   form: ShipmentJobForm,
-  requesterEmail?: string,
 ) {
-  const nextEvents = form.tracking_events
+  return form.tracking_events
     .map((event, index) => ({
       shipment_job_id: jobId,
       event_date: event.event_date,
@@ -1191,44 +1199,6 @@ async function replaceShipmentTrackingEvents(
       sort_order: index,
     }))
     .filter((event) => event.event_date && event.description);
-
-  if (requesterEmail) {
-    const { error } = await supabase.rpc(
-      "replace_accessible_shipment_tracking_events",
-      {
-        requester_email: requesterEmail,
-        target_job_id: jobId,
-        events_payload: nextEvents,
-      },
-    );
-
-    if (error) {
-      throw error;
-    }
-
-    return;
-  }
-
-  const { error: deleteError } = await supabase
-    .from("shipment_tracking_events")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("shipment_job_id", jobId);
-
-  if (deleteError) {
-    throw deleteError;
-  }
-
-  if (!nextEvents.length) {
-    return;
-  }
-
-  const { error: insertError } = await supabase
-    .from("shipment_tracking_events")
-    .insert(nextEvents);
-
-  if (insertError) {
-    throw insertError;
-  }
 }
 
 function groupTrackingEventsByJob(events: ShipmentTrackingEvent[]) {
@@ -1271,21 +1241,17 @@ async function uploadShipmentDocumentFiles(
         .from("shipment-documents")
         .upload(storagePath, file, {
           cacheControl: "3600",
-          upsert: true,
+          upsert: false,
         });
 
       if (error) {
         throw error;
       }
 
-      const { data } = supabase.storage
-        .from("shipment-documents")
-        .getPublicUrl(storagePath);
-
       return {
         name: file.name,
         storagePath,
-        fileUrl: data.publicUrl,
+        fileUrl: null,
       };
     }),
   );

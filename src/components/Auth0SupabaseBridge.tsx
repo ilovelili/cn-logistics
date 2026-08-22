@@ -3,20 +3,26 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { setSupabaseAccessTokenProvider } from "../lib/supabase";
 
 export function Auth0SupabaseBridge({ children }: { children: ReactNode }) {
-  const { getIdTokenClaims } = useAuth0();
+  const { getAccessTokenSilently, getIdTokenClaims } = useAuth0();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setSupabaseAccessTokenProvider(async () => {
+      // Refresh the Auth0 session before reading the ID token that carries the
+      // non-namespaced `role: authenticated` claim required by Supabase.
+      await getAccessTokenSilently();
       const claims = await getIdTokenClaims();
-      return claims?.__raw ?? null;
+      if (!claims?.__raw) {
+        throw new Error("Missing Auth0 ID token");
+      }
+      return claims.__raw;
     });
     setReady(true);
 
     return () => {
       setSupabaseAccessTokenProvider(null);
     };
-  }, [getIdTokenClaims]);
+  }, [getAccessTokenSilently, getIdTokenClaims]);
 
   return ready ? children : null;
 }

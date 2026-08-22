@@ -1195,11 +1195,8 @@ function canRequestDocument(document: ShipmentDocument) {
 }
 
 function canPreviewDocument(document: ShipmentDocument, approvedOnly: boolean) {
-  return (
-    !approvedOnly ||
-    document.scope === "customer" ||
-    isShipmentDocumentPreviewable(document)
-  );
+  if (!document.file_url) return false;
+  return !approvedOnly || isShipmentDocumentPreviewable(document);
 }
 
 function ShipmentDocumentDeleteConfirmModal({

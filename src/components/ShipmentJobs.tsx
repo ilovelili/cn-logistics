@@ -253,7 +253,7 @@ export default function ShipmentJobs({
 
     setSaving(true);
     try {
-      await createShipmentJob(form);
+      await createShipmentJob(form, profileEmail);
       await onRefresh();
       setShowCreate(false);
       showToast("success", t("admin.entry.created"));

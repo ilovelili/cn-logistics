@@ -17,9 +17,11 @@ export default function DocumentPreviewModal({
   onClose,
 }: DocumentPreviewModalProps) {
   const shouldHideNativeToolbar = !(allowNativeToolbar ?? adminTheme);
+  if (!document.file_url) return null;
+
   const previewUrl = shouldHideNativeToolbar
-    ? appendPdfViewerParams(document.file_url || "/sample-document.pdf")
-    : document.file_url || "/sample-document.pdf";
+    ? appendPdfViewerParams(document.file_url)
+    : document.file_url;
 
   return (
     <div

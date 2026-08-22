@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Plus,
@@ -82,6 +82,8 @@ export default function TrackingEntryForm() {
     event_time: new Date().toISOString().slice(0, 16),
   });
   const [newStatus, setNewStatus] = useState("");
+  const searchRequestId = useRef(0);
+  const eventRequestId = useRef(0);
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -90,6 +92,7 @@ export default function TrackingEntryForm() {
 
   const searchParcels = async () => {
     if (!searchTerm.trim()) return;
+    const requestId = ++searchRequestId.current;
     setSearchLoading(true);
     try {
       const { data, error } = await supabase
@@ -97,14 +100,19 @@ export default function TrackingEntryForm() {
         .select(
           "id, tracking_number, status, order:orders(order_number, customer_name), carrier:carriers(name)",
         )
-        .or(`tracking_number.ilike.%${searchTerm}%`)
+        .ilike("tracking_number", `%${searchTerm.trim()}%`)
         .limit(10);
       if (error) throw error;
+      if (requestId !== searchRequestId.current) return;
       setParcels((data || []) as unknown as Parcel[]);
     } catch {
-      showToast("error", "検索に失敗しました");
+      if (requestId === searchRequestId.current) {
+        showToast("error", "検索に失敗しました");
+      }
     } finally {
-      setSearchLoading(false);
+      if (requestId === searchRequestId.current) {
+        setSearchLoading(false);
+      }
     }
   };
 
@@ -121,12 +129,20 @@ export default function TrackingEntryForm() {
   };
 
   const loadEvents = async (parcelId: string) => {
-    const { data } = await supabase
+    const requestId = ++eventRequestId.current;
+    const { data, error } = await supabase
       .from("tracking_events")
       .select("*")
       .eq("parcel_id", parcelId)
       .order("event_time", { ascending: false })
       .limit(10);
+    if (error) {
+      if (requestId === eventRequestId.current) {
+        showToast("error", "追跡履歴の読み込みに失敗しました");
+      }
+      return;
+    }
+    if (requestId !== eventRequestId.current) return;
     setEvents(data || []);
   };
 
@@ -173,6 +189,13 @@ export default function TrackingEntryForm() {
   useEffect(() => {
     if (!searchTerm.trim()) setParcels([]);
   }, [searchTerm]);
+
+  useEffect(() => {
+    return () => {
+      searchRequestId.current += 1;
+      eventRequestId.current += 1;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">

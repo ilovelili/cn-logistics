@@ -22,10 +22,19 @@ export async function lookupJapaneseAddress(zipcode: string) {
   const script = document.createElement("script");
 
   return new Promise<string | null>((resolve, reject) => {
+    let timeoutId: number | null = null;
     const cleanup = () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
       script.remove();
       delete window[callbackName as keyof Window];
     };
+
+    timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Zipcode lookup timed out"));
+    }, 10000);
 
     window[callbackName as keyof Window] = ((response: ZipCloudResponse) => {
       cleanup();

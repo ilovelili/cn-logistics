@@ -478,6 +478,7 @@ const ja = {
   "superAdmin.feedback.average": "平均評価点数",
   "superAdmin.feedback.operator": "CN担当",
   "superAdmin.feedback.submitter": "評価者",
+  "superAdmin.feedback.loadFailed": "評価履歴の読み込みに失敗しました",
   "superAdmin.feedback.noFeedback": "評価はまだありません。",
   "superAdmin.feedback.searchPlaceholder":
     "インボイス#、CN担当、評価者、理由で検索...",
@@ -998,6 +999,7 @@ const en: Messages = {
   "superAdmin.feedback.list": "Feedback history",
   "superAdmin.feedback.average": "Average rating score",
   "superAdmin.feedback.operator": "CN contact",
+  "superAdmin.feedback.loadFailed": "Failed to load feedback history",
   "superAdmin.feedback.submitter": "Submitter",
   "superAdmin.feedback.noFeedback": "No feedback yet.",
   "superAdmin.feedback.searchPlaceholder":

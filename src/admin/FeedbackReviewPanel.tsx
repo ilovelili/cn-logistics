@@ -73,6 +73,7 @@ export default function FeedbackReviewPanel({
   const [feedback, setFeedback] = useState<ShipmentFeedbackReview[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [sortKey, setSortKey] = useState<FeedbackColumnId>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
@@ -89,8 +90,12 @@ export default function FeedbackReviewPanel({
 
   const loadFeedback = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       setFeedback(await fetchAllShipmentFeedback(superAdminEmail));
+    } catch {
+      setFeedback([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -321,6 +326,12 @@ export default function FeedbackReviewPanel({
           </span>
         </h1>
       </section>
+
+      {loadError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+          {t("superAdmin.feedback.loadFailed")}
+        </div>
+      )}
 
       <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

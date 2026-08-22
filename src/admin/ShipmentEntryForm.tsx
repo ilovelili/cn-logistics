@@ -301,7 +301,7 @@ export default function ShipmentEntryForm({
   ) => {
     setLoading(true);
     try {
-      await createShipmentJob(form);
+      await createShipmentJob(form, adminEmail);
       await onRefresh();
       showToast("success", t("admin.entry.created"));
     } catch {

@@ -61,7 +61,7 @@ export async function uploadAppUserAvatar(email: string, file: File) {
     .from("app-avatars")
     .upload(path, file, {
       cacheControl: "3600",
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {

@@ -98,22 +98,26 @@ export async function submitShipmentFeedbackForTargets({
   targetRoles?: ShipmentFeedbackTargetRole[];
   reason: string;
 }): Promise<ShipmentFeedback[]> {
-  return Promise.all(
-    targetRoles.map((targetRole) =>
-      submitShipmentFeedback({
-        shipmentJobId,
-        submitterEmail,
-        attitudeRating: feedbackByTarget[targetRole].attitudeRating,
-        professionalismRating:
-          feedbackByTarget[targetRole].professionalismRating,
-        speedRating: feedbackByTarget[targetRole].speedRating,
-        accuracyRating: feedbackByTarget[targetRole].accuracyRating,
-        priceRating: feedbackByTarget[targetRole].priceRating,
-        targetRole,
-        reason,
-      }),
-    ),
-  );
+  const { data, error } = await supabase.rpc("submit_shipment_feedback_batch", {
+    feedback_shipment_job_id: shipmentJobId,
+    feedback_submitter_email: submitterEmail,
+    feedback_by_target: targetRoles.map((targetRole) => ({
+      target_role: targetRole,
+      attitude_rating: feedbackByTarget[targetRole].attitudeRating,
+      professionalism_rating:
+        feedbackByTarget[targetRole].professionalismRating,
+      speed_rating: feedbackByTarget[targetRole].speedRating,
+      accuracy_rating: feedbackByTarget[targetRole].accuracyRating,
+      price_rating: feedbackByTarget[targetRole].priceRating,
+    })),
+    feedback_reason: reason,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ShipmentFeedback[];
 }
 
 export const feedbackTargetRoles: ShipmentFeedbackTargetRole[] = [

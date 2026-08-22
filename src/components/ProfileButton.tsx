@@ -124,7 +124,7 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       }
 
       const coverScale =
-        Math.min(
+        Math.max(
           CROP_PREVIEW_SIZE / imageSize.width,
           CROP_PREVIEW_SIZE / imageSize.height,
         ) * zoom;
@@ -156,7 +156,7 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
     const displayScale =
-      Math.min(
+      Math.max(
         CROP_PREVIEW_SIZE / naturalWidth,
         CROP_PREVIEW_SIZE / naturalHeight,
       ) * cropZoom;
@@ -254,6 +254,14 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
   useEffect(() => {
     setCropPosition((position) => clampCropPosition(position));
   }, [clampCropPosition, cropImageSize, cropZoom]);
+
+  useEffect(() => {
+    return () => {
+      if (cropImageUrl) {
+        URL.revokeObjectURL(cropImageUrl);
+      }
+    };
+  }, [cropImageUrl]);
 
   const avatar = avatarUrl ? (
     <img
