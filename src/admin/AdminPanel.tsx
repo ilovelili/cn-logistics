@@ -26,7 +26,7 @@ import LogoMark from "../components/LogoMark";
 import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
 import { ShipperUser, fetchShipperUsersByAdmin } from "../lib/shipperUsers";
 import { AppUserRole } from "../lib/auth";
-import { t } from "../lib/i18n";
+import { t, type Locale } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
 
 type AdminView =
@@ -42,6 +42,8 @@ interface AdminPanelProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
   onToggleDark: () => void;
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
   profileEmail: string;
   profileRole: AppUserRole;
   switchedAccountName?: string;
@@ -60,6 +62,8 @@ export default function AdminPanel({
   jobs,
   documents,
   onToggleDark,
+  locale,
+  onLocaleChange,
   profileEmail,
   profileRole,
   switchedAccountName,
@@ -391,7 +395,7 @@ export default function AdminPanel({
                 </button>
               )}
             </InstantTooltip>
-            <LanguageSelect />
+            <LanguageSelect locale={locale} onLocaleChange={onLocaleChange} />
           </div>
         </div>
       </header>

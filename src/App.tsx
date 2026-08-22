@@ -13,7 +13,7 @@ import { AdminAuthProvider } from "./admin/AdminAuthProvider";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminPanel from "./admin/AdminPanel";
 import { AppUserRole, fetchAppUserProfile, syncAuth0AppUser } from "./lib/auth";
-import { t } from "./lib/i18n";
+import { getLocale, setLocale, t, type Locale } from "./lib/i18n";
 import {
   fetchShipmentNotifications,
   markShipmentNotificationRead,
@@ -66,6 +66,8 @@ function useDarkMode() {
 function MainApp({
   darkMode,
   onToggleDark,
+  locale,
+  onLocaleChange,
   profileEmail,
   profileRole,
   profileShipperName,
@@ -77,6 +79,8 @@ function MainApp({
 }: {
   darkMode: boolean;
   onToggleDark: () => void;
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
   profileEmail: string;
   profileRole: AppUserRole;
   profileShipperName: string | null;
@@ -242,6 +246,8 @@ function MainApp({
         jobs={jobs}
         documents={documents}
         onToggleDark={onToggleDark}
+        locale={locale}
+        onLocaleChange={onLocaleChange}
         profileEmail={profileEmail}
         profileRole={profileRole}
         switchedAccountName={switchedAccountName}
@@ -515,7 +521,10 @@ function MainApp({
                     </button>
                   )}
                 </InstantTooltip>
-                <LanguageSelect />
+                <LanguageSelect
+                  locale={locale}
+                  onLocaleChange={onLocaleChange}
+                />
               </div>
             </div>
           </header>
@@ -534,9 +543,13 @@ function LogoNavigationIcon({ className }: { className?: string }) {
 function AppContent({
   darkMode,
   onToggleDark,
+  locale,
+  onLocaleChange,
 }: {
   darkMode: boolean;
   onToggleDark: () => void;
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
 }) {
   const {
     logout: logoutAdmin,
@@ -914,6 +927,8 @@ function AppContent({
       <MainApp
         darkMode={darkMode}
         onToggleDark={onToggleDark}
+        locale={locale}
+        onLocaleChange={onLocaleChange}
         profileEmail={authEmail}
         profileRole={profileRole}
         profileShipperName={profileShipperName}
@@ -930,9 +945,21 @@ function AppContent({
 
 function AppWithAuth() {
   const [darkMode, toggleDark] = useDarkMode();
+  const [locale, setCurrentLocale] = useState<Locale>(getLocale);
+
+  const handleLocaleChange = (nextLocale: Locale) => {
+    setLocale(nextLocale);
+    setCurrentLocale(nextLocale);
+  };
+
   return (
     <AdminAuthProvider>
-      <AppContent darkMode={darkMode} onToggleDark={toggleDark} />
+      <AppContent
+        darkMode={darkMode}
+        onToggleDark={toggleDark}
+        locale={locale}
+        onLocaleChange={handleLocaleChange}
+      />
     </AdminAuthProvider>
   );
 }

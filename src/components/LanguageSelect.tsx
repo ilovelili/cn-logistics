@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { getLocale, setLocale, type Locale } from "../lib/i18n";
+import { type Locale } from "../lib/i18n";
 
 const languageOptions: Array<{
   value: Locale;
@@ -11,9 +11,15 @@ const languageOptions: Array<{
   { value: "en", flag: "🇺🇸", label: "English" },
 ];
 
-export default function LanguageSelect() {
+export default function LanguageSelect({
+  locale,
+  onLocaleChange,
+}: {
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
+}) {
   const listboxId = useId();
-  const currentLocale = getLocale();
+  const currentLocale = locale;
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(() =>
     Math.max(
@@ -74,8 +80,9 @@ export default function LanguageSelect() {
       return;
     }
 
-    setLocale(nextLocale);
-    window.location.reload();
+    onLocaleChange(nextLocale);
+    setOpen(false);
+    buttonRef.current?.focus();
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
