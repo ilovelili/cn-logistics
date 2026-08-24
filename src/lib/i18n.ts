@@ -11,10 +11,10 @@ const ja = {
   "auth.unavailable.title": "アカウントを確認できません",
   "auth.unavailable.message":
     "一時的な通信エラーによりアカウント情報を確認できませんでした。しばらくしてから再度お試しください。",
-  "auth.provisioning.retry": "Auth0登録を再試行",
-  "auth.provisioning.succeeded": "Auth0へのユーザー登録が完了しました",
+  "auth.provisioning.retry": "ユーザー登録を再試行",
+  "auth.provisioning.succeeded": "ユーザー登録が完了しました",
   "auth.provisioning.failed":
-    "Auth0へのユーザー登録に失敗しました。時間をおいて再度お試しください。",
+    "Aユーザー登録に失敗しました。時間をおいて再度お試しください。",
   "auth.provisioning.pending":
     "ユーザー情報は保存されましたが、Auth0への登録は未完了です。一覧から再試行してください。",
 
@@ -83,7 +83,8 @@ const ja = {
   "common.parties": "荷主/荷受人",
   "common.route": "ルート",
   "common.documents": "書類",
-  "common.internalDocuments": "社内書類",
+  "common.customerDocuments": "書類(顧客用)",
+  "common.internalDocuments": "書類(社内用)",
   "common.blAwbDate": "BL/AWB日付",
   "common.vesselFlightNo": "船名/便名 No.",
   "common.workingDaysSpent": "経過営業日",
@@ -397,7 +398,7 @@ const ja = {
   "admin.userRegistration.confirmReject":
     "この荷主を却下すると、承認待ち状態に戻せなくなります。",
   "admin.userRegistration.confirmDelete":
-    "この荷主をアプリとAuth0から削除します。この操作は取り消せません。",
+    "この荷主をアプリから削除します。この操作は取り消せません。",
 
   "superAdmin.nav.adminOperators": "管理者登録",
   "superAdmin.nav.standardFlow": "標準フロー管理",
@@ -436,7 +437,7 @@ const ja = {
     "削除を完了できませんでした。ユーザーが停止状態になっている場合は、もう一度削除をお試しください。",
   "superAdmin.operators.confirmDeleteTitle": "管理者を削除しますか？",
   "superAdmin.operators.confirmDelete":
-    "この管理者をアプリとAuth0から削除します。削除後はログインや切替先として利用できません。",
+    "この管理者をアプリから削除します。削除後はログインや切替先として利用できません。",
   "superAdmin.standardFlow.title": "出荷標準フロー管理",
   "superAdmin.standardFlow.description":
     "出荷案件で使う標準フローの追跡テンプレートを編集できます。",
@@ -531,12 +532,12 @@ const en: Messages = {
   "auth.unavailable.title": "Unable to verify account",
   "auth.unavailable.message":
     "A temporary service or network error prevented account verification. Please try again shortly.",
-  "auth.provisioning.retry": "Retry Auth0",
-  "auth.provisioning.succeeded": "The Auth0 user was provisioned",
+  "auth.provisioning.retry": "Retry Login",
+  "auth.provisioning.succeeded": "The user was provisioned",
   "auth.provisioning.failed":
-    "Auth0 provisioning failed. Please try again shortly.",
+    "User provisioning failed. Please try again shortly.",
   "auth.provisioning.pending":
-    "The user was saved, but Auth0 provisioning is incomplete. Retry from the list.",
+    "The user was saved, but user provisioning is incomplete. Retry from the list.",
 
   "profile.title": "Profile",
   "profile.email": "Email",
@@ -602,7 +603,8 @@ const en: Messages = {
   "common.parties": "Shipper / Consignee",
   "common.route": "Route",
   "common.documents": "Documents",
-  "common.internalDocuments": "Internal documents",
+  "common.customerDocuments": "Documents (customer)",
+  "common.internalDocuments": "Documents (internal)",
   "common.blAwbDate": "BL/AWB date",
   "common.vesselFlightNo": "Vessel / Flight No.",
   "common.workingDaysSpent": "Working days",
@@ -915,12 +917,12 @@ const en: Messages = {
   "admin.userRegistration.approvalFailed": "Failed to update approval status",
   "admin.userRegistration.deleted": "Shipper deleted",
   "admin.userRegistration.deleteFailed":
-    "Deletion could not be completed. If the user is now disabled, retry deletion to finish Auth0 cleanup.",
+    "Deletion could not be completed. If the user is now disabled, retry deletion to finish user cleanup.",
   "admin.userRegistration.confirmTitle": "{action}?",
   "admin.userRegistration.confirmApprove": "Approve this shipper registration.",
   "admin.userRegistration.confirmReject": "Reject this shipper registration.",
   "admin.userRegistration.confirmDelete":
-    "This shipper will be permanently removed from Auth0 and disabled in the application.",
+    "This shipper will be permanently removed from the application and disabled.",
 
   "superAdmin.nav.adminOperators": "Admin registration",
   "superAdmin.nav.standardFlow": "Standard flow mgmt",
@@ -956,10 +958,10 @@ const en: Messages = {
   "superAdmin.operators.updateFailed": "Failed to update admin",
   "superAdmin.operators.deleted": "Admin deleted",
   "superAdmin.operators.deleteFailed":
-    "Deletion could not be completed. If the user is now disabled, retry deletion to finish Auth0 cleanup.",
+    "Deletion could not be completed. If the user is now disabled, retry deletion to finish user cleanup.",
   "superAdmin.operators.confirmDeleteTitle": "Delete admin?",
   "superAdmin.operators.confirmDelete":
-    "This admin will be permanently removed from Auth0 and can no longer log in or be switched to.",
+    "This admin will be permanently removed and can no longer log in or be switched to.",
   "superAdmin.standardFlow.title": "Shipment standard flow management",
   "superAdmin.standardFlow.description":
     "Edit the tracking templates used by shipment standard flow.",

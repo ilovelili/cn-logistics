@@ -793,7 +793,9 @@ function buildColumns(
     },
     {
       id: "documents",
-      label: t("common.documents"),
+      label: t(
+        showInternalDocuments ? "common.customerDocuments" : "common.documents",
+      ),
       width: 320,
       render: (job) => (
         <DocumentPills

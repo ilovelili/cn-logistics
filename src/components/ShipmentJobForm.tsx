@@ -365,7 +365,7 @@ export default function ShipmentJobForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUploadField
-          label={t("common.documents")}
+          label={t("common.customerDocuments")}
           existingFiles={splitDocumentNames(form.documents)}
           existingDocuments={documents.filter(
             (document) => document.scope === "customer",
