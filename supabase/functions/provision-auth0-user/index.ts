@@ -254,6 +254,12 @@ async function provisionUser({
     body: JSON.stringify({
       connection,
       email,
+      // Auth0 otherwise sends a verification link for the M2M provisioning
+      // client, which has no interactive callback URL. Passwordless login
+      // still requires the user to prove mailbox access before a session is
+      // issued through the CN Navigator SPA client.
+      email_verified: true,
+      verify_email: false,
     }),
     signal: AbortSignal.timeout(10_000),
   });

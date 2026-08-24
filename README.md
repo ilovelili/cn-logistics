@@ -71,6 +71,12 @@ creation forms, including contacts added later from the shipper edit screen.
 Normal users still cannot enter the application until their
 `app_users.approval_status` is `approved`.
 
+Provisioning suppresses Auth0's automatic verification email because that
+message is generated for the Machine-to-Machine provisioning client, which has
+no browser callback URL. A newly provisioned user should open CN Navigator and
+complete the normal Auth0 passwordless email challenge there; provisioning does
+not create a logged-in session or bypass that challenge.
+
 Application users are saved before Auth0 provisioning begins. The database
 tracks each attempt as `pending`, `provisioned`, or `failed`; if Auth0 is
 temporarily unavailable, the user remains in the application list and an
