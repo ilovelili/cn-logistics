@@ -49,13 +49,20 @@ interface PreparedDeletion {
   auth0_user_id: string | null;
 }
 
-type UserLifecycleRpc = {
+type CallerLifecycleRpc = {
   (
     name: "begin_auth0_user_provisioning",
     args: {
       requested_users: Array<{ email: string; role: ProvisionableRole }>;
     },
   ): PromiseLike<{ data: PreparedUser[] | null; error: unknown }>;
+  (
+    name: "begin_auth0_user_deletion",
+    args: { target_user_id: string },
+  ): PromiseLike<{ data: PreparedDeletion[] | null; error: unknown }>;
+};
+
+type CompletionLifecycleRpc = {
   (
     name: "finish_auth0_user_provisioning",
     args: {
@@ -64,10 +71,6 @@ type UserLifecycleRpc = {
       provisioning_error: string | null;
     },
   ): PromiseLike<{ data: null; error: unknown }>;
-  (
-    name: "begin_auth0_user_deletion",
-    args: { target_user_id: string },
-  ): PromiseLike<{ data: PreparedDeletion[] | null; error: unknown }>;
   (
     name: "finish_auth0_user_deletion",
     args: { target_user_id: string; deletion_error: string | null },
@@ -340,13 +343,19 @@ export default {
     // The caller supplies an Auth0 token. Forward it to PostgREST so the
     // configured Supabase third-party Auth integration validates the token and
     // the database functions can authorize the corresponding app user.
+    const supabaseUrl = requiredEnv("SUPABASE_URL");
     const supabase = createClient(
-      requiredEnv("SUPABASE_URL"),
+      supabaseUrl,
       requiredEnv("SUPABASE_ANON_KEY"),
       {
         global: { headers: { Authorization: authorization } },
         auth: { persistSession: false, autoRefreshToken: false },
       },
+    );
+    const supabaseAdmin = createClient(
+      supabaseUrl,
+      requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
     try {
@@ -364,7 +373,10 @@ export default {
       const body = (await request.json()) as UserLifecycleRequest;
       const lifecycleRpc = supabase.rpc.bind(
         supabase,
-      ) as unknown as UserLifecycleRpc;
+      ) as unknown as CallerLifecycleRpc;
+      const completionRpc = supabaseAdmin.rpc.bind(
+        supabaseAdmin,
+      ) as unknown as CompletionLifecycleRpc;
 
       if (body.action === "delete") {
         const targetUserId = body.user_id?.trim() ?? "";
@@ -406,7 +418,7 @@ export default {
             email: preparedDeletion.email,
             storedUserId: preparedDeletion.auth0_user_id,
           });
-          const { error: completionError } = await lifecycleRpc(
+          const { error: completionError } = await completionRpc(
             "finish_auth0_user_deletion",
             { target_user_id: targetUserId, deletion_error: null },
           );
@@ -419,7 +431,7 @@ export default {
             error instanceof Error
               ? error.message
               : "Auth0 user deletion failed";
-          await lifecycleRpc("finish_auth0_user_deletion", {
+          await completionRpc("finish_auth0_user_deletion", {
             target_user_id: targetUserId,
             deletion_error: message,
           });
@@ -465,7 +477,7 @@ export default {
             connection,
             email: user.email,
           });
-          const { error: completionError } = await lifecycleRpc(
+          const { error: completionError } = await completionRpc(
             "finish_auth0_user_provisioning",
             {
               provisioned_email: user.email,
@@ -482,7 +494,7 @@ export default {
             error instanceof Error
               ? error.message
               : "Auth0 provisioning failed";
-          await lifecycleRpc("finish_auth0_user_provisioning", {
+          await completionRpc("finish_auth0_user_provisioning", {
             provisioned_email: user.email,
             provisioned_auth0_user_id: null,
             provisioning_error: message,
