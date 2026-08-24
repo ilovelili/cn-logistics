@@ -75,7 +75,8 @@ export default function ShipmentJobDetailModal({
               </span>
             </div>
             <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-              {job.shipper_name || "-"} → {job.consignee_name || "-"}
+              {job.consignor_name || job.shipper_name || "-"} →{" "}
+              {job.consignee_name || "-"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -172,6 +173,10 @@ export default function ShipmentJobDetailModal({
               <DetailField
                 label={t("common.consignee")}
                 value={job.consignee_name}
+              />
+              <DetailField
+                label={t("common.consignor")}
+                value={job.consignor_name}
               />
               <DetailField
                 label={t("common.invoice")}

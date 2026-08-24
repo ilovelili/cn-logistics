@@ -37,6 +37,7 @@ export interface ShipmentJob {
   transport_mode: TransportMode | null;
   shipper_name: string | null;
   consignee_name: string | null;
+  consignor_name: string | null;
   pol_aol: string | null;
   pod_aod: string | null;
   vessel_flight_numbers: string[];
@@ -127,6 +128,7 @@ export interface ShipmentJobForm {
   transport_mode: TransportMode;
   shipper_name: string;
   consignee_name: string;
+  consignor_name: string;
   pol_aol: string;
   pod_aod: string;
   vessel_flight_numbers: string[];
@@ -313,6 +315,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   transport_mode: "air",
   shipper_name: "",
   consignee_name: "",
+  consignor_name: "",
   pol_aol: "",
   pod_aod: "",
   vessel_flight_numbers: [""],
@@ -358,6 +361,7 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     transport_mode: job.transport_mode ?? "air",
     shipper_name: job.shipper_name ?? "",
     consignee_name: job.consignee_name ?? "",
+    consignor_name: job.consignor_name ?? "",
     pol_aol: job.pol_aol ?? "",
     pod_aod: job.pod_aod ?? "",
     vessel_flight_numbers:
@@ -405,6 +409,7 @@ export function formToPayload(form: ShipmentJobForm) {
     transport_mode: form.transport_mode || null,
     shipper_name: form.shipper_name || null,
     consignee_name: form.consignee_name || null,
+    consignor_name: form.consignor_name || null,
     pol_aol: form.pol_aol || null,
     pod_aod: form.pod_aod || null,
     vessel_flight_numbers: form.vessel_flight_numbers

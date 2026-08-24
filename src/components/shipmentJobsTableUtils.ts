@@ -28,6 +28,7 @@ export function buildShipmentJobSearchText(
     job.invoice_number,
     job.job_number,
     job.consignee_name,
+    job.consignor_name,
     job.pol_aol,
     job.pod_aod,
     ...(job.vessel_flight_numbers ?? []),
@@ -69,6 +70,7 @@ export function getShipmentJobSortValue(
     case "invoice_number":
     case "job_number":
     case "consignee_name":
+    case "consignor_name":
     case "pol_aol":
     case "pod_aod":
       return job[sortKey] ?? "";

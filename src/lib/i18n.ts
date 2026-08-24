@@ -80,7 +80,8 @@ const ja = {
   "common.jobNumber": "Job No.",
   "common.shipper": "荷主",
   "common.consignee": "荷受人",
-  "common.parties": "荷主/荷受人",
+  "common.consignor": "荷送人",
+  "common.parties": "荷主/荷送人/荷受人",
   "common.route": "ルート",
   "common.documents": "書類",
   "common.customerDocuments": "書類(顧客用)",
@@ -228,7 +229,7 @@ const ja = {
   "jobs.new": "出荷案件を追加",
   "jobs.createTitle": "出荷案件を作成",
   "jobs.searchPlaceholder":
-    "インボイス#、荷主名、担当者、荷主、荷受人、POL/AOL、POD/AOD、BL/AWB、書類で検索...",
+    "インボイス#、荷主名、担当者、荷主、荷受人、荷送人、POL/AOL、POD/AOD、BL/AWB、書類で検索...",
   "jobs.filter.allShippers": "すべての荷主",
   "jobs.filter.allStatus": "すべてのステータス",
   "jobs.filter.allTrade": "すべての取引",
@@ -310,6 +311,7 @@ const ja = {
   "form.invoice": "インボイス#",
   "form.shipper": "荷主",
   "form.consignee": "荷受人",
+  "form.consignor": "荷送人",
   "form.selectShipper": "荷主を選択",
   "form.selectFiles": "ファイルを選択",
   "form.uploadHelp":
@@ -330,7 +332,8 @@ const ja = {
   "admin.entry.createNew": "新規作成",
   "admin.entry.findJob": "案件を検索",
   "admin.entry.filter.all": "すべて",
-  "admin.entry.searchPlaceholder": "インボイス、荷主、荷受人、BL/AWB...",
+  "admin.entry.searchPlaceholder":
+    "インボイス、荷主、荷送人、荷受人、BL/AWB...",
   "admin.entry.untitledJob": "名称未設定の案件",
   "admin.entry.selectJob":
     "編集する出荷案件を選択してください。ステータス、BL/AWB、ルート、書類を更新できます。",
@@ -600,7 +603,8 @@ const en: Messages = {
   "common.jobNumber": "Job No.",
   "common.shipper": "Shipper",
   "common.consignee": "Consignee",
-  "common.parties": "Shipper / Consignee",
+  "common.consignor": "Consignor",
+  "common.parties": "Shipper / Consignor / Consignee",
   "common.route": "Route",
   "common.documents": "Documents",
   "common.customerDocuments": "Documents (customer)",
@@ -750,7 +754,7 @@ const en: Messages = {
   "jobs.new": "Add shipment",
   "jobs.createTitle": "Create shipment",
   "jobs.searchPlaceholder":
-    "Search invoice #, shipper, assignee, consignee, POL/AOL, POD/AOD, BL/AWB, documents...",
+    "Search invoice #, shipper, assignee, consignee, consignor, POL/AOL, POD/AOD, BL/AWB, documents...",
   "jobs.filter.allShippers": "All shippers",
   "jobs.filter.allStatus": "All statuses",
   "jobs.filter.allTrade": "All trade modes",
@@ -833,6 +837,7 @@ const en: Messages = {
   "form.invoice": "Invoice #",
   "form.shipper": "Shipper",
   "form.consignee": "Consignee",
+  "form.consignor": "Consignor",
   "form.selectShipper": "Select shipper",
   "form.selectFiles": "Select files",
   "form.uploadHelp": "Upload PDF, image, Excel, and other document files.",
@@ -853,7 +858,8 @@ const en: Messages = {
   "admin.entry.createNew": "Create new",
   "admin.entry.findJob": "Search shipment",
   "admin.entry.filter.all": "All",
-  "admin.entry.searchPlaceholder": "Invoice, shipper, consignee, BL/AWB...",
+  "admin.entry.searchPlaceholder":
+    "Invoice, shipper, consignor, consignee, BL/AWB...",
   "admin.entry.untitledJob": "Untitled shipment",
   "admin.entry.selectJob":
     "Select a shipment to edit status, BL/AWB, route, and documents.",

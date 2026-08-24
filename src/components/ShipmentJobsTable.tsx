@@ -68,6 +68,7 @@ export type ShipmentJobsTableSortKey =
   | "job_number"
   | "transport_mode"
   | "consignee_name"
+  | "consignor_name"
   | "pol_aol"
   | "pod_aod"
   | "vessel_flight_numbers"
@@ -91,7 +92,7 @@ interface ShipmentDocumentDeleteTarget {
   document: ShipmentDocument;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v8";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v9";
 const mobileDetailActionQuery = "(max-width: 639px)";
 
 interface ShipmentJobsTableProps {
@@ -890,6 +891,17 @@ function buildColumns(
       render: (job) => (
         <span className={`font-medium ${strongText}`}>
           {job.consignee_name || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "consignor_name",
+      label: t("common.consignor"),
+      width: 145,
+      sortKey: "consignor_name",
+      render: (job) => (
+        <span className={`font-medium ${strongText}`}>
+          {job.consignor_name || "-"}
         </span>
       ),
     },

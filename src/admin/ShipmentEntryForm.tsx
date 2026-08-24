@@ -677,7 +677,8 @@ function AdminShipmentJobModal({
               {job.invoice_number || job.mbl_mawb || t("admin.entry.title")}
             </h3>
             <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-              {job.shipper_name || "-"} → {job.consignee_name || "-"}
+              {job.consignor_name || job.shipper_name || "-"} →{" "}
+              {job.consignee_name || "-"}
             </p>
             <p className="mt-1 text-xs font-bold text-gray-500 dark:text-gray-400">
               {t("common.jobNumber")}: {job.job_number || "-"}
