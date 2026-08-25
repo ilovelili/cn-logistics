@@ -549,6 +549,7 @@ export default function ShipmentEntryForm({
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
             shipperOptions={shipperOptions}
+            customerSelection
             fixedAssignedAdminEmail={
               canEditAssignedAdmins ? undefined : adminEmail
             }

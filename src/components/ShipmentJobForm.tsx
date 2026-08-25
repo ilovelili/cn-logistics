@@ -18,6 +18,7 @@ import type { ShipperUser } from "../lib/shipperUsers";
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
   shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  customerSelection?: boolean;
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
   documents?: ShipmentDocument[];
@@ -67,6 +68,7 @@ const manualProgressColorOptions = [
 export default function ShipmentJobForm({
   job,
   shipperOptions = [],
+  customerSelection = false,
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
   documents = [],
@@ -140,7 +142,9 @@ export default function ShipmentJobForm({
   const shipperSelectOptions = buildShipperSelectOptions(
     shipperOptions,
     form.shipper_name,
+    customerSelection ? t("form.selectCustomer") : t("form.selectShipper"),
   );
+  const hasSelectableCustomer = shipperSelectOptions.length > 1;
 
   const toggleAssignedAdmin = (adminUserId: string) => {
     setForm((current) => ({
@@ -246,13 +250,23 @@ export default function ShipmentJobForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {shipperOptions.length > 0 ? (
+        {customerSelection || shipperOptions.length > 0 ? (
           <SelectField
-            label={t("common.shipperName")}
+            label={
+              customerSelection
+                ? t("form.customerName")
+                : t("common.shipperName")
+            }
             value={form.shipper_name}
-            disabled={Boolean(job)}
+            disabled={
+              Boolean(job) || (customerSelection && !hasSelectableCustomer)
+            }
             onChange={updateShipper}
-            options={shipperSelectOptions}
+            options={
+              customerSelection && !hasSelectableCustomer
+                ? [{ value: "", label: t("form.noCustomersAvailable") }]
+                : shipperSelectOptions
+            }
           />
         ) : (
           <TextField
@@ -448,7 +462,7 @@ export default function ShipmentJobForm({
         )}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (customerSelection && !form.shipper_name)}
           className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors"
         >
           {loading ? t("common.saving") : submitLabel}
@@ -853,6 +867,7 @@ function getShipperAdminAssignments(
 function buildShipperSelectOptions(
   shipperOptions: Pick<ShipperUser, "shipper_name">[],
   currentShipperName: string,
+  emptyOptionLabel: string,
 ) {
   const optionNames = [
     currentShipperName,
@@ -863,7 +878,7 @@ function buildShipperSelectOptions(
   const uniqueOptionNames = Array.from(new Set(optionNames));
 
   return [
-    { value: "", label: t("form.selectShipper") },
+    { value: "", label: emptyOptionLabel },
     ...uniqueOptionNames.map((name) => ({
       value: name,
       label: name,
