@@ -17,6 +17,12 @@ sends the `shipper_registration_approved` template to the contact's registered
 email address. Its editable variables are `{{customer_name}}`,
 `{{contact_person}}`, `{{recipient_email}}`, and `{{application_url}}`.
 
+When a user submits a customer-document download request, responsible active
+administrators receive the `document_download_requested_admin` template. The
+recipient set combines the shipment and customer assignments, with active super
+administrators used only when no assigned administrator is available. This
+template is also editable from **Email templates**.
+
 The sender is `CN Navigator <no-reply@navigator.cnlogistics.co.jp>`, using the
 Tokyo-region endpoint `email-smtp.ap-northeast-1.amazonaws.com`. Verify that
 address, or the `navigator.cnlogistics.co.jp` domain, in the same AWS SES region

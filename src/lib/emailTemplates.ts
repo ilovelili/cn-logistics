@@ -35,10 +35,26 @@ const shipperRegistrationEmailTemplateVariables = [
   "application_url",
 ] as const;
 
+const documentDownloadRequestEmailTemplateVariables = [
+  "admin_name",
+  "requester_name",
+  "requester_email",
+  "customer_name",
+  "document_name",
+  "job_number",
+  "invoice_number",
+  "awb_bl_number",
+  "application_url",
+] as const;
+
 export function getEmailTemplateVariables(templateKey: string) {
-  return templateKey === "shipper_registration_approved"
-    ? shipperRegistrationEmailTemplateVariables
-    : shipmentEmailTemplateVariables;
+  if (templateKey === "shipper_registration_approved") {
+    return shipperRegistrationEmailTemplateVariables;
+  }
+  if (templateKey === "document_download_requested_admin") {
+    return documentDownloadRequestEmailTemplateVariables;
+  }
+  return shipmentEmailTemplateVariables;
 }
 
 export async function fetchEmailTemplates(): Promise<EmailTemplate[]> {

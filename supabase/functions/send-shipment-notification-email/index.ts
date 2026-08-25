@@ -25,6 +25,19 @@ interface ShipperRegistrationDelivery {
   contact_person: string | null;
 }
 
+interface DocumentDownloadRequestDelivery {
+  id: string;
+  recipient_email: string;
+  admin_name: string;
+  requester_name: string;
+  requester_email: string;
+  customer_name: string;
+  document_name: string;
+  job_number: string | null;
+  invoice_number: string | null;
+  awb_bl_number: string | null;
+}
+
 interface EmailTemplate {
   subject_template: string;
   text_template: string;
@@ -38,6 +51,7 @@ const smtpHost = "email-smtp.ap-northeast-1.amazonaws.com";
 const configurationSetName = "cn-navigator";
 const templateKey = "shipment_status_update";
 const shipperRegistrationTemplateKey = "shipper_registration_approved";
+const documentDownloadRequestTemplateKey = "document_download_requested_admin";
 const statusLabels: Record<string, { ja: string; en: string }> = {
   under_process: { ja: "処理中", en: "Under process" },
   customs_hold: { ja: "通関保留", en: "Customs hold" },
@@ -94,11 +108,13 @@ Deno.serve(async (request) => {
     requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     { auth: { persistSession: false } },
   );
-  const isShipperRegistration = body.delivery_type === "shipper_registration";
+  const deliveryType = body.delivery_type === "shipper_registration"
+    ? "shipper_registration"
+    : body.delivery_type === "document_download_request"
+    ? "document_download_request"
+    : "shipment_status";
   const { data, error: claimError } = await supabase.rpc(
-    isShipperRegistration
-      ? "claim_shipper_registration_email"
-      : "claim_shipment_notification_email",
+    claimRpcFor(deliveryType),
     { target_delivery_id: body.delivery_id },
   );
 
@@ -110,7 +126,9 @@ Deno.serve(async (request) => {
   }
 
   const [delivery] = (data ?? []) as (
-    EmailDelivery | ShipperRegistrationDelivery
+    | EmailDelivery
+    | ShipperRegistrationDelivery
+    | DocumentDownloadRequestDelivery
   )[];
   if (!delivery) {
     return Response.json({ status: "already_processed" });
@@ -132,17 +150,12 @@ Deno.serve(async (request) => {
       },
     });
     const applicationUrl = requiredEnv("CN_NAVIGATOR_URL");
-    const message = isShipperRegistration
-      ? await buildShipperRegistrationMessage(
-          supabase,
-          delivery as ShipperRegistrationDelivery,
-          applicationUrl,
-        )
-      : await buildShipmentMessage(
-          supabase,
-          delivery as EmailDelivery,
-          applicationUrl,
-        );
+    const message = await buildMessage(
+      supabase,
+      deliveryType,
+      delivery,
+      applicationUrl,
+    );
     const result = await transporter.sendMail({
       from: `CN Navigator <${senderAddress}>`,
       to: delivery.recipient_email,
@@ -155,9 +168,7 @@ Deno.serve(async (request) => {
     });
 
     const { error: completeError } = await supabase.rpc(
-      isShipperRegistration
-        ? "complete_shipper_registration_email"
-        : "complete_shipment_notification_email",
+      completeRpcFor(deliveryType),
       {
         target_delivery_id: delivery.id,
         message_id: result.messageId ?? "",
@@ -172,9 +183,7 @@ Deno.serve(async (request) => {
   } catch (error) {
     const safeMessage = safeErrorMessage(error);
     await supabase.rpc(
-      isShipperRegistration
-        ? "fail_shipper_registration_email"
-        : "fail_shipment_notification_email",
+      failRpcFor(deliveryType),
       {
         target_delivery_id: delivery.id,
         failure_message: safeMessage,
@@ -184,6 +193,73 @@ Deno.serve(async (request) => {
     return Response.json({ error: "Email delivery failed" }, { status: 502 });
   }
 });
+
+type DeliveryType =
+  | "shipment_status"
+  | "shipper_registration"
+  | "document_download_request";
+
+type Delivery =
+  | EmailDelivery
+  | ShipperRegistrationDelivery
+  | DocumentDownloadRequestDelivery;
+
+function claimRpcFor(deliveryType: DeliveryType) {
+  if (deliveryType === "shipper_registration") {
+    return "claim_shipper_registration_email";
+  }
+  if (deliveryType === "document_download_request") {
+    return "claim_document_download_request_email";
+  }
+  return "claim_shipment_notification_email";
+}
+
+function completeRpcFor(deliveryType: DeliveryType) {
+  if (deliveryType === "shipper_registration") {
+    return "complete_shipper_registration_email";
+  }
+  if (deliveryType === "document_download_request") {
+    return "complete_document_download_request_email";
+  }
+  return "complete_shipment_notification_email";
+}
+
+function failRpcFor(deliveryType: DeliveryType) {
+  if (deliveryType === "shipper_registration") {
+    return "fail_shipper_registration_email";
+  }
+  if (deliveryType === "document_download_request") {
+    return "fail_document_download_request_email";
+  }
+  return "fail_shipment_notification_email";
+}
+
+async function buildMessage(
+  supabase: EmailTemplateClient,
+  deliveryType: DeliveryType,
+  delivery: Delivery,
+  applicationUrl: string,
+) {
+  if (deliveryType === "shipper_registration") {
+    return await buildShipperRegistrationMessage(
+      supabase,
+      delivery as ShipperRegistrationDelivery,
+      applicationUrl,
+    );
+  }
+  if (deliveryType === "document_download_request") {
+    return await buildDocumentDownloadRequestMessage(
+      supabase,
+      delivery as DocumentDownloadRequestDelivery,
+      applicationUrl,
+    );
+  }
+  return await buildShipmentMessage(
+    supabase,
+    delivery as EmailDelivery,
+    applicationUrl,
+  );
+}
 
 async function buildShipmentMessage(
   supabase: EmailTemplateClient,
@@ -252,6 +328,46 @@ async function buildShipperRegistrationMessage(
     customer_name: delivery.shipper_name,
     contact_person: delivery.contact_person || delivery.recipient_email,
     recipient_email: delivery.recipient_email,
+    application_url: applicationUrl.replace(/\/$/, ""),
+  };
+
+  return {
+    subject: renderTemplate(template.subject_template, values, false).replace(
+      /[\r\n]+/g,
+      " ",
+    ),
+    text: renderTemplate(template.text_template, values, false),
+    html: renderTemplate(template.html_template, values, true),
+  };
+}
+
+async function buildDocumentDownloadRequestMessage(
+  supabase: EmailTemplateClient,
+  delivery: DocumentDownloadRequestDelivery,
+  applicationUrl: string,
+) {
+  const { data, error } = await supabase
+    .from("email_templates")
+    .select("subject_template,text_template,html_template")
+    .eq("template_key", documentDownloadRequestTemplateKey)
+    .single();
+
+  if (error || !data) {
+    throw new Error(
+      "Document download request email template could not be loaded",
+    );
+  }
+
+  const template = data as EmailTemplate;
+  const values = {
+    admin_name: delivery.admin_name,
+    requester_name: delivery.requester_name,
+    requester_email: delivery.requester_email,
+    customer_name: delivery.customer_name,
+    document_name: delivery.document_name,
+    job_number: delivery.job_number || "-",
+    invoice_number: delivery.invoice_number || "-",
+    awb_bl_number: delivery.awb_bl_number || "-",
     application_url: applicationUrl.replace(/\/$/, ""),
   };
 
