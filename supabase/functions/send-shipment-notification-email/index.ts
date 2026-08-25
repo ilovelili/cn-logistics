@@ -108,11 +108,12 @@ Deno.serve(async (request) => {
     requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     { auth: { persistSession: false } },
   );
-  const deliveryType = body.delivery_type === "shipper_registration"
-    ? "shipper_registration"
-    : body.delivery_type === "document_download_request"
-    ? "document_download_request"
-    : "shipment_status";
+  const deliveryType =
+    body.delivery_type === "shipper_registration"
+      ? "shipper_registration"
+      : body.delivery_type === "document_download_request"
+        ? "document_download_request"
+        : "shipment_status";
   const { data, error: claimError } = await supabase.rpc(
     claimRpcFor(deliveryType),
     { target_delivery_id: body.delivery_id },
@@ -182,27 +183,20 @@ Deno.serve(async (request) => {
     return Response.json({ status: "sent" });
   } catch (error) {
     const safeMessage = safeErrorMessage(error);
-    await supabase.rpc(
-      failRpcFor(deliveryType),
-      {
-        target_delivery_id: delivery.id,
-        failure_message: safeMessage,
-      },
-    );
+    await supabase.rpc(failRpcFor(deliveryType), {
+      target_delivery_id: delivery.id,
+      failure_message: safeMessage,
+    });
 
     return Response.json({ error: "Email delivery failed" }, { status: 502 });
   }
 });
 
 type DeliveryType =
-  | "shipment_status"
-  | "shipper_registration"
-  | "document_download_request";
+  "shipment_status" | "shipper_registration" | "document_download_request";
 
 type Delivery =
-  | EmailDelivery
-  | ShipperRegistrationDelivery
-  | DocumentDownloadRequestDelivery;
+  EmailDelivery | ShipperRegistrationDelivery | DocumentDownloadRequestDelivery;
 
 function claimRpcFor(deliveryType: DeliveryType) {
   if (deliveryType === "shipper_registration") {
