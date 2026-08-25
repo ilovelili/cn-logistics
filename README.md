@@ -23,6 +23,11 @@ recipient set combines the shipment and customer assignments, with active super
 administrators used only when no assigned administrator is available. This
 template is also editable from **Email templates**.
 
+When an administrator approves a pending document download, the requesting
+user receives the editable `document_download_approved_user` template with the
+approved private Storage object attached. Attachments are limited to 25 MB so
+the encoded message stays within the SES SMTP message-size limit.
+
 The sender is `CN Navigator <no-reply@navigator.cnlogistics.co.jp>`, using the
 Tokyo-region endpoint `email-smtp.ap-northeast-1.amazonaws.com`. Verify that
 address, or the `navigator.cnlogistics.co.jp` domain, in the same AWS SES region
