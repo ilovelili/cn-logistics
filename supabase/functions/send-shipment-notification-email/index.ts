@@ -125,13 +125,14 @@ Deno.serve(async (request) => {
     requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     { auth: { persistSession: false } },
   );
-  const deliveryType = body.delivery_type === "shipper_registration"
-    ? "shipper_registration"
-    : body.delivery_type === "document_download_request"
-    ? "document_download_request"
-    : body.delivery_type === "document_download_approved"
-    ? "document_download_approved"
-    : "shipment_status";
+  const deliveryType =
+    body.delivery_type === "shipper_registration"
+      ? "shipper_registration"
+      : body.delivery_type === "document_download_request"
+        ? "document_download_request"
+        : body.delivery_type === "document_download_approved"
+          ? "document_download_approved"
+          : "shipment_status";
   const { data, error: claimError } = await supabase.rpc(
     claimRpcFor(deliveryType),
     { target_delivery_id: body.delivery_id },
@@ -176,14 +177,15 @@ Deno.serve(async (request) => {
       delivery,
       applicationUrl,
     );
-    const attachments = deliveryType === "document_download_approved"
-      ? [
-        await buildApprovedDocumentAttachment(
-          supabase,
-          delivery as DocumentDownloadApprovedDelivery,
-        ),
-      ]
-      : undefined;
+    const attachments =
+      deliveryType === "document_download_approved"
+        ? [
+            await buildApprovedDocumentAttachment(
+              supabase,
+              delivery as DocumentDownloadApprovedDelivery,
+            ),
+          ]
+        : undefined;
     const result = await transporter.sendMail({
       from: `CN Navigator <${senderAddress}>`,
       to: delivery.recipient_email,
