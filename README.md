@@ -1,6 +1,6 @@
 # CN Navigator
 
-## Shipment status email notifications
+## Email notifications
 
 Shipment status changes create both the in-app notification and an email
 delivery record in the same database transaction. Postgres invokes the
@@ -11,6 +11,11 @@ The `shipment_status_update` subject, plain-text body, and HTML body are stored
 in `email_templates`. Verified active super administrators can edit them from
 the **Email templates** menu. Shipment values use `{{variable_name}}`
 placeholders and are substituted by the Edge Function when each email is sent.
+
+When a shipper contact is approved and can log in, the same delivery system
+sends the `shipper_registration_approved` template to the contact's registered
+email address. Its editable variables are `{{customer_name}}`,
+`{{contact_person}}`, `{{recipient_email}}`, and `{{application_url}}`.
 
 The sender is `CN Navigator <no-reply@navigator.cnlogistics.co.jp>`, using the
 Tokyo-region endpoint `email-smtp.ap-northeast-1.amazonaws.com`. Verify that

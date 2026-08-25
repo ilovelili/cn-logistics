@@ -392,7 +392,8 @@ const ja = {
   "admin.userRegistration.action": "操作",
   "admin.userRegistration.approve": "承認",
   "admin.userRegistration.unapprove": "却下",
-  "admin.userRegistration.approved": "荷主を承認しました",
+  "admin.userRegistration.approved":
+    "荷主を承認しました。ログイン案内メールを送信します。",
   "admin.userRegistration.rejected": "荷主を却下しました",
   "admin.userRegistration.approvalFailed": "承認状態の更新に失敗しました",
   "admin.userRegistration.deleted": "荷主を削除しました",
@@ -491,7 +492,7 @@ const ja = {
     "インボイス#、CN担当、評価者、理由で検索...",
   "superAdmin.emailTemplates.title": "メールテンプレート管理",
   "superAdmin.emailTemplates.description":
-    "出荷ステータス更新時に送信するメールの件名と本文を編集できます。",
+    "システムから送信するメールの件名と本文を編集できます。",
   "superAdmin.emailTemplates.list": "テンプレート一覧",
   "superAdmin.emailTemplates.empty": "メールテンプレートがありません。",
   "superAdmin.emailTemplates.subject": "件名",
@@ -501,7 +502,7 @@ const ja = {
   "superAdmin.emailTemplates.htmlPreviewTitle": "HTMLメールプレビュー",
   "superAdmin.emailTemplates.variables": "利用可能な差し込み項目",
   "superAdmin.emailTemplates.variablesDescription":
-    "以下の項目は送信時に案件情報へ置き換わります。二重波括弧を含めて入力してください。",
+    "以下の項目は送信時に対象の情報へ置き換わります。二重波括弧を含めて入力してください。",
   "superAdmin.emailTemplates.lastUpdated": "最終更新：{date}",
   "superAdmin.emailTemplates.discard": "変更を破棄",
   "superAdmin.emailTemplates.loadFailed":
@@ -924,7 +925,8 @@ const en: Messages = {
     "Failed to update CN contacts",
   "admin.userRegistration.approve": "Approve",
   "admin.userRegistration.unapprove": "Reject",
-  "admin.userRegistration.approved": "Approved",
+  "admin.userRegistration.approved":
+    "Shipper approved. A login notification email will be sent.",
   "admin.userRegistration.rejected": "Rejected",
   "admin.userRegistration.approvalFailed": "Failed to update approval status",
   "admin.userRegistration.deleted": "Shipper deleted",
@@ -1020,7 +1022,7 @@ const en: Messages = {
     "Search invoice #, CN contact, submitter, reason...",
   "superAdmin.emailTemplates.title": "Email template management",
   "superAdmin.emailTemplates.description":
-    "Edit the subject and message bodies sent when a shipment status changes.",
+    "Edit the subject and message bodies sent by the system.",
   "superAdmin.emailTemplates.list": "Templates",
   "superAdmin.emailTemplates.empty": "No email templates are available.",
   "superAdmin.emailTemplates.subject": "Subject",
@@ -1030,7 +1032,7 @@ const en: Messages = {
   "superAdmin.emailTemplates.htmlPreviewTitle": "HTML email preview",
   "superAdmin.emailTemplates.variables": "Available variables",
   "superAdmin.emailTemplates.variablesDescription":
-    "These variables are replaced with shipment data when the email is sent. Include the double braces.",
+    "These variables are replaced with the relevant data when the email is sent. Include the double braces.",
   "superAdmin.emailTemplates.lastUpdated": "Last updated: {date}",
   "superAdmin.emailTemplates.discard": "Discard changes",
   "superAdmin.emailTemplates.loadFailed": "Failed to load email templates",

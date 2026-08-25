@@ -15,6 +15,14 @@ interface EmailDelivery {
 
 interface DeliveryRequest {
   delivery_id?: unknown;
+  delivery_type?: unknown;
+}
+
+interface ShipperRegistrationDelivery {
+  id: string;
+  recipient_email: string;
+  shipper_name: string;
+  contact_person: string | null;
 }
 
 interface EmailTemplate {
@@ -29,6 +37,7 @@ const senderAddress = "no-reply@navigator.cnlogistics.co.jp";
 const smtpHost = "email-smtp.ap-northeast-1.amazonaws.com";
 const configurationSetName = "cn-navigator";
 const templateKey = "shipment_status_update";
+const shipperRegistrationTemplateKey = "shipper_registration_approved";
 const statusLabels: Record<string, { ja: string; en: string }> = {
   under_process: { ja: "処理中", en: "Under process" },
   customs_hold: { ja: "通関保留", en: "Customs hold" },
@@ -85,8 +94,11 @@ Deno.serve(async (request) => {
     requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     { auth: { persistSession: false } },
   );
+  const isShipperRegistration = body.delivery_type === "shipper_registration";
   const { data, error: claimError } = await supabase.rpc(
-    "claim_shipment_notification_email",
+    isShipperRegistration
+      ? "claim_shipper_registration_email"
+      : "claim_shipment_notification_email",
     { target_delivery_id: body.delivery_id },
   );
 
@@ -97,7 +109,9 @@ Deno.serve(async (request) => {
     );
   }
 
-  const [delivery] = (data ?? []) as EmailDelivery[];
+  const [delivery] = (data ?? []) as (
+    EmailDelivery | ShipperRegistrationDelivery
+  )[];
   if (!delivery) {
     return Response.json({ status: "already_processed" });
   }
@@ -117,11 +131,18 @@ Deno.serve(async (request) => {
         minVersion: "TLSv1.2",
       },
     });
-    const message = await buildMessage(
-      supabase,
-      delivery,
-      requiredEnv("CN_NAVIGATOR_URL"),
-    );
+    const applicationUrl = requiredEnv("CN_NAVIGATOR_URL");
+    const message = isShipperRegistration
+      ? await buildShipperRegistrationMessage(
+          supabase,
+          delivery as ShipperRegistrationDelivery,
+          applicationUrl,
+        )
+      : await buildShipmentMessage(
+          supabase,
+          delivery as EmailDelivery,
+          applicationUrl,
+        );
     const result = await transporter.sendMail({
       from: `CN Navigator <${senderAddress}>`,
       to: delivery.recipient_email,
@@ -134,7 +155,9 @@ Deno.serve(async (request) => {
     });
 
     const { error: completeError } = await supabase.rpc(
-      "complete_shipment_notification_email",
+      isShipperRegistration
+        ? "complete_shipper_registration_email"
+        : "complete_shipment_notification_email",
       {
         target_delivery_id: delivery.id,
         message_id: result.messageId ?? "",
@@ -148,16 +171,21 @@ Deno.serve(async (request) => {
     return Response.json({ status: "sent" });
   } catch (error) {
     const safeMessage = safeErrorMessage(error);
-    await supabase.rpc("fail_shipment_notification_email", {
-      target_delivery_id: delivery.id,
-      failure_message: safeMessage,
-    });
+    await supabase.rpc(
+      isShipperRegistration
+        ? "fail_shipper_registration_email"
+        : "fail_shipment_notification_email",
+      {
+        target_delivery_id: delivery.id,
+        failure_message: safeMessage,
+      },
+    );
 
     return Response.json({ error: "Email delivery failed" }, { status: 502 });
   }
 });
 
-async function buildMessage(
+async function buildShipmentMessage(
   supabase: EmailTemplateClient,
   delivery: EmailDelivery,
   applicationUrl: string,
@@ -192,6 +220,39 @@ async function buildMessage(
     current_status_en: currentStatus.en,
     update_details_en: updateEn,
     application_url: normalizedApplicationUrl,
+  };
+
+  return {
+    subject: renderTemplate(template.subject_template, values, false).replace(
+      /[\r\n]+/g,
+      " ",
+    ),
+    text: renderTemplate(template.text_template, values, false),
+    html: renderTemplate(template.html_template, values, true),
+  };
+}
+
+async function buildShipperRegistrationMessage(
+  supabase: EmailTemplateClient,
+  delivery: ShipperRegistrationDelivery,
+  applicationUrl: string,
+) {
+  const { data, error } = await supabase
+    .from("email_templates")
+    .select("subject_template,text_template,html_template")
+    .eq("template_key", shipperRegistrationTemplateKey)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Shipper registration email template could not be loaded");
+  }
+
+  const template = data as EmailTemplate;
+  const values = {
+    customer_name: delivery.shipper_name,
+    contact_person: delivery.contact_person || delivery.recipient_email,
+    recipient_email: delivery.recipient_email,
+    application_url: applicationUrl.replace(/\/$/, ""),
   };
 
   return {

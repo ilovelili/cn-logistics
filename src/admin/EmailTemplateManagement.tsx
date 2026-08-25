@@ -12,7 +12,7 @@ import {
   EmailTemplate,
   EmailTemplateForm,
   fetchEmailTemplates,
-  shipmentEmailTemplateVariables,
+  getEmailTemplateVariables,
   updateEmailTemplate,
 } from "../lib/emailTemplates";
 import { getLocale, t } from "../lib/i18n";
@@ -252,14 +252,16 @@ export default function EmailTemplateManagement() {
                   {t("superAdmin.emailTemplates.variablesDescription")}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {shipmentEmailTemplateVariables.map((variable) => (
-                    <code
-                      key={variable}
-                      className="rounded-lg border border-cyan-200 bg-white px-2 py-1 text-xs text-cyan-900 dark:border-cyan-800 dark:bg-gray-950 dark:text-cyan-200"
-                    >
-                      {`{{${variable}}}`}
-                    </code>
-                  ))}
+                  {getEmailTemplateVariables(selectedTemplate.template_key).map(
+                    (variable) => (
+                      <code
+                        key={variable}
+                        className="rounded-lg border border-cyan-200 bg-white px-2 py-1 text-xs text-cyan-900 dark:border-cyan-800 dark:bg-gray-950 dark:text-cyan-200"
+                      >
+                        {`{{${variable}}}`}
+                      </code>
+                    ),
+                  )}
                 </div>
               </div>
 

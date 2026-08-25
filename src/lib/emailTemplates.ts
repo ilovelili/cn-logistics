@@ -15,7 +15,7 @@ export interface EmailTemplateForm {
   html_template: string;
 }
 
-export const shipmentEmailTemplateVariables = [
+const shipmentEmailTemplateVariables = [
   "awb_bl_number",
   "origin",
   "destination",
@@ -27,6 +27,19 @@ export const shipmentEmailTemplateVariables = [
   "update_details_en",
   "application_url",
 ] as const;
+
+const shipperRegistrationEmailTemplateVariables = [
+  "customer_name",
+  "contact_person",
+  "recipient_email",
+  "application_url",
+] as const;
+
+export function getEmailTemplateVariables(templateKey: string) {
+  return templateKey === "shipper_registration_approved"
+    ? shipperRegistrationEmailTemplateVariables
+    : shipmentEmailTemplateVariables;
+}
 
 export async function fetchEmailTemplates(): Promise<EmailTemplate[]> {
   const { data, error } = await supabase.rpc(
