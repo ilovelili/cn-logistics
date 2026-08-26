@@ -5,6 +5,7 @@ import {
   RefreshCw,
   Save,
   Search,
+  ShieldCheck,
   Trash2,
   X,
   XCircle,
@@ -36,6 +37,7 @@ import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import TableActionButton from "../components/TableActionButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
+import AdminPageHeader from "./AdminPageHeader";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { usePagination } from "../components/usePagination";
@@ -597,16 +599,12 @@ export default function AdminOperatorManagement({
         />
       )}
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:rounded-3xl sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1
-              className="text-2xl font-black text-gray-900 dark:text-white"
-              data-tutorial-target="admin-operator-page"
-            >
-              {t("superAdmin.operators.title")}
-            </h1>
-          </div>
+      <AdminPageHeader
+        icon={ShieldCheck}
+        title={t("superAdmin.operators.title")}
+        description={t("superAdmin.operators.description")}
+        titleTutorialTarget="admin-operator-page"
+        actions={
           <button
             type="button"
             onClick={() => setShowForm((value) => !value)}
@@ -615,8 +613,8 @@ export default function AdminOperatorManagement({
             <Plus className="h-4 w-4" />
             {t("superAdmin.operators.new")}
           </button>
-        </div>
-      </section>
+        }
+      />
 
       {showForm && (
         <form

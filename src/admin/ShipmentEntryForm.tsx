@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import ShipmentJobForm from "../components/ShipmentJobForm";
+import AdminPageHeader from "./AdminPageHeader";
 import DocumentPreviewModal from "../components/DocumentPreviewModal";
 import InstantTooltip from "../components/InstantTooltip";
 import LogoMark from "../components/LogoMark";
@@ -371,50 +372,52 @@ export default function ShipmentEntryForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t("admin.entry.title")}
-        </h2>
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 xl:max-w-4xl xl:grid-cols-4">
-          <ShipmentHeaderMetric
-            label={t("dashboard.totalJobs")}
-            value={summaryStats.totalJobs}
-            icon={<LogoMark alt="" className="h-4 w-4 rounded" />}
-            tone="blue"
-            onClick={() => openMetricFilter({ kind: "all" })}
-          />
-          <ShipmentHeaderMetric
-            label={t("status.customsHold")}
-            value={summaryStats.customsHold}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            tone="amber"
-            onClick={() =>
-              openMetricFilter({ kind: "status", status: "customs_hold" })
-            }
-          />
-          <ShipmentHeaderMetric
-            label={t("status.delivered")}
-            value={summaryStats.delivered}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            tone="emerald"
-            onClick={() =>
-              openMetricFilter({ kind: "status", status: "delivered" })
-            }
-          />
-          <ShipmentHeaderMetric
-            label={t("documents.pendingApproval")}
-            value={summaryStats.pendingDocumentApprovals}
-            icon={<FileStack className="h-4 w-4" />}
-            tone="rose"
-            onClick={() =>
-              openMetricFilter({
-                kind: "documentApproval",
-                approvalStatus: "pending",
-              })
-            }
-          />
-        </div>
-      </div>
+      <AdminPageHeader
+        icon={FileStack}
+        title={t("admin.entry.title")}
+        description={t("admin.entry.description")}
+        actions={
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 xl:max-w-4xl xl:grid-cols-4">
+            <ShipmentHeaderMetric
+              label={t("dashboard.totalJobs")}
+              value={summaryStats.totalJobs}
+              icon={<LogoMark alt="" className="h-4 w-4 rounded" />}
+              tone="blue"
+              onClick={() => openMetricFilter({ kind: "all" })}
+            />
+            <ShipmentHeaderMetric
+              label={t("status.customsHold")}
+              value={summaryStats.customsHold}
+              icon={<AlertTriangle className="h-4 w-4" />}
+              tone="amber"
+              onClick={() =>
+                openMetricFilter({ kind: "status", status: "customs_hold" })
+              }
+            />
+            <ShipmentHeaderMetric
+              label={t("status.delivered")}
+              value={summaryStats.delivered}
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              tone="emerald"
+              onClick={() =>
+                openMetricFilter({ kind: "status", status: "delivered" })
+              }
+            />
+            <ShipmentHeaderMetric
+              label={t("documents.pendingApproval")}
+              value={summaryStats.pendingDocumentApprovals}
+              icon={<FileStack className="h-4 w-4" />}
+              tone="rose"
+              onClick={() =>
+                openMetricFilter({
+                  kind: "documentApproval",
+                  approvalStatus: "pending",
+                })
+              }
+            />
+          </div>
+        }
+      />
 
       <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900 sm:inline-grid sm:w-auto">
         <button

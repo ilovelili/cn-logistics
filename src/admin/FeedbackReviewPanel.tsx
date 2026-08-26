@@ -6,7 +6,7 @@ import {
   useState,
   type MouseEvent,
 } from "react";
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import {
   fetchAllShipmentFeedback,
   ShipmentFeedbackReview,
@@ -27,6 +27,7 @@ import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
+import AdminPageHeader from "./AdminPageHeader";
 
 interface FeedbackReviewPanelProps {
   superAdminEmail: string;
@@ -319,13 +320,12 @@ export default function FeedbackReviewPanel({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-          <span data-tutorial-target="feedback-review-page">
-            {t("superAdmin.feedback.title")}
-          </span>
-        </h1>
-      </section>
+      <AdminPageHeader
+        icon={Star}
+        title={t("superAdmin.feedback.title")}
+        description={t("superAdmin.feedback.description")}
+        titleTutorialTarget="feedback-review-page"
+      />
 
       {loadError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">

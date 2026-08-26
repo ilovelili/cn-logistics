@@ -331,6 +331,8 @@ const ja = {
   "admin.nav.shipmentEntry": "出荷案件管理",
   "admin.nav.userRegistration": "荷主登録",
   "admin.entry.title": "出荷案件管理",
+  "admin.entry.description":
+    "出荷案件の登録・更新、進捗、書類承認を一元管理できます。",
   "admin.entry.updateExisting": "既存案件を更新",
   "admin.entry.createNew": "新規作成",
   "admin.entry.findJob": "案件を検索",
@@ -351,6 +353,8 @@ const ja = {
   "admin.documents.updateFailed": "書類承認の更新に失敗しました",
 
   "admin.userRegistration.title": "荷主登録",
+  "admin.userRegistration.description":
+    "荷主情報の登録、承認状況、CN担当の割り当てを管理できます。",
   "admin.userRegistration.dashboard": "登録荷主一覧",
   "admin.userRegistration.newUser": "新規荷主登録",
   "admin.userRegistration.noUsers": "登録済み荷主はまだありません。",
@@ -416,6 +420,8 @@ const ja = {
   "superAdmin.switch.normalUsers": "荷主ユーザー",
   "superAdmin.switch.backToSuperAdmin": "スーパー管理者に戻る",
   "superAdmin.operators.title": "管理者登録",
+  "superAdmin.operators.description":
+    "管理者の登録、担当区分、担当荷主の割り当てを管理できます。",
   "superAdmin.operators.new": "管理者を追加",
   "superAdmin.operators.list": "管理者一覧",
   "superAdmin.operators.email": "メールアドレス",
@@ -482,6 +488,8 @@ const ja = {
   "superAdmin.standardFlow.validationFailed":
     "ステータスキー、テンプレート文言、表示順を正しく入力してください",
   "superAdmin.feedback.title": "評価一覧",
+  "superAdmin.feedback.description":
+    "荷主ユーザーから届いたCN担当への評価を確認できます。",
   "superAdmin.feedback.list": "評価履歴",
   "superAdmin.feedback.average": "平均評価点数",
   "superAdmin.feedback.operator": "CN担当",
@@ -863,6 +871,8 @@ const en: Messages = {
   "admin.nav.shipmentEntry": "Shipment management",
   "admin.nav.userRegistration": "Shipper registration",
   "admin.entry.title": "Shipment management",
+  "admin.entry.description":
+    "Manage shipment registration, updates, progress, and document approvals in one place.",
   "admin.entry.updateExisting": "Update existing",
   "admin.entry.createNew": "Create new",
   "admin.entry.findJob": "Search shipment",
@@ -884,6 +894,8 @@ const en: Messages = {
   "admin.documents.updateFailed": "Failed to update document approval",
 
   "admin.userRegistration.title": "Shipper registration",
+  "admin.userRegistration.description":
+    "Manage shipper details, approval status, and CN contact assignments.",
   "admin.userRegistration.dashboard": "Registered shippers",
   "admin.userRegistration.newUser": "Register shipper",
   "admin.userRegistration.noUsers": "No registered shippers yet.",
@@ -949,6 +961,8 @@ const en: Messages = {
   "superAdmin.switch.normalUsers": "Shipper users",
   "superAdmin.switch.backToSuperAdmin": "Back to super admin",
   "superAdmin.operators.title": "Admin registration",
+  "superAdmin.operators.description":
+    "Manage admins, staff roles, and assigned shippers.",
   "superAdmin.operators.new": "Add admin",
   "superAdmin.operators.list": "Admin list",
   "superAdmin.operators.email": "Email",
@@ -1014,6 +1028,8 @@ const en: Messages = {
   "superAdmin.standardFlow.validationFailed":
     "Enter a valid status key, template text, and order",
   "superAdmin.feedback.title": "Feedback",
+  "superAdmin.feedback.description":
+    "Review feedback submitted by shipper users about their CN contacts.",
   "superAdmin.feedback.list": "Feedback history",
   "superAdmin.feedback.average": "Average rating score",
   "superAdmin.feedback.operator": "CN contact",

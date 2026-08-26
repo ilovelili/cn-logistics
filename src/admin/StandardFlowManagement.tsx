@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle,
   Edit3,
+  ListChecks,
   Plus,
   Save,
   Search,
@@ -10,6 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import TableActionButton from "../components/TableActionButton";
+import AdminPageHeader from "./AdminPageHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
@@ -351,13 +353,12 @@ export default function StandardFlowManagement() {
         />
       )}
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          <span data-tutorial-target="standard-flow-page">
-            {t("superAdmin.standardFlow.title")}
-          </span>
-        </h2>
-      </div>
+      <AdminPageHeader
+        icon={ListChecks}
+        title={t("superAdmin.standardFlow.title")}
+        description={t("superAdmin.standardFlow.description")}
+        titleTutorialTarget="standard-flow-page"
+      />
 
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:rounded-3xl sm:p-6">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

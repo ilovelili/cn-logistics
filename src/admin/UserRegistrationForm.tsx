@@ -13,6 +13,7 @@ import {
   Save,
   Search,
   Trash2,
+  UserPlus,
   X,
   XCircle,
 } from "lucide-react";
@@ -43,6 +44,7 @@ import { useStickyTableHeaderPreference } from "../components/useStickyTableHead
 import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import TableActionButton from "../components/TableActionButton";
+import AdminPageHeader from "./AdminPageHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
@@ -689,26 +691,24 @@ export default function UserRegistrationForm({
         </div>
       )}
 
-      <div>
-        <div className="flex items-center justify-between gap-4">
-          <h2
-            className="text-2xl font-bold text-gray-900 dark:text-white"
-            data-tutorial-target="shipper-registration-page"
-          >
-            {t("admin.userRegistration.title")}
-          </h2>
+      <AdminPageHeader
+        icon={UserPlus}
+        title={t("admin.userRegistration.title")}
+        description={t("admin.userRegistration.description")}
+        titleTutorialTarget="shipper-registration-page"
+        actions={
           <button
             type="button"
             onClick={toggleCreateForm}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
           >
             <Plus className="h-4 w-4" />
             {showCreateForm
               ? t("common.cancel")
               : t("admin.userRegistration.newUser")}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {!showCreateForm && (
         <section className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">

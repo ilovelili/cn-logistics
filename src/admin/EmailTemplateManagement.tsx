@@ -17,6 +17,7 @@ import {
   updateEmailTemplate,
 } from "../lib/emailTemplates";
 import { getLocale, t } from "../lib/i18n";
+import AdminPageHeader from "./AdminPageHeader";
 
 const emptyForm: EmailTemplateForm = {
   subject_template: "",
@@ -149,21 +150,11 @@ export default function EmailTemplateManagement() {
         </div>
       )}
 
-      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-start gap-3">
-          <span className="rounded-2xl bg-cyan-50 p-3 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
-            <Mail className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-              {t("superAdmin.emailTemplates.title")}
-            </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {t("superAdmin.emailTemplates.description")}
-            </p>
-          </div>
-        </div>
-      </section>
+      <AdminPageHeader
+        icon={Mail}
+        title={t("superAdmin.emailTemplates.title")}
+        description={t("superAdmin.emailTemplates.description")}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <section className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
