@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Code2,
   Eye,
+  Info,
   Mail,
   RefreshCw,
   Save,
@@ -271,19 +272,20 @@ export default function EmailTemplateManagement() {
                 onChange={(value) => updateField("subject_template", value)}
                 maxLength={500}
               />
-              <TemplateField
-                label={t("superAdmin.emailTemplates.plainText")}
-                value={form.text_template}
-                onChange={(value) => updateField("text_template", value)}
-                multiline
-                rows={18}
-                maxLength={50000}
-              />
               <HtmlTemplateField
                 value={form.html_template}
                 onChange={(value) => updateField("html_template", value)}
                 activeTab={htmlTab}
                 onTabChange={setHtmlTab}
+              />
+              <TemplateField
+                label={t("superAdmin.emailTemplates.plainText")}
+                tooltip={t("superAdmin.emailTemplates.plainTextTooltip")}
+                value={form.text_template}
+                onChange={(value) => updateField("text_template", value)}
+                multiline
+                rows={18}
+                maxLength={50000}
               />
             </div>
           )}
@@ -391,6 +393,7 @@ function TemplateField({
   rows,
   maxLength,
   monospace = false,
+  tooltip,
 }: {
   label: string;
   value: string;
@@ -399,6 +402,7 @@ function TemplateField({
   rows?: number;
   maxLength: number;
   monospace?: boolean;
+  tooltip?: string;
 }) {
   const className = `mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:border-cyan-700 ${
     monospace ? "font-mono" : ""
@@ -406,8 +410,23 @@ function TemplateField({
 
   return (
     <label className="block">
-      <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-        {label}
+      <span className="flex items-center gap-1.5 text-sm font-bold text-gray-800 dark:text-gray-200">
+        <span>{label}</span>
+        {tooltip && (
+          <span
+            tabIndex={0}
+            aria-label={tooltip}
+            className="group relative inline-flex cursor-help text-gray-400 outline-none focus-visible:text-cyan-600 dark:text-gray-500 dark:focus-visible:text-cyan-300"
+          >
+            <Info className="h-4 w-4" aria-hidden="true" />
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 rounded-xl bg-slate-950 px-3 py-2 text-xs font-medium leading-relaxed text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-slate-100 dark:text-slate-950"
+            >
+              {tooltip}
+            </span>
+          </span>
+        )}
       </span>
       {multiline ? (
         <textarea

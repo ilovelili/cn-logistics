@@ -496,8 +496,10 @@ const ja = {
   "superAdmin.emailTemplates.list": "テンプレート一覧",
   "superAdmin.emailTemplates.empty": "メールテンプレートがありません。",
   "superAdmin.emailTemplates.subject": "件名",
-  "superAdmin.emailTemplates.plainText": "テキスト本文",
-  "superAdmin.emailTemplates.html": "HTML本文",
+  "superAdmin.emailTemplates.plainText": "テキスト本文（フォールバック）",
+  "superAdmin.emailTemplates.plainTextTooltip":
+    "HTMLメールを表示できないメール環境の場合にのみ、このテキスト本文が表示されます。通常はHTML本文が使用されます。",
+  "superAdmin.emailTemplates.html": "HTML本文（メイン）",
   "superAdmin.emailTemplates.htmlPreview": "プレビュー",
   "superAdmin.emailTemplates.htmlPreviewTitle": "HTMLメールプレビュー",
   "superAdmin.emailTemplates.variables": "利用可能な差し込み項目",
@@ -511,7 +513,7 @@ const ja = {
   "superAdmin.emailTemplates.updateFailed":
     "メールテンプレートの更新に失敗しました",
   "superAdmin.emailTemplates.validationFailed":
-    "件名（1行）、テキスト本文、HTML本文を入力してください",
+    "件名（1行）、HTML本文、フォールバック用テキスト本文を入力してください",
   "admin.login.title": "管理者ポータル",
   "admin.login.heading": "ログイン",
   "admin.login.username": "メール",
@@ -1026,8 +1028,10 @@ const en: Messages = {
   "superAdmin.emailTemplates.list": "Templates",
   "superAdmin.emailTemplates.empty": "No email templates are available.",
   "superAdmin.emailTemplates.subject": "Subject",
-  "superAdmin.emailTemplates.plainText": "Plain-text body",
-  "superAdmin.emailTemplates.html": "HTML body",
+  "superAdmin.emailTemplates.plainText": "Plain-text body (fallback)",
+  "superAdmin.emailTemplates.plainTextTooltip":
+    "This text is shown only when the recipient's email client cannot display the HTML email. The HTML body is used normally.",
+  "superAdmin.emailTemplates.html": "HTML body (primary)",
   "superAdmin.emailTemplates.htmlPreview": "Preview",
   "superAdmin.emailTemplates.htmlPreviewTitle": "HTML email preview",
   "superAdmin.emailTemplates.variables": "Available variables",
@@ -1040,7 +1044,7 @@ const en: Messages = {
   "superAdmin.emailTemplates.updateFailed":
     "Failed to update the email template",
   "superAdmin.emailTemplates.validationFailed":
-    "Enter a single-line subject, plain-text body, and HTML body",
+    "Enter a single-line subject, HTML body, and fallback plain-text body",
   "admin.login.title": "Admin portal",
   "admin.login.heading": "Login",
   "admin.login.username": "Email",
