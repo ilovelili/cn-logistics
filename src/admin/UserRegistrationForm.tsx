@@ -20,7 +20,7 @@ import {
 import {
   AdminOperator,
   AdminOperatorStaffRole,
-  fetchAdminOperators,
+  fetchAssignableAdminOperators,
 } from "../lib/adminOperators";
 import {
   createShipperUser,
@@ -202,15 +202,10 @@ export default function UserRegistrationForm({
   }, [loadUsers]);
 
   useEffect(() => {
-    if (!isSuperAdmin) {
-      setAdminOperators([]);
-      return;
-    }
-
     let active = true;
     async function loadAdminOperators() {
       try {
-        const operators = await fetchAdminOperators(adminEmail);
+        const operators = await fetchAssignableAdminOperators(adminEmail);
         if (active) {
           setAdminOperators(operators);
         }
@@ -226,7 +221,7 @@ export default function UserRegistrationForm({
     return () => {
       active = false;
     };
-  }, [adminEmail, isSuperAdmin]);
+  }, [adminEmail]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -239,7 +234,7 @@ export default function UserRegistrationForm({
       const { auth0Provisioned } = await createShipperUser(form, adminEmail);
       let updatedUsers = await fetchShipperUsersByAdmin(adminEmail);
 
-      if (isSuperAdmin && selectedCreateAdminIds.length > 0) {
+      if (selectedCreateAdminIds.length > 0) {
         const createdUsers = updatedUsers.filter((user) =>
           createdContactEmails.includes(user.email.toLowerCase()),
         );
@@ -247,7 +242,7 @@ export default function UserRegistrationForm({
         const assignedUsers = await Promise.all(
           createdUsers.map((user) =>
             updateShipperUserAdminAssignments({
-              superAdminEmail: adminEmail,
+              requesterEmail: adminEmail,
               userId: user.id,
               adminUserIds: selectedCreateAdminIds,
             }),
@@ -940,9 +935,9 @@ export default function UserRegistrationForm({
                 null,
             );
           }}
-          isSuperAdmin={isSuperAdmin}
+          showAdminAssignments
           adminOperators={adminOperators}
-          superAdminEmail={adminEmail}
+          requesterEmail={adminEmail}
           onNotify={showToast}
           onAssignmentsSaved={(updatedUser) => {
             setUsers((currentUsers) =>
@@ -1058,32 +1053,30 @@ export default function UserRegistrationForm({
               value={form.notes}
               onChange={(value) => updateField("notes", value)}
             />
-            {isSuperAdmin && (
-              <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                <div className="mb-3">
-                  <h4 className="font-bold text-gray-900 dark:text-white">
-                    {t("admin.userRegistration.assignedAdmins")}
-                  </h4>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {t("admin.userRegistration.assignedAdminsDescription")}
-                  </p>
-                </div>
-                <AdminOperatorCheckboxGrid
-                  adminOperators={adminOperators}
-                  selectedAdminIds={selectedCreateAdminIds}
-                  assignmentsReadOnly={false}
-                  onToggle={(operatorId) =>
-                    setSelectedCreateAdminIds((currentIds) =>
-                      currentIds.includes(operatorId)
-                        ? currentIds.filter(
-                            (currentId) => currentId !== operatorId,
-                          )
-                        : [...currentIds, operatorId],
-                    )
-                  }
-                />
-              </section>
-            )}
+            <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="mb-3">
+                <h4 className="font-bold text-gray-900 dark:text-white">
+                  {t("admin.userRegistration.assignedAdmins")}
+                </h4>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t("admin.userRegistration.assignedAdminsDescription")}
+                </p>
+              </div>
+              <AdminOperatorCheckboxGrid
+                adminOperators={adminOperators}
+                selectedAdminIds={selectedCreateAdminIds}
+                assignmentsReadOnly={false}
+                onToggle={(operatorId) =>
+                  setSelectedCreateAdminIds((currentIds) =>
+                    currentIds.includes(operatorId)
+                      ? currentIds.filter(
+                          (currentId) => currentId !== operatorId,
+                        )
+                      : [...currentIds, operatorId],
+                  )
+                }
+              />
+            </section>
           </div>
 
           <div className="mt-6 flex justify-end gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
@@ -1106,9 +1099,9 @@ export function UserDetailModal({
   user,
   users = [user],
   onSaved,
-  isSuperAdmin,
+  showAdminAssignments = false,
   adminOperators,
-  superAdminEmail,
+  requesterEmail,
   detailsReadOnly = false,
   assignmentsReadOnly = false,
   onNotify,
@@ -1118,9 +1111,9 @@ export function UserDetailModal({
   user: ShipperUser;
   users?: ShipperUser[];
   onSaved: (users: ShipperUser[]) => void;
-  isSuperAdmin: boolean;
+  showAdminAssignments?: boolean;
   adminOperators: AdminOperator[];
-  superAdminEmail: string;
+  requesterEmail: string;
   detailsReadOnly?: boolean;
   assignmentsReadOnly?: boolean;
   onNotify?: (type: "success" | "error", message: string) => void;
@@ -1251,7 +1244,7 @@ export function UserDetailModal({
 
     try {
       const updatedUser = await updateShipperUserAdminAssignments({
-        superAdminEmail,
+        requesterEmail,
         userId: user.id,
         adminUserIds: selectedAdminIds,
       });
@@ -1294,7 +1287,7 @@ export function UserDetailModal({
           <StatusBadge status={user.approval_status} />
         </div>
 
-        {isSuperAdmin && (
+        {showAdminAssignments && (
           <section className="mb-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

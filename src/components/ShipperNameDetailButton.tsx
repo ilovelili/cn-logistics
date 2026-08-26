@@ -56,9 +56,9 @@ export default function ShipperNameDetailButton({
           user={selectedShipperUser}
           users={shipperUsers}
           onSaved={() => undefined}
-          isSuperAdmin={isSuperAdmin}
+          showAdminAssignments={isSuperAdmin}
           adminOperators={adminOperators}
-          superAdminEmail={requesterEmail}
+          requesterEmail={requesterEmail}
           detailsReadOnly
           assignmentsReadOnly
           onAssignmentsSaved={() => undefined}

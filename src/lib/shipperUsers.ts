@@ -213,18 +213,18 @@ export async function deleteShipperUser({ userId }: { userId: string }) {
 }
 
 export async function updateShipperUserAdminAssignments({
-  superAdminEmail,
+  requesterEmail,
   userId,
   adminUserIds,
 }: {
-  superAdminEmail: string;
+  requesterEmail: string;
   userId: string;
   adminUserIds: string[];
 }) {
   const { data, error } = await supabase.rpc(
-    "update_normal_user_admin_assignments",
+    "update_accessible_normal_user_admin_assignments",
     {
-      super_admin_email: superAdminEmail,
+      requester_email: requesterEmail,
       target_user_id: userId,
       admin_user_ids: adminUserIds,
     },

@@ -286,7 +286,7 @@ export default function AdminOperatorManagement({
             adminUserIds.add(createdOperator.id);
 
             return updateShipperUserAdminAssignments({
-              superAdminEmail,
+              requesterEmail: superAdminEmail,
               userId: shipperUserId,
               adminUserIds: [...adminUserIds],
             });
@@ -352,7 +352,7 @@ export default function AdminOperatorManagement({
         }
 
         return updateShipperUserAdminAssignments({
-          superAdminEmail,
+          requesterEmail: superAdminEmail,
           userId: shipperUser.id,
           adminUserIds: [...adminUserIds],
         });
@@ -582,9 +582,9 @@ export default function AdminOperatorManagement({
       {selectedShipperUser && (
         <UserDetailModal
           user={selectedShipperUser}
-          isSuperAdmin
+          showAdminAssignments
           adminOperators={operators}
-          superAdminEmail={superAdminEmail}
+          requesterEmail={superAdminEmail}
           detailsReadOnly
           onNotify={showToast}
           onSaved={(updatedUsers) => {

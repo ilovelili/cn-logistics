@@ -71,6 +71,21 @@ export async function fetchAdminOperators(superAdminEmail: string) {
   return (data ?? []) as AdminOperator[];
 }
 
+export async function fetchAssignableAdminOperators(requesterEmail: string) {
+  const { data, error } = await supabase.rpc(
+    "list_assignable_admin_operators",
+    {
+      requester_email: requesterEmail,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as AdminOperator[];
+}
+
 export async function createAdminOperator(
   form: AdminOperatorForm,
   superAdminEmail: string,
