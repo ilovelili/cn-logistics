@@ -36,6 +36,7 @@ import {
   updateShipperContacts,
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import { lookupJapaneseAddress } from "../lib/zipcode";
 import SortableTableHeader from "../components/SortableTableHeader";
 import PaginationControls from "../components/PaginationControls";
@@ -51,6 +52,10 @@ import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 import ShipperUserReadOnlyDetails from "./ShipperUserReadOnlyDetails";
 import ResponsibleAdminBadges from "../components/ResponsibleAdminBadges";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 function getStaffRoleLabel(role: AdminOperatorStaffRole) {
   return t(`superAdmin.operators.staffRole.${role}`);
@@ -180,7 +185,7 @@ export default function UserRegistrationForm({
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
       setToast({ type, message });
-      setTimeout(() => setToast(null), 4000);
+      setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
     },
     [],
   );
@@ -190,8 +195,11 @@ export default function UserRegistrationForm({
     try {
       const registeredUsers = await fetchShipperUsersByAdmin(adminEmail);
       setUsers(registeredUsers);
-    } catch {
-      showToast("error", t("admin.userRegistration.loadFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("admin.userRegistration.loadFailed"), error),
+      );
     } finally {
       setUsersLoading(false);
     }
@@ -268,8 +276,14 @@ export default function UserRegistrationForm({
             : "auth.provisioning.pending",
         ),
       );
-    } catch {
-      showToast("error", t("admin.userRegistration.createFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("admin.userRegistration.createFailed"),
+          error,
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -282,9 +296,12 @@ export default function UserRegistrationForm({
         await retryShipperUserAuth0Provisioning(user.email);
         await loadUsers();
         showToast("success", t("auth.provisioning.succeeded"));
-      } catch {
+      } catch (error) {
         await loadUsers();
-        showToast("error", t("auth.provisioning.failed"));
+        showToast(
+          "error",
+          appendAdminErrorDetails(t("auth.provisioning.failed"), error),
+        );
       } finally {
         setProvisioningId(null);
       }
@@ -312,8 +329,14 @@ export default function UserRegistrationForm({
       } else {
         showToast("error", t("admin.userRegistration.zipcodeLookupFailed"));
       }
-    } catch {
-      showToast("error", t("admin.userRegistration.zipcodeLookupFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("admin.userRegistration.zipcodeLookupFailed"),
+          error,
+        ),
+      );
     } finally {
       setAddressLoading(false);
     }
@@ -458,8 +481,14 @@ export default function UserRegistrationForm({
           ? t("admin.userRegistration.approved")
           : t("admin.userRegistration.rejected"),
       );
-    } catch {
-      showToast("error", t("admin.userRegistration.approvalFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("admin.userRegistration.approvalFailed"),
+          error,
+        ),
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -478,13 +507,28 @@ export default function UserRegistrationForm({
       await loadUsers();
       setSelectedUser(null);
 
-      if (deletionResults.some((result) => result.status === "rejected")) {
-        showToast("error", t("admin.userRegistration.deleteFailed"));
+      const failedDeletion = deletionResults.find(
+        (result) => result.status === "rejected",
+      );
+      if (failedDeletion?.status === "rejected") {
+        showToast(
+          "error",
+          appendAdminErrorDetails(
+            t("admin.userRegistration.deleteFailed"),
+            failedDeletion.reason,
+          ),
+        );
       } else {
         showToast("success", t("admin.userRegistration.deleted"));
       }
-    } catch {
-      showToast("error", t("admin.userRegistration.deleteFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("admin.userRegistration.deleteFailed"),
+          error,
+        ),
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -671,18 +715,20 @@ export default function UserRegistrationForm({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4" />
+            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <XCircle className="h-4 w-4" />
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 
@@ -1222,9 +1268,13 @@ export function UserDetailModal({
         ),
       );
       onClose();
-    } catch {
-      setError(t("admin.userRegistration.updateFailed"));
-      onNotify?.("error", t("admin.userRegistration.updateFailed"));
+    } catch (error) {
+      const message = appendAdminErrorDetails(
+        t("admin.userRegistration.updateFailed"),
+        error,
+      );
+      setError(message);
+      onNotify?.("error", message);
     } finally {
       setSaving(false);
     }
@@ -1251,9 +1301,13 @@ export function UserDetailModal({
       onAssignmentsSaved(updatedUser);
       onNotify?.("success", t("admin.userRegistration.assignmentUpdated"));
       onClose();
-    } catch {
-      setAssignmentError(t("admin.userRegistration.assignmentUpdateFailed"));
-      onNotify?.("error", t("admin.userRegistration.assignmentUpdateFailed"));
+    } catch (error) {
+      const message = appendAdminErrorDetails(
+        t("admin.userRegistration.assignmentUpdateFailed"),
+        error,
+      );
+      setAssignmentError(message);
+      onNotify?.("error", message);
     } finally {
       setAssignmentsSaving(false);
     }

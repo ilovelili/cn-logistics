@@ -29,6 +29,7 @@ import {
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
 import type { TranslationKey } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import SortableTableHeader from "../components/SortableTableHeader";
 import PaginationControls from "../components/PaginationControls";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
@@ -42,6 +43,10 @@ import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { usePagination } from "../components/usePagination";
 import { UserDetailModal } from "./UserRegistrationForm";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 interface AdminOperatorManagementProps {
   superAdminEmail: string;
@@ -136,7 +141,7 @@ export default function AdminOperatorManagement({
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
       setToast({ type, message });
-      setTimeout(() => setToast(null), 4000);
+      setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
     },
     [],
   );
@@ -145,8 +150,11 @@ export default function AdminOperatorManagement({
     setLoading(true);
     try {
       setOperators(await fetchAdminOperators(superAdminEmail));
-    } catch {
-      showToast("error", t("superAdmin.operators.loadFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("superAdmin.operators.loadFailed"), error),
+      );
     } finally {
       setLoading(false);
     }
@@ -308,7 +316,10 @@ export default function AdminOperatorManagement({
         ),
       );
     } catch (error) {
-      showToast("error", getOperatorCreateErrorMessage(error));
+      showToast(
+        "error",
+        appendAdminErrorDetails(getOperatorCreateErrorMessage(error), error),
+      );
     } finally {
       setSaving(false);
     }
@@ -321,9 +332,12 @@ export default function AdminOperatorManagement({
         await retryAdminOperatorAuth0Provisioning(operator.email);
         await loadOperators();
         showToast("success", t("auth.provisioning.succeeded"));
-      } catch {
+      } catch (error) {
         await loadOperators();
-        showToast("error", t("auth.provisioning.failed"));
+        showToast(
+          "error",
+          appendAdminErrorDetails(t("auth.provisioning.failed"), error),
+        );
       } finally {
         setProvisioningId(null);
       }
@@ -391,8 +405,11 @@ export default function AdminOperatorManagement({
       await loadShipperUsers();
       await loadOperators();
       showToast("success", t("superAdmin.operators.updated"));
-    } catch {
-      showToast("error", t("superAdmin.operators.updateFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("superAdmin.operators.updateFailed"), error),
+      );
     } finally {
       setEditSaving(false);
     }
@@ -411,8 +428,11 @@ export default function AdminOperatorManagement({
       );
       setDeleteTarget(null);
       showToast("success", t("superAdmin.operators.deleted"));
-    } catch {
-      showToast("error", t("superAdmin.operators.deleteFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("superAdmin.operators.deleteFailed"), error),
+      );
     } finally {
       setDeletingId(null);
     }
@@ -547,14 +567,18 @@ export default function AdminOperatorManagement({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold shadow-xl ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-bold shadow-xl ${
             toast.type === "success"
               ? "bg-emerald-50 text-emerald-800"
               : "bg-rose-50 text-rose-800"
           }`}
         >
-          {toast.type === "error" && <XCircle className="h-5 w-5" />}
-          {toast.message}
+          {toast.type === "error" && (
+            <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          )}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 

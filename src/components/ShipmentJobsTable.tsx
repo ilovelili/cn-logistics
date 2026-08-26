@@ -20,6 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import {
   isCustomerDocumentDownloadApprovalExpired,
   isCustomerDocumentDownloadable,
@@ -199,7 +200,7 @@ export default function ShipmentJobsTable({
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
       setToast({ type, message });
-      setTimeout(() => setToast(null), 4000);
+      setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
     },
     [],
   );
@@ -216,8 +217,11 @@ export default function ShipmentJobsTable({
         );
         await onRefresh?.();
         showToast("success", t("documents.batchRequested", { count: 1 }));
-      } catch {
-        showToast("error", t("documents.batchRequestFailed"));
+      } catch (error) {
+        showToast(
+          "error",
+          appendErrorDetails(t("documents.batchRequestFailed"), error),
+        );
       } finally {
         setRequestingDocumentId(null);
       }
@@ -237,8 +241,11 @@ export default function ShipmentJobsTable({
         );
         await onRefresh?.();
         showToast("success", t("admin.documents.approved"));
-      } catch {
-        showToast("error", t("admin.documents.updateFailed"));
+      } catch (error) {
+        showToast(
+          "error",
+          appendErrorDetails(t("admin.documents.updateFailed"), error),
+        );
       } finally {
         setRequestingDocumentId(null);
       }
@@ -250,8 +257,11 @@ export default function ShipmentJobsTable({
       setDownloadingDocumentId(document.id);
       try {
         await downloadShipmentDocument(document);
-      } catch {
-        showToast("error", t("documents.downloadFailed"));
+      } catch (error) {
+        showToast(
+          "error",
+          appendErrorDetails(t("documents.downloadFailed"), error),
+        );
       } finally {
         setDownloadingDocumentId(null);
       }
@@ -273,8 +283,11 @@ export default function ShipmentJobsTable({
         t("documents.deletedWithName", { name: deleteTarget.document.name }),
       );
       setDeleteTarget(null);
-    } catch {
-      showToast("error", t("documents.deleteFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendErrorDetails(t("documents.deleteFailed"), error),
+      );
     } finally {
       setDeletingDocumentId(null);
     }
@@ -369,18 +382,20 @@ export default function ShipmentJobsTable({
     >
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
             toast.type === "success"
               ? "bg-emerald-500 text-white"
               : "bg-rose-500 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-5 w-5" />
+            <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
           ) : (
-            <AlertCircle className="h-5 w-5" />
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
       <div

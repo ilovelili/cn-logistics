@@ -10,6 +10,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { appendErrorDetails } from "../lib/errors";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 interface Parcel {
   id: string;
@@ -87,7 +92,7 @@ export default function TrackingEntryForm() {
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
   };
 
   const searchParcels = async () => {
@@ -105,9 +110,12 @@ export default function TrackingEntryForm() {
       if (error) throw error;
       if (requestId !== searchRequestId.current) return;
       setParcels((data || []) as unknown as Parcel[]);
-    } catch {
+    } catch (error) {
       if (requestId === searchRequestId.current) {
-        showToast("error", "検索に失敗しました");
+        showToast(
+          "error",
+          appendAdminErrorDetails("検索に失敗しました", error),
+        );
       }
     } finally {
       if (requestId === searchRequestId.current) {
@@ -138,7 +146,10 @@ export default function TrackingEntryForm() {
       .limit(10);
     if (error) {
       if (requestId === eventRequestId.current) {
-        showToast("error", "追跡履歴の読み込みに失敗しました");
+        showToast(
+          "error",
+          appendAdminErrorDetails("追跡履歴の読み込みに失敗しました", error),
+        );
       }
       return;
     }
@@ -179,8 +190,14 @@ export default function TrackingEntryForm() {
         event_time: new Date().toISOString().slice(0, 16),
       });
       await loadEvents(selectedParcel.id);
-    } catch {
-      showToast("error", "登録に失敗しました。もう一度お試しください。");
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          "登録に失敗しました。もう一度お試しください。",
+          error,
+        ),
+      );
     } finally {
       setSubmitLoading(false);
     }
@@ -201,18 +218,20 @@ export default function TrackingEntryForm() {
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg transition-all ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 

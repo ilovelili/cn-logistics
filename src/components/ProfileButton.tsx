@@ -16,6 +16,7 @@ import {
   uploadAppUserAvatar,
 } from "../lib/auth";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import InstantTooltip from "./InstantTooltip";
 
 interface ProfileButtonProps {
@@ -83,7 +84,7 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
   };
 
   const handleAvatarChange = async (
@@ -201,9 +202,10 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       setProfile(nextProfile);
       cancelCrop();
       showToast("success", t("profile.updated"));
-    } catch {
-      setError(t("profile.uploadFailed"));
-      showToast("error", t("profile.uploadFailed"));
+    } catch (error) {
+      const message = appendErrorDetails(t("profile.uploadFailed"), error);
+      setError(message);
+      showToast("error", message);
     } finally {
       setUploading(false);
     }
@@ -444,18 +446,20 @@ export default function ProfileButton({ email }: ProfileButtonProps) {
       {toast &&
         createPortal(
           <div
-            className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+            className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
               toast.type === "success"
                 ? "bg-emerald-500 text-white"
                 : "bg-rose-500 text-white"
             }`}
           >
             {toast.type === "success" ? (
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
             ) : (
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             )}
-            {toast.message}
+            <span className="whitespace-pre-line break-words">
+              {toast.message}
+            </span>
           </div>,
           document.body,
         )}

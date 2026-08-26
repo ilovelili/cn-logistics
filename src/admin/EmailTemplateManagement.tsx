@@ -17,7 +17,12 @@ import {
   updateEmailTemplate,
 } from "../lib/emailTemplates";
 import { getLocale, t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import AdminPageHeader from "./AdminPageHeader";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 const emptyForm: EmailTemplateForm = {
   subject_template: "",
@@ -53,7 +58,7 @@ export default function EmailTemplateManagement() {
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
       setToast({ type, message });
-      window.setTimeout(() => setToast(null), 4000);
+      window.setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
     },
     [],
   );
@@ -78,8 +83,14 @@ export default function EmailTemplateManagement() {
         setSelectedKey(null);
         setForm(emptyForm);
       }
-    } catch {
-      showToast("error", t("superAdmin.emailTemplates.loadFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("superAdmin.emailTemplates.loadFailed"),
+          error,
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -123,8 +134,14 @@ export default function EmailTemplateManagement() {
       );
       setForm(templateToForm(updatedTemplate));
       showToast("success", t("superAdmin.emailTemplates.updated"));
-    } catch {
-      showToast("error", t("superAdmin.emailTemplates.updateFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("superAdmin.emailTemplates.updateFailed"),
+          error,
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -135,18 +152,20 @@ export default function EmailTemplateManagement() {
       {toast && (
         <div
           role="status"
-          className={`fixed right-5 top-5 z-[100] flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-xl ${
+          className={`fixed right-5 top-5 z-[100] flex max-w-[min(36rem,calc(100vw-2.5rem))] items-start gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-xl ${
             toast.type === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
               : "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <XCircle className="h-4 w-4" />
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 

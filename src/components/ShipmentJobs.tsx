@@ -27,6 +27,7 @@ import {
 } from "./shipmentJobsTableUtils";
 import { SortDirection } from "./SortableTableHeader";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import {
   FeedbackRatingPayload,
   fetchShipmentFeedbackForUser,
@@ -243,7 +244,7 @@ export default function ShipmentJobs({
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
   };
 
   const handleCreate = async (
@@ -257,8 +258,11 @@ export default function ShipmentJobs({
       await onRefresh();
       setShowCreate(false);
       showToast("success", t("admin.entry.created"));
-    } catch {
-      showToast("error", t("admin.entry.createFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendErrorDetails(t("admin.entry.createFailed"), error),
+      );
     } finally {
       setSaving(false);
     }
@@ -278,18 +282,20 @@ export default function ShipmentJobs({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[200] flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ${
             toast.type === "success"
               ? "bg-emerald-500 text-white"
               : "bg-rose-500 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-5 w-5" />
+            <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
           ) : (
-            <AlertCircle className="h-5 w-5" />
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 
@@ -486,8 +492,11 @@ export default function ShipmentJobs({
               [jobId]: [...existingJobFeedback, ...savedFeedback],
             }));
             showToast("success", t("feedback.saved"));
-          } catch {
-            showToast("error", t("feedback.submitFailed"));
+          } catch (error) {
+            showToast(
+              "error",
+              appendErrorDetails(t("feedback.submitFailed"), error),
+            );
           } finally {
             setFeedbackSaving(false);
           }

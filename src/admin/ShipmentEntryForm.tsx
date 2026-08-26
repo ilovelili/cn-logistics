@@ -29,6 +29,7 @@ import {
 } from "../components/shipmentJobsTableUtils";
 import { SortDirection } from "../components/SortableTableHeader";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import type { AdminOperator } from "../lib/adminOperators";
 import type { ShipperUser } from "../lib/shipperUsers";
 import {
@@ -45,6 +46,10 @@ import {
   transportModeOptions,
   updateShipmentJob,
 } from "../lib/shipmentJobs";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 export type ShipmentEntryCriteria =
   | { kind: "all" }
@@ -248,7 +253,7 @@ export default function ShipmentEntryForm({
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
   };
 
   useEffect(() => {
@@ -305,8 +310,11 @@ export default function ShipmentEntryForm({
       await createShipmentJob(form, adminEmail);
       await onRefresh();
       showToast("success", t("admin.entry.created"));
-    } catch {
-      showToast("error", t("admin.entry.createFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("admin.entry.createFailed"), error),
+      );
     } finally {
       setLoading(false);
     }
@@ -322,8 +330,11 @@ export default function ShipmentEntryForm({
       await onRefresh();
       setSelectedJob(null);
       showToast("success", t("admin.entry.updated"));
-    } catch {
-      showToast("error", t("admin.entry.updateFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("admin.entry.updateFailed"), error),
+      );
     } finally {
       setLoading(false);
     }
@@ -357,18 +368,20 @@ export default function ShipmentEntryForm({
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <XCircle className="w-4 h-4" />
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 

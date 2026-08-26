@@ -70,6 +70,7 @@ const ja = {
   "appFeedback.done": "閉じる",
 
   "common.status": "ステータス",
+  "common.errorDetails": "詳細: {details}",
   "common.shipperName": "荷主名",
   "common.trade": "取引",
   "common.tradeMode": "取引形態",
@@ -607,6 +608,7 @@ const en: Messages = {
   "appFeedback.done": "Close",
 
   "common.status": "Status",
+  "common.errorDetails": "Details: {details}",
   "common.shipperName": "Shipper",
   "common.trade": "Trade",
   "common.tradeMode": "Trade mode",

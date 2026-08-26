@@ -18,6 +18,7 @@ import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
 import { t } from "../lib/i18n";
+import { appendErrorDetails } from "../lib/errors";
 import {
   createShipmentTrackingEventTemplate,
   fetchAllShipmentTrackingEventTemplates,
@@ -29,6 +30,10 @@ import {
   updateShipmentTrackingEventTemplate,
   type ShipmentStatus,
 } from "../lib/shipmentJobs";
+
+function appendAdminErrorDetails(summary: string, error: unknown) {
+  return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
+}
 
 const defaultFlowName = "door_to_door";
 
@@ -120,7 +125,7 @@ export default function StandardFlowManagement() {
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), type === "error" ? 8000 : 4000);
   };
 
   const loadTemplates = useCallback(async () => {
@@ -129,8 +134,11 @@ export default function StandardFlowManagement() {
       const nextTemplates = await fetchAllShipmentTrackingEventTemplates();
       setTemplates(nextTemplates);
       setDrafts(buildDrafts(nextTemplates));
-    } catch {
-      showToast("error", t("superAdmin.standardFlow.loadFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("superAdmin.standardFlow.loadFailed"), error),
+      );
     } finally {
       setLoading(false);
     }
@@ -246,8 +254,14 @@ export default function StandardFlowManagement() {
         [updatedTemplate.id]: templateToForm(updatedTemplate),
       }));
       showToast("success", t("superAdmin.standardFlow.updated"));
-    } catch {
-      showToast("error", t("superAdmin.standardFlow.updateFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("superAdmin.standardFlow.updateFailed"),
+          error,
+        ),
+      );
     } finally {
       setSavingId(null);
     }
@@ -274,8 +288,14 @@ export default function StandardFlowManagement() {
         sort_order: form.sort_order + 10,
       });
       showToast("success", t("superAdmin.standardFlow.created"));
-    } catch {
-      showToast("error", t("superAdmin.standardFlow.createFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("superAdmin.standardFlow.createFailed"),
+          error,
+        ),
+      );
     } finally {
       setCreating(false);
     }
@@ -297,8 +317,14 @@ export default function StandardFlowManagement() {
       });
       showToast("success", t("superAdmin.standardFlow.deleted"));
       setDeleteTarget(null);
-    } catch {
-      showToast("error", t("superAdmin.standardFlow.deleteFailed"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(
+          t("superAdmin.standardFlow.deleteFailed"),
+          error,
+        ),
+      );
     } finally {
       setDeletingId(null);
     }
@@ -308,18 +334,20 @@ export default function StandardFlowManagement() {
     <div className="space-y-6">
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-[200] flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
+          className={`fixed right-6 top-6 z-[200] flex max-w-[min(36rem,calc(100vw-3rem))] items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4" />
+            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <XCircle className="h-4 w-4" />
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          {toast.message}
+          <span className="whitespace-pre-line break-words">
+            {toast.message}
+          </span>
         </div>
       )}
 
