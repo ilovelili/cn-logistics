@@ -26,6 +26,14 @@ interface ShipperRegistrationDelivery {
   contact_person: string | null;
 }
 
+interface ShipperRegistrationApprovalDelivery {
+  id: string;
+  recipient_email: string;
+  super_admin_name: string;
+  customer_name: string;
+  registered_by: string;
+}
+
 interface DocumentDownloadRequestDelivery {
   id: string;
   recipient_email: string;
@@ -65,6 +73,8 @@ const smtpHost = "email-smtp.ap-northeast-1.amazonaws.com";
 const configurationSetName = "cn-navigator";
 const templateKey = "shipment_status_update";
 const shipperRegistrationTemplateKey = "shipper_registration_approved";
+const shipperRegistrationApprovalTemplateKey =
+  "shipper_registration_approval_admin";
 const documentDownloadRequestTemplateKey = "document_download_requested_admin";
 const documentDownloadApprovedTemplateKey = "document_download_approved_user";
 const shipmentDocumentBucket = "shipment-documents";
@@ -128,11 +138,13 @@ Deno.serve(async (request) => {
   const deliveryType =
     body.delivery_type === "shipper_registration"
       ? "shipper_registration"
-      : body.delivery_type === "document_download_request"
-        ? "document_download_request"
-        : body.delivery_type === "document_download_approved"
-          ? "document_download_approved"
-          : "shipment_status";
+      : body.delivery_type === "shipper_registration_approval"
+        ? "shipper_registration_approval"
+        : body.delivery_type === "document_download_request"
+          ? "document_download_request"
+          : body.delivery_type === "document_download_approved"
+            ? "document_download_approved"
+            : "shipment_status";
   const { data, error: claimError } = await supabase.rpc(
     claimRpcFor(deliveryType),
     { target_delivery_id: body.delivery_id },
@@ -148,6 +160,7 @@ Deno.serve(async (request) => {
   const [delivery] = (data ?? []) as (
     | EmailDelivery
     | ShipperRegistrationDelivery
+    | ShipperRegistrationApprovalDelivery
     | DocumentDownloadRequestDelivery
     | DocumentDownloadApprovedDelivery
   )[];
@@ -225,18 +238,23 @@ Deno.serve(async (request) => {
 type DeliveryType =
   | "shipment_status"
   | "shipper_registration"
+  | "shipper_registration_approval"
   | "document_download_request"
   | "document_download_approved";
 
 type Delivery =
   | EmailDelivery
   | ShipperRegistrationDelivery
+  | ShipperRegistrationApprovalDelivery
   | DocumentDownloadRequestDelivery
   | DocumentDownloadApprovedDelivery;
 
 function claimRpcFor(deliveryType: DeliveryType) {
   if (deliveryType === "shipper_registration") {
     return "claim_shipper_registration_email";
+  }
+  if (deliveryType === "shipper_registration_approval") {
+    return "claim_shipper_registration_approval_email";
   }
   if (deliveryType === "document_download_request") {
     return "claim_document_download_request_email";
@@ -251,6 +269,9 @@ function completeRpcFor(deliveryType: DeliveryType) {
   if (deliveryType === "shipper_registration") {
     return "complete_shipper_registration_email";
   }
+  if (deliveryType === "shipper_registration_approval") {
+    return "complete_shipper_registration_approval_email";
+  }
   if (deliveryType === "document_download_request") {
     return "complete_document_download_request_email";
   }
@@ -263,6 +284,9 @@ function completeRpcFor(deliveryType: DeliveryType) {
 function failRpcFor(deliveryType: DeliveryType) {
   if (deliveryType === "shipper_registration") {
     return "fail_shipper_registration_email";
+  }
+  if (deliveryType === "shipper_registration_approval") {
+    return "fail_shipper_registration_approval_email";
   }
   if (deliveryType === "document_download_request") {
     return "fail_document_download_request_email";
@@ -283,6 +307,13 @@ async function buildMessage(
     return await buildShipperRegistrationMessage(
       supabase,
       delivery as ShipperRegistrationDelivery,
+      applicationUrl,
+    );
+  }
+  if (deliveryType === "shipper_registration_approval") {
+    return await buildShipperRegistrationApprovalMessage(
+      supabase,
+      delivery as ShipperRegistrationApprovalDelivery,
       applicationUrl,
     );
   }
@@ -374,6 +405,41 @@ async function buildShipperRegistrationMessage(
     customer_name: delivery.shipper_name,
     contact_person: delivery.contact_person || delivery.recipient_email,
     recipient_email: delivery.recipient_email,
+    application_url: applicationUrl.replace(/\/$/, ""),
+  };
+
+  return {
+    subject: renderTemplate(template.subject_template, values, false).replace(
+      /[\r\n]+/g,
+      " ",
+    ),
+    text: renderTemplate(template.text_template, values, false),
+    html: renderTemplate(template.html_template, values, true),
+  };
+}
+
+async function buildShipperRegistrationApprovalMessage(
+  supabase: EmailClient,
+  delivery: ShipperRegistrationApprovalDelivery,
+  applicationUrl: string,
+) {
+  const { data, error } = await supabase
+    .from("email_templates")
+    .select("subject_template,text_template,html_template")
+    .eq("template_key", shipperRegistrationApprovalTemplateKey)
+    .single();
+
+  if (error || !data) {
+    throw new Error(
+      "Shipper registration approval email template could not be loaded",
+    );
+  }
+
+  const template = data as EmailTemplate;
+  const values = {
+    super_admin_name: delivery.super_admin_name,
+    customer_name: delivery.customer_name,
+    registered_by: delivery.registered_by,
     application_url: applicationUrl.replace(/\/$/, ""),
   };
 

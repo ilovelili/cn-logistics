@@ -17,6 +17,12 @@ sends the `shipper_registration_approved` template to the contact's registered
 email address. Its editable variables are `{{customer_name}}`,
 `{{contact_person}}`, `{{recipient_email}}`, and `{{application_url}}`.
 
+When an administrator registers a new shipper, every active super administrator
+receives the Japanese-only `shipper_registration_approval_admin` template so
+they can review and approve it. Its editable variables are
+`{{super_admin_name}}`, `{{customer_name}}`, `{{registered_by}}`, and
+`{{application_url}}`.
+
 When a user submits a customer-document download request, responsible active
 administrators receive the `document_download_requested_admin` template. The
 recipient set combines the shipment and customer assignments, with active super

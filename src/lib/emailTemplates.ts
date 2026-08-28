@@ -35,6 +35,13 @@ const shipperRegistrationEmailTemplateVariables = [
   "application_url",
 ] as const;
 
+const shipperRegistrationApprovalEmailTemplateVariables = [
+  "super_admin_name",
+  "customer_name",
+  "registered_by",
+  "application_url",
+] as const;
+
 const documentDownloadRequestEmailTemplateVariables = [
   "admin_name",
   "customer_name",
@@ -56,6 +63,9 @@ const documentDownloadApprovedEmailTemplateVariables = [
 export function getEmailTemplateVariables(templateKey: string) {
   if (templateKey === "shipper_registration_approved") {
     return shipperRegistrationEmailTemplateVariables;
+  }
+  if (templateKey === "shipper_registration_approval_admin") {
+    return shipperRegistrationApprovalEmailTemplateVariables;
   }
   if (templateKey === "document_download_requested_admin") {
     return documentDownloadRequestEmailTemplateVariables;
