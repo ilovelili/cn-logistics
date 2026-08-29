@@ -4,8 +4,10 @@ import {
   FileText,
   MapPin,
   Star,
+  Trash2,
   X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { t } from "../lib/i18n";
 import {
   getShipmentFeedbackSummaryRating,
@@ -23,6 +25,8 @@ import {
   transportModeLabels,
 } from "../lib/shipmentJobs";
 import InstantTooltip from "./InstantTooltip";
+import ShipmentJobDeleteConfirmModal from "./ShipmentJobDeleteConfirmModal";
+import TableActionButton from "./TableActionButton";
 
 interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
@@ -30,6 +34,7 @@ interface ShipmentJobDetailModalProps {
   feedback?: ShipmentFeedback | null;
   feedbackLoading?: boolean;
   showInternalDocuments?: boolean;
+  onDelete?: (job: ShipmentJob) => Promise<void>;
   onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
 }
@@ -40,9 +45,18 @@ export default function ShipmentJobDetailModal({
   feedback,
   feedbackLoading = false,
   showInternalDocuments = false,
+  onDelete,
   onOpenFeedback,
   onClose,
 }: ShipmentJobDetailModalProps) {
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setDeleteConfirmationOpen(false);
+    setDeleting(false);
+  }, [job?.id]);
+
   if (!job) {
     return null;
   }
@@ -50,6 +64,20 @@ export default function ShipmentJobDetailModal({
   const internalDocuments = documents.filter(
     (document) => document.scope === "internal",
   );
+
+  const confirmDelete = async () => {
+    if (!onDelete) return;
+
+    setDeleting(true);
+    try {
+      await onDelete(job);
+      setDeleteConfirmationOpen(false);
+    } catch {
+      // The parent owns the localized error toast; keep the dialog open.
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div
@@ -80,6 +108,15 @@ export default function ShipmentJobDetailModal({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {onDelete && (
+              <TableActionButton
+                variant="danger"
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                onClick={() => setDeleteConfirmationOpen(true)}
+              >
+                {t("common.delete")}
+              </TableActionButton>
+            )}
             {onOpenFeedback && (
               <button
                 type="button"
@@ -204,6 +241,14 @@ export default function ShipmentJobDetailModal({
           )}
         </div>
       </div>
+      {deleteConfirmationOpen && onDelete && (
+        <ShipmentJobDeleteConfirmModal
+          job={job}
+          deleting={deleting}
+          onCancel={() => setDeleteConfirmationOpen(false)}
+          onConfirm={() => void confirmDelete()}
+        />
+      )}
     </div>
   );
 }

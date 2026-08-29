@@ -105,6 +105,7 @@ const ja = {
   "common.reject": "却下",
   "common.edit": "編集",
   "common.delete": "削除",
+  "common.action": "操作",
   "common.deleteConfirmTitle": "削除しますか？",
   "common.deleteConfirm": "この項目を削除します。この操作は取り消せません。",
   "common.view": "表示",
@@ -279,6 +280,11 @@ const ja = {
   "jobs.detail.shipment": "出荷情報",
   "jobs.detail.route": "ルート / BL",
   "jobs.detail.parties": "関係者",
+  "jobs.deleted": "出荷案件を削除しました",
+  "jobs.deleteFailed": "出荷案件の削除に失敗しました",
+  "jobs.deleteConfirmTitle": "出荷案件を削除しますか？",
+  "jobs.deleteConfirm":
+    "この出荷案件を一覧から削除します。関連する書類とステータス履歴も表示されなくなります。",
 
   "documents.onHold": "保留中",
   "documents.pendingApproval": "書類DL承認待ち",
@@ -643,6 +649,7 @@ const en: Messages = {
   "common.reject": "Reject",
   "common.edit": "Edit",
   "common.delete": "Delete",
+  "common.action": "Actions",
   "common.deleteConfirmTitle": "Delete?",
   "common.deleteConfirm":
     "This item will be deleted. This action cannot be undone.",
@@ -792,6 +799,11 @@ const en: Messages = {
   "jobs.detail.shipment": "Shipment",
   "jobs.detail.route": "Route / BL",
   "jobs.detail.parties": "Parties",
+  "jobs.deleted": "Shipment deleted",
+  "jobs.deleteFailed": "Failed to delete shipment",
+  "jobs.deleteConfirmTitle": "Delete this shipment?",
+  "jobs.deleteConfirm":
+    "This shipment will be removed from the list. Its documents and tracking history will also be hidden.",
 
   "feedback.title": "Feedback",
   "feedback.open": "Enter feedback",

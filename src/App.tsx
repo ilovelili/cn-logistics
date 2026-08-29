@@ -628,7 +628,6 @@ function AppContent({
     void loginWithRedirect({
       authorizationParams: {
         connection: "email",
-        prompt: "login",
         ui_locales: "ja",
       },
     }).catch(() => {

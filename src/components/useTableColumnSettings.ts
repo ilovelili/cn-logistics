@@ -59,20 +59,30 @@ export function useTableColumnSettings<TColumnId extends string>(
     });
   };
 
-  const moveColumn = (fromColumnId: TColumnId, toColumnId: TColumnId) => {
-    if (fromColumnId === toColumnId) return;
-
+  const moveColumn = (fromColumnId: TColumnId, insertionIndex: number) => {
     setSettings((current) => {
       const nextOrder = orderedColumns.map((column) => column.id);
       const fromIndex = nextOrder.indexOf(fromColumnId);
-      const toIndex = nextOrder.indexOf(toColumnId);
 
-      if (fromIndex === -1 || toIndex === -1) {
+      if (fromIndex === -1) {
         return current;
       }
 
+      const boundedInsertionIndex = Math.max(
+        0,
+        Math.min(insertionIndex, nextOrder.length),
+      );
       nextOrder.splice(fromIndex, 1);
-      nextOrder.splice(toIndex, 0, fromColumnId);
+      const adjustedInsertionIndex =
+        fromIndex < boundedInsertionIndex
+          ? boundedInsertionIndex - 1
+          : boundedInsertionIndex;
+
+      if (adjustedInsertionIndex === fromIndex) {
+        return current;
+      }
+
+      nextOrder.splice(adjustedInsertionIndex, 0, fromColumnId);
 
       return {
         ...current,

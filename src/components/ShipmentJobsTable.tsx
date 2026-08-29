@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckCircle,
   Download,
+  Edit3,
   Eye,
   FileClock,
   FileText,
@@ -45,6 +46,8 @@ import { useStickyTableHeaderPreference } from "./useStickyTableHeaderPreference
 import TableHorizontalScrollHint from "./TableHorizontalScrollHint";
 import TableScrollToTopButton from "./TableScrollToTopButton";
 import TableColumnSettingsButton from "./TableColumnSettings";
+import TableActionButton from "./TableActionButton";
+import ShipmentJobDeleteConfirmModal from "./ShipmentJobDeleteConfirmModal";
 import InstantTooltip from "./InstantTooltip";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
@@ -121,6 +124,7 @@ interface ShipmentJobsTableProps {
   adminOperators?: AdminOperator[];
   onSort: (sortKey: ShipmentJobsTableSortKey) => void;
   onSelectJob: (job: ShipmentJob) => void;
+  onDeleteJob?: (job: ShipmentJob) => Promise<void>;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onRefresh?: () => Promise<void>;
@@ -151,6 +155,7 @@ export default function ShipmentJobsTable({
   adminOperators = [],
   onSort,
   onSelectJob,
+  onDeleteJob,
   onPageChange,
   onPageSizeChange,
   onRefresh,
@@ -168,6 +173,10 @@ export default function ShipmentJobsTable({
   );
   const [deleteTarget, setDeleteTarget] =
     useState<ShipmentDocumentDeleteTarget | null>(null);
+  const [jobDeleteTarget, setJobDeleteTarget] = useState<ShipmentJob | null>(
+    null,
+  );
+  const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
   const [expandedDocumentJobId, setExpandedDocumentJobId] = useState<
     string | null
   >(null);
@@ -292,38 +301,27 @@ export default function ShipmentJobsTable({
       setDeletingDocumentId(null);
     }
   }, [deleteTarget, onRefresh, requesterEmail, showToast]);
+  const deleteJob = useCallback(async () => {
+    if (!jobDeleteTarget || !onDeleteJob) return;
+
+    setDeletingJobId(jobDeleteTarget.id);
+    try {
+      await onDeleteJob(jobDeleteTarget);
+      setJobDeleteTarget(null);
+    } catch {
+      // The parent owns the localized error toast; keep the dialog open.
+    } finally {
+      setDeletingJobId(null);
+    }
+  }, [jobDeleteTarget, onDeleteJob]);
   const canDeleteDocuments = Boolean(requesterEmail) && !approvedDocumentsOnly;
-  const columns = useMemo(
-    () =>
-      buildColumns(
-        documentsByJob,
-        adminTheme,
-        showInternalDocuments,
-        approvedDocumentsOnly,
-        shipperOptions,
-        shipperUsers,
-        requesterEmail,
-        isSuperAdmin,
-        adminOperators,
-        statusColorMap,
-        requestingDocumentId,
-        downloadingDocumentId,
-        deletingDocumentId,
-        canDeleteDocuments,
-        expandedDocumentJobId,
-        setExpandedDocumentJobId,
-        setPreviewDocument,
-        requestDocument,
-        approveDocument,
-        downloadDocument,
-        setDeleteTarget,
-      ),
-    [
-      adminTheme,
-      shipperOptions,
+  const columns = useMemo(() => {
+    const nextColumns = buildColumns(
       documentsByJob,
-      approvedDocumentsOnly,
+      adminTheme,
       showInternalDocuments,
+      approvedDocumentsOnly,
+      shipperOptions,
       shipperUsers,
       requesterEmail,
       isSuperAdmin,
@@ -334,13 +332,67 @@ export default function ShipmentJobsTable({
       deletingDocumentId,
       canDeleteDocuments,
       expandedDocumentJobId,
+      setExpandedDocumentJobId,
       setPreviewDocument,
       requestDocument,
       approveDocument,
       downloadDocument,
       setDeleteTarget,
-    ],
-  );
+    );
+
+    if (onDeleteJob) {
+      nextColumns.push({
+        id: "action",
+        label: t("common.action"),
+        width: 170,
+        render: (job) => (
+          <div className="flex items-center gap-2">
+            <TableActionButton
+              variant="success"
+              icon={<Edit3 className="h-3.5 w-3.5" />}
+              onClick={() => onSelectJob(job)}
+            >
+              {t("common.edit")}
+            </TableActionButton>
+            <TableActionButton
+              variant="danger"
+              icon={<Trash2 className="h-3.5 w-3.5" />}
+              disabled={deletingJobId === job.id}
+              onClick={() => setJobDeleteTarget(job)}
+            >
+              {t("common.delete")}
+            </TableActionButton>
+          </div>
+        ),
+      });
+    }
+
+    return nextColumns;
+  }, [
+    adminTheme,
+    shipperOptions,
+    documentsByJob,
+    approvedDocumentsOnly,
+    showInternalDocuments,
+    shipperUsers,
+    requesterEmail,
+    isSuperAdmin,
+    adminOperators,
+    statusColorMap,
+    requestingDocumentId,
+    downloadingDocumentId,
+    deletingDocumentId,
+    canDeleteDocuments,
+    expandedDocumentJobId,
+    setPreviewDocument,
+    requestDocument,
+    approveDocument,
+    downloadDocument,
+    setDeleteTarget,
+    deletingJobId,
+    onDeleteJob,
+    onSelectJob,
+  ]);
   const columnSettingsRoleKey = `${columnSettingsStorageKey}-${
     adminTheme
       ? showInternalDocuments
@@ -690,6 +742,14 @@ export default function ShipmentJobsTable({
           deleting={deletingDocumentId === deleteTarget.document.id}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => void deleteDocument()}
+        />
+      )}
+      {jobDeleteTarget && (
+        <ShipmentJobDeleteConfirmModal
+          job={jobDeleteTarget}
+          deleting={deletingJobId === jobDeleteTarget.id}
+          onCancel={() => setJobDeleteTarget(null)}
+          onConfirm={() => void deleteJob()}
         />
       )}
     </section>

@@ -694,6 +694,20 @@ export async function updateShipmentJob(
   }
 }
 
+export async function softDeleteShipmentJob(
+  id: string,
+  requesterEmail: string,
+) {
+  const { error } = await supabase.rpc("soft_delete_accessible_shipment_job", {
+    requester_email: requesterEmail,
+    target_job_id: id,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function updateShipmentDocumentApproval(
   id: string,
   approvalStatus: DocumentApprovalStatus,

@@ -8,6 +8,7 @@ import {
   Filter,
   Plus,
   Search,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
@@ -19,6 +20,8 @@ import LogoMark from "../components/LogoMark";
 import ShipmentJobsTable, {
   ShipmentJobsTableSortKey,
 } from "../components/ShipmentJobsTable";
+import ShipmentJobDeleteConfirmModal from "../components/ShipmentJobDeleteConfirmModal";
+import TableActionButton from "../components/TableActionButton";
 import {
   buildShipmentJobDocumentsByJob,
   buildShipmentJobSearchText,
@@ -40,6 +43,7 @@ import {
   ShipmentJob,
   ShipmentStatus,
   ShipmentStatusColorMap,
+  softDeleteShipmentJob,
   softDeleteShipmentDocument,
   statusOptions,
   tradeModeOptions,
@@ -340,6 +344,21 @@ export default function ShipmentEntryForm({
     }
   };
 
+  const handleDeleteJob = async (job: ShipmentJob) => {
+    try {
+      await softDeleteShipmentJob(job.id, adminEmail);
+      setSelectedJob((current) => (current?.id === job.id ? null : current));
+      await onRefresh();
+      showToast("success", t("jobs.deleted"));
+    } catch (error) {
+      showToast(
+        "error",
+        appendAdminErrorDetails(t("jobs.deleteFailed"), error),
+      );
+      throw error;
+    }
+  };
+
   const handleSort = (nextSortKey: ShipmentJobsTableSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -541,6 +560,7 @@ export default function ShipmentEntryForm({
             adminOperators={adminOperators}
             onSort={handleSort}
             onSelectJob={setSelectedJob}
+            onDeleteJob={handleDeleteJob}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
             onRefresh={onRefresh}
@@ -552,6 +572,7 @@ export default function ShipmentEntryForm({
             }
             adminEmail={adminEmail}
             loading={loading}
+            onDeleteJob={handleDeleteJob}
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
             onRefresh={onRefresh}
@@ -636,6 +657,7 @@ function AdminShipmentJobModal({
   adminEmail,
   loading,
   shipperOptions,
+  onDeleteJob,
   onClose,
   onSubmit,
   onRefresh,
@@ -646,6 +668,7 @@ function AdminShipmentJobModal({
   adminEmail: string;
   loading: boolean;
   shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  onDeleteJob: (job: ShipmentJob) => Promise<void>;
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   onRefresh: () => Promise<void>;
@@ -659,6 +682,9 @@ function AdminShipmentJobModal({
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
     null,
   );
+  const [deleteJobConfirmationOpen, setDeleteJobConfirmationOpen] =
+    useState(false);
+  const [deletingJob, setDeletingJob] = useState(false);
 
   if (!job) {
     return null;
@@ -674,6 +700,18 @@ function AdminShipmentJobModal({
       setDeleteTarget(null);
     } finally {
       setDeletingDocumentId(null);
+    }
+  };
+
+  const deleteJob = async () => {
+    setDeletingJob(true);
+    try {
+      await onDeleteJob(job);
+      setDeleteJobConfirmationOpen(false);
+    } catch {
+      // The parent owns the localized error toast; keep the dialog open.
+    } finally {
+      setDeletingJob(false);
     }
   };
 
@@ -701,19 +739,28 @@ function AdminShipmentJobModal({
               {t("common.jobNumber")}: {job.job_number || "-"}
             </p>
           </div>
-          <InstantTooltip label={t("jobs.detail.close")}>
-            {(tooltipId) => (
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                aria-label={t("jobs.detail.close")}
-                aria-describedby={tooltipId}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </InstantTooltip>
+          <div className="flex items-center gap-2">
+            <TableActionButton
+              variant="danger"
+              icon={<Trash2 className="h-3.5 w-3.5" />}
+              onClick={() => setDeleteJobConfirmationOpen(true)}
+            >
+              {t("common.delete")}
+            </TableActionButton>
+            <InstantTooltip label={t("jobs.detail.close")}>
+              {(tooltipId) => (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  aria-label={t("jobs.detail.close")}
+                  aria-describedby={tooltipId}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </InstantTooltip>
+          </div>
         </div>
 
         <ShipmentJobForm
@@ -742,6 +789,14 @@ function AdminShipmentJobModal({
           deleting={deletingDocumentId === deleteTarget.id}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => void deleteDocument()}
+        />
+      )}
+      {deleteJobConfirmationOpen && (
+        <ShipmentJobDeleteConfirmModal
+          job={job}
+          deleting={deletingJob}
+          onCancel={() => setDeleteJobConfirmationOpen(false)}
+          onConfirm={() => void deleteJob()}
         />
       )}
     </div>

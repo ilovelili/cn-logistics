@@ -38,6 +38,7 @@ import {
 } from "../lib/shipmentFeedback";
 import {
   createShipmentJob,
+  softDeleteShipmentJob,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
@@ -268,6 +269,20 @@ export default function ShipmentJobs({
     }
   };
 
+  const handleDeleteJob = async (job: ShipmentJob) => {
+    if (!canManageShipments) return;
+
+    try {
+      await softDeleteShipmentJob(job.id, profileEmail);
+      setSelectedJob((current) => (current?.id === job.id ? null : current));
+      await onRefresh();
+      showToast("success", t("jobs.deleted"));
+    } catch (error) {
+      showToast("error", appendErrorDetails(t("jobs.deleteFailed"), error));
+      throw error;
+    }
+  };
+
   const handleSort = (nextSortKey: ShipmentJobsTableSortKey) => {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -429,6 +444,7 @@ export default function ShipmentJobs({
         visibleTo={visibleTo}
         onSort={handleSort}
         onSelectJob={setSelectedJob}
+        onDeleteJob={canManageShipments ? handleDeleteJob : undefined}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
         requesterEmail={profileEmail}
@@ -446,6 +462,7 @@ export default function ShipmentJobs({
         }
         feedbackLoading={feedbackLoading}
         showInternalDocuments={canManageShipments}
+        onDelete={canManageShipments ? handleDeleteJob : undefined}
         onOpenFeedback={openFeedbackModal}
         onClose={() => setSelectedJob(null)}
       />

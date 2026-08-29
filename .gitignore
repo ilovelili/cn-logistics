@@ -24,4 +24,4 @@ dist-ssr
 
 # Supabase CLI runtime state
 supabase/.branches/
-supabase/.temp/start-secrets/
+supabase/.temp/

@@ -11,6 +11,7 @@ createRoot(document.getElementById("root")!).render(
     <Auth0Provider
       domain={auth0Config.domain}
       clientId={auth0Config.clientId}
+      cacheLocation={import.meta.env.DEV ? "localstorage" : "memory"}
       authorizationParams={{
         connection: "email",
         redirect_uri: window.location.origin,
