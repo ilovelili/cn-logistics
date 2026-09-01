@@ -87,7 +87,7 @@ const statusLabels: Record<string, { ja: string; en: string }> = {
   warehouse_in: { ja: "倉庫入庫", en: "Warehouse in" },
   customs_origin: { ja: "輸出通関中", en: "Origin customs clearance" },
   terminal_in: { ja: "ターミナル搬入", en: "Terminal in" },
-  departure: { ja: "出発", en: "Departure" },
+  departure: { ja: "航空便／本船出発", en: "Flight/vessel departed" },
   arrival: { ja: "到着", en: "Arrival" },
   customs_destination: {
     ja: "輸入通関中",
@@ -357,11 +357,21 @@ async function buildShipmentMessage(
   const awbBlNumber = delivery.awb_bl_number || "-";
   const origin = delivery.origin || "-";
   const destination = delivery.destination || "-";
-  const previousStatus = labelFor(delivery.previous_status);
   const currentStatus = labelFor(delivery.current_status);
+  const previousStatus = labelFor(delivery.previous_status);
   const normalizedApplicationUrl = applicationUrl.replace(/\/$/, "");
-  const updateJa = `${previousStatus.ja} → ${currentStatus.ja}`;
-  const updateEn = `${previousStatus.en} → ${currentStatus.en}`;
+  const updateJa =
+    delivery.previous_status === "__created__"
+      ? `新規案件登録（現在のステータス：${currentStatus.ja}）`
+      : delivery.previous_status === "__updated__"
+        ? `案件情報更新（現在のステータス：${currentStatus.ja}）`
+        : `${previousStatus.ja} → ${currentStatus.ja}`;
+  const updateEn =
+    delivery.previous_status === "__created__"
+      ? `New shipment registered (current status: ${currentStatus.en})`
+      : delivery.previous_status === "__updated__"
+        ? `Shipment details updated (current status: ${currentStatus.en})`
+        : `${previousStatus.en} → ${currentStatus.en}`;
   const values = {
     awb_bl_number: awbBlNumber,
     origin,

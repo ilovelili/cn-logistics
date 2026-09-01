@@ -1392,7 +1392,9 @@ function ShipmentProgressStatus({
   const latestCompletedEvent = getLatestCompletedTrackingEvent(job);
   const displayStatusLabel = statusUnset
     ? t("common.unset")
-    : latestCompletedEvent?.description.trim() || statusLabels[job.status];
+    : progressPercent === 100
+      ? statusLabels.delivered
+      : latestCompletedEvent?.description.trim() || statusLabels[job.status];
   const statusClass = statusUnset
     ? "border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
     : statusBadgeClasses[job.status];

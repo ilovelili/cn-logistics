@@ -1,11 +1,9 @@
 import { supabase } from "./supabase";
-import type { ShipmentStatus } from "./shipmentJobs";
-
 export interface ShipmentNotification {
   id: string;
   shipment_job_id: string;
-  previous_status: ShipmentStatus;
-  current_status: ShipmentStatus;
+  previous_status: string;
+  current_status: string;
   awb_bl_number: string | null;
   origin: string | null;
   destination: string | null;

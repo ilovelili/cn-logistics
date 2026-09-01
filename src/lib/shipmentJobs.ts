@@ -403,10 +403,15 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
 }
 
 export function formToPayload(form: ShipmentJobForm) {
+  const progressPercent = normalizeProgressPercent(form.progress_percent);
+
   return {
-    status: form.manual_progress_edited
-      ? form.status
-      : (getStatusFromTrackingEvents(form) ?? form.status),
+    status:
+      progressPercent === 100
+        ? "delivered"
+        : form.manual_progress_edited
+          ? form.status
+          : (getStatusFromTrackingEvents(form) ?? form.status),
     under_process_from_date: form.under_process_from_date || null,
     under_process_to_date: form.under_process_to_date || null,
     customs_hold_from_date: form.customs_hold_from_date || null,
@@ -430,7 +435,7 @@ export function formToPayload(form: ShipmentJobForm) {
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
     assigned_admin_user_ids: form.assigned_admin_user_ids,
-    progress_percent: normalizeProgressPercent(form.progress_percent),
+    progress_percent: progressPercent,
     progress_step: normalizeProgressStep(form.progress_step),
     progress_total_steps: form.progress_total_steps,
     progress_color_hex: normalizeStatusColor(form.progress_color_hex),

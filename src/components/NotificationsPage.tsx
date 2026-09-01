@@ -123,6 +123,9 @@ export default function NotificationsPage({
             {visibleNotifications.map((notification) => {
               const isUnread = !notification.read_at;
               const isExpanded = selectedId === notification.id;
+              const notificationTitle = getNotificationTitle(notification);
+              const notificationSummary =
+                getNotificationSummary(notification);
 
               return (
                 <button
@@ -147,17 +150,14 @@ export default function NotificationsPage({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <p className="font-bold text-gray-950 dark:text-white">
-                          {t("notifications.statusUpdated")}
+                          {notificationTitle}
                         </p>
                         <time className="text-xs font-medium text-gray-500 dark:text-gray-400">
                           {formatNotificationDate(notification.created_at)}
                         </time>
                       </div>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        {t("notifications.statusChanged", {
-                          previous: statusLabels[notification.previous_status],
-                          current: statusLabels[notification.current_status],
-                        })}
+                        {notificationSummary}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
                         <span className="inline-flex items-center gap-1.5">
@@ -183,12 +183,20 @@ export default function NotificationsPage({
                             value={notification.destination}
                           />
                           <Detail
-                            label={t("notifications.previousStatus")}
-                            value={statusLabels[notification.previous_status]}
+                            label={
+                              isShipmentSaveNotification(notification)
+                                ? t("notifications.updateType")
+                                : t("notifications.previousStatus")
+                            }
+                            value={getNotificationStatusLabel(
+                              notification.previous_status,
+                            )}
                           />
                           <Detail
                             label={t("notifications.currentStatus")}
-                            value={statusLabels[notification.current_status]}
+                            value={getNotificationStatusLabel(
+                              notification.current_status,
+                            )}
                           />
                         </div>
                       )}
@@ -256,4 +264,45 @@ function formatNotificationDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function getNotificationTitle(notification: ShipmentNotification) {
+  if (notification.previous_status === "__created__") {
+    return t("notifications.shipmentCreated");
+  }
+  if (notification.previous_status === "__updated__") {
+    return t("notifications.shipmentDetailsUpdated");
+  }
+  return t("notifications.statusUpdated");
+}
+
+function getNotificationSummary(notification: ShipmentNotification) {
+  const current = getNotificationStatusLabel(notification.current_status);
+  if (
+    notification.previous_status === "__created__" ||
+    notification.previous_status === "__updated__"
+  ) {
+    return t("notifications.currentStatusSummary", { current });
+  }
+  return t("notifications.statusChanged", {
+    previous: getNotificationStatusLabel(notification.previous_status),
+    current,
+  });
+}
+
+function getNotificationStatusLabel(status: string) {
+  if (status === "__created__") {
+    return t("notifications.shipmentCreated");
+  }
+  if (status === "__updated__") {
+    return t("notifications.shipmentDetailsUpdated");
+  }
+  return statusLabels[status as keyof typeof statusLabels] ?? status;
+}
+
+function isShipmentSaveNotification(notification: ShipmentNotification) {
+  return (
+    notification.previous_status === "__created__" ||
+    notification.previous_status === "__updated__"
+  );
 }
