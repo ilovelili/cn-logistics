@@ -193,6 +193,7 @@ const ja = {
   "progress.color.warning": "注意",
   "progress.color.invalid": "無効",
   "progress.color.alert": "警告",
+  "progress.color.completed": "完了",
   "progress.percentHelp": "0〜100%で手動設定できます。",
   "progress.stepHelp": "1〜{count}ステップで手動設定できます。",
 
@@ -746,6 +747,7 @@ const en: Messages = {
   "progress.color.warning": "Warning",
   "progress.color.invalid": "Invalid",
   "progress.color.alert": "Alert",
+  "progress.color.completed": "Completed",
   "progress.percentHelp": "Set manually from 0 to 100%.",
   "progress.stepHelp": "Set manually from 1 to {count} steps.",
 

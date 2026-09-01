@@ -23,6 +23,7 @@ import {
 import { t } from "../lib/i18n";
 import { appendErrorDetails } from "../lib/errors";
 import {
+  completedShipmentProgressColor,
   isCustomerDocumentDownloadApprovalExpired,
   isCustomerDocumentDownloadable,
   isShipmentDocumentPreviewable,
@@ -1387,19 +1388,29 @@ function ShipmentProgressStatus({
     activeStepCount,
     progressPercent,
   );
-  const statusClass = statusBadgeClasses[job.status];
-  const customColor = job.progress_color_hex || statusColorMap[job.status];
+  const statusUnset = isShipmentStatusUnset(job);
+  const latestCompletedEvent = getLatestCompletedTrackingEvent(job);
+  const displayStatusLabel = statusUnset
+    ? t("common.unset")
+    : latestCompletedEvent?.description.trim() || statusLabels[job.status];
+  const statusClass = statusUnset
+    ? "border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+    : statusBadgeClasses[job.status];
+  const customColor = statusUnset
+    ? null
+    : job.progress_color_hex || statusColorMap[job.status];
   const customBadgeStyle = customColor
     ? getStatusColorBadgeStyle(customColor)
     : undefined;
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       <span
-        className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}
+        className={`block max-w-full truncate rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}
         style={customBadgeStyle}
+        title={displayStatusLabel}
       >
-        {statusLabels[job.status]}
+        {displayStatusLabel}
       </span>
       <div
         className="h-2 w-20 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
@@ -1410,7 +1421,10 @@ function ShipmentProgressStatus({
           className="block h-full rounded-full transition-[width]"
           style={{
             width: `${progressPercent}%`,
-            backgroundColor: customColor || getDefaultManualProgressColor(job),
+            backgroundColor:
+              progressPercent === 100
+                ? completedShipmentProgressColor
+                : customColor || getDefaultManualProgressColor(job),
           }}
         />
       </div>
@@ -1418,8 +1432,44 @@ function ShipmentProgressStatus({
   );
 }
 
+function getLatestCompletedTrackingEvent(job: ShipmentJob) {
+  return (job.tracking_events ?? []).reduce<
+    ShipmentJob["tracking_events"][number] | null
+  >((latest, event) => {
+    if (!event.event_date || !event.description.trim()) return latest;
+    if (!latest) return event;
+
+    if (event.event_date !== latest.event_date) {
+      return event.event_date > latest.event_date ? event : latest;
+    }
+
+    if (event.sort_order !== latest.sort_order) {
+      return event.sort_order > latest.sort_order ? event : latest;
+    }
+
+    return event.created_at > latest.created_at ? event : latest;
+  }, null);
+}
+
+function isShipmentStatusUnset(job: ShipmentJob) {
+  return (
+    !getLatestCompletedTrackingEvent(job) && !hasSavedManualProgress(job)
+  );
+}
+
+function hasSavedManualProgress(job: ShipmentJob) {
+  const hasDefinedFlow = (job.tracking_events?.length ?? 0) > 0;
+  const hasProgressValue =
+    typeof job.progress_percent === "number" ||
+    typeof job.progress_step === "number";
+
+  return hasDefinedFlow && hasProgressValue;
+}
+
 function getShipmentProgressStepCount(job: ShipmentJob) {
   const totalSteps = getShipmentProgressTotalSteps(job);
+
+  if (isShipmentStatusUnset(job)) return 0;
 
   if (typeof job.progress_step === "number") {
     return Math.max(1, Math.min(totalSteps, Math.round(job.progress_step)));
@@ -1461,6 +1511,8 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
 }
 
 function getShipmentProgressTotalSteps(job: ShipmentJob) {
+  if (isShipmentStatusUnset(job)) return 1;
+
   const savedTotalSteps =
     typeof job.progress_total_steps === "number"
       ? Math.round(job.progress_total_steps)
@@ -1472,13 +1524,26 @@ function getShipmentProgressTotalSteps(job: ShipmentJob) {
   return Math.max(
     1,
     savedTotalSteps || trackingEventCount || savedProgressStep,
-    savedProgressStep,
   );
 }
 
 function getShipmentProgressPercent(job: ShipmentJob, activeStepCount: number) {
+  if (isShipmentStatusUnset(job)) return 0;
+
   if (typeof job.progress_percent === "number") {
     return Math.max(0, Math.min(100, Math.round(job.progress_percent)));
+  }
+
+  if (typeof job.progress_step === "number") {
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          (activeStepCount / getShipmentProgressTotalSteps(job)) * 100,
+        ),
+      ),
+    );
   }
 
   return Math.max(
@@ -1495,12 +1560,13 @@ function getShipmentProgressLabel(
   activeStepCount: number,
   progressPercent: number,
 ) {
+  if (isShipmentStatusUnset(job)) {
+    return `0/${getShipmentProgressTotalSteps(job)}`;
+  }
+
   const progressPercentLabel =
     typeof job.progress_percent === "number" ? `${progressPercent}%` : null;
-  const progressStep =
-    typeof job.progress_step === "number"
-      ? `${Math.max(1, Math.round(job.progress_step))}/${getShipmentProgressTotalSteps(job)}`
-      : `${activeStepCount}/${getShipmentProgressTotalSteps(job)}`;
+  const progressStep = `${activeStepCount}/${getShipmentProgressTotalSteps(job)}`;
 
   return progressPercentLabel
     ? `${progressPercentLabel} (${progressStep})`

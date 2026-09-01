@@ -4,6 +4,7 @@ import { t, type TranslationKey } from "../lib/i18n";
 import InstantTooltip from "./InstantTooltip";
 import {
   defaultShipmentJobForm,
+  completedShipmentProgressColor,
   fetchShipmentTrackingEventTemplates,
   ShipmentJob,
   ShipmentDocument,
@@ -65,6 +66,13 @@ const manualProgressColorOptions = [
     label: t("progress.color.alert"),
     classes: "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100",
     activeClasses: "ring-2 ring-rose-500 ring-offset-2",
+  },
+  {
+    value: completedShipmentProgressColor,
+    label: t("progress.color.completed"),
+    classes:
+      "col-span-2 border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100",
+    activeClasses: "ring-2 ring-blue-500 ring-offset-2",
   },
 ] as const;
 
@@ -145,6 +153,7 @@ export default function ShipmentJobForm({
   const totalProgressSteps = Math.max(
     1,
     progressTemplates.length ||
+      form.progress_total_steps ||
       form.tracking_events.length ||
       Number(form.progress_step) ||
       1,
@@ -156,27 +165,31 @@ export default function ShipmentJobForm({
     if (!hasDefinedProgressFlow) return;
 
     setForm((current) => {
-      const linkedProgress = current.progress_percent.trim()
-        ? linkShipmentProgressFromPercent(
-            current.progress_percent,
-            totalProgressSteps,
+      const parsedProgressStep = Number(current.progress_step);
+      const boundedProgressStep = current.progress_step.trim()
+        ? String(
+            Math.max(
+              1,
+              Math.min(
+                totalProgressSteps,
+                Number.isFinite(parsedProgressStep)
+                  ? Math.round(parsedProgressStep)
+                  : 1,
+              ),
+            ),
           )
-        : linkShipmentProgressFromStep(
-            current.progress_step,
-            totalProgressSteps,
-          );
+        : current.progress_step;
 
       if (
-        linkedProgress.progress_percent === current.progress_percent &&
-        linkedProgress.progress_step === current.progress_step &&
-        current.progress_total_steps === totalProgressSteps
+        current.progress_total_steps === totalProgressSteps &&
+        current.progress_step === boundedProgressStep
       ) {
         return current;
       }
 
       return {
         ...current,
-        ...linkedProgress,
+        progress_step: boundedProgressStep,
         progress_total_steps: totalProgressSteps,
       };
     });
@@ -319,18 +332,33 @@ export default function ShipmentJobForm({
       (template) => template.flow_name === flowName,
     );
 
-    setForm((current) => ({
-      ...current,
-      manual_progress_edited: false,
-      tracking_events: [
-        ...current.tracking_events,
-        ...selectedTemplates.map((template) => ({
-          event_date: "",
-          location: "",
-          description: template.description,
-        })),
-      ],
-    }));
+    setForm((current) => {
+      const selectedTotalSteps = Math.max(1, selectedTemplates.length);
+      const linkedProgress = current.progress_percent.trim()
+        ? linkShipmentProgressFromPercent(
+            current.progress_percent,
+            selectedTotalSteps,
+          )
+        : linkShipmentProgressFromStep(
+            current.progress_step,
+            selectedTotalSteps,
+          );
+
+      return {
+        ...current,
+        ...linkedProgress,
+        manual_progress_edited: false,
+        progress_total_steps: selectedTotalSteps,
+        tracking_events: [
+          ...current.tracking_events,
+          ...selectedTemplates.map((template) => ({
+            event_date: "",
+            location: "",
+            description: template.description,
+          })),
+        ],
+      };
+    });
     setSelectedStandardFlowName(flowName);
     setStandardFlowPickerOpen(false);
   };
@@ -787,6 +815,8 @@ function ManualProgressFields({
   const percentValue = clampNumericInput(progressPercent, 0, 100);
   const stepValue = clampNumericInput(progressStep, 1, totalSteps);
   const colorValue = getManualProgressColorValue(progressColorHex);
+  const progressBarColor =
+    percentValue === 100 ? completedShipmentProgressColor : colorValue;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -808,7 +838,8 @@ function ManualProgressFields({
                 max="100"
                 value={percentValue}
                 onChange={(event) => onPercentChange(event.target.value)}
-                className="min-w-0 flex-1 accent-slate-950"
+                className="min-w-0 flex-1"
+                style={{ accentColor: progressBarColor }}
               />
               <input
                 type="number"
@@ -859,7 +890,9 @@ function ManualProgressFields({
                   className="h-1.5 rounded-full"
                   style={{
                     backgroundColor:
-                      index < stepValue ? colorValue : "rgb(226 232 240)",
+                      index < stepValue
+                        ? progressBarColor
+                        : "rgb(226 232 240)",
                   }}
                 />
               ))}

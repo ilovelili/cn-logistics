@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 import { t } from "./i18n";
 
+export const completedShipmentProgressColor = "#2563eb";
+
 export type LegacyShipmentStatus =
   "under_process" | "customs_hold" | "completed";
 export type StandardFlowShipmentStatus =
