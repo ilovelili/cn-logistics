@@ -335,16 +335,16 @@ export default function ShipmentJobForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField
-          label={t("form.consignee")}
-          value={form.consignee_name}
-          onChange={(value) => updateField("consignee_name", value)}
-          placeholder="bbb USA"
-        />
-        <TextField
           label={t("form.consignor")}
           value={form.consignor_name}
           onChange={(value) => updateField("consignor_name", value)}
           placeholder="aaa Japan"
+        />
+        <TextField
+          label={t("form.consignee")}
+          value={form.consignee_name}
+          onChange={(value) => updateField("consignee_name", value)}
+          placeholder="bbb USA"
         />
       </div>
 
