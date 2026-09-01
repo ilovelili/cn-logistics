@@ -890,9 +890,7 @@ function ManualProgressFields({
                   className="h-1.5 rounded-full"
                   style={{
                     backgroundColor:
-                      index < stepValue
-                        ? progressBarColor
-                        : "rgb(226 232 240)",
+                      index < stepValue ? progressBarColor : "rgb(226 232 240)",
                   }}
                 />
               ))}

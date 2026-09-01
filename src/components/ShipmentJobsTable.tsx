@@ -1452,9 +1452,7 @@ function getLatestCompletedTrackingEvent(job: ShipmentJob) {
 }
 
 function isShipmentStatusUnset(job: ShipmentJob) {
-  return (
-    !getLatestCompletedTrackingEvent(job) && !hasSavedManualProgress(job)
-  );
+  return !getLatestCompletedTrackingEvent(job) && !hasSavedManualProgress(job);
 }
 
 function hasSavedManualProgress(job: ShipmentJob) {
