@@ -1399,8 +1399,10 @@ function ShipmentProgressStatus({
   const customColor = statusUnset
     ? null
     : job.progress_color_hex || statusColorMap[job.status];
-  const customBadgeStyle = customColor
-    ? getStatusColorBadgeStyle(customColor)
+  const badgeColor =
+    progressPercent === 100 ? completedShipmentProgressColor : customColor;
+  const customBadgeStyle = badgeColor
+    ? getStatusColorBadgeStyle(badgeColor)
     : undefined;
 
   return (
