@@ -47,6 +47,7 @@ export interface ShipmentJob {
   assigned_admin_user_ids: string[];
   progress_percent: number | null;
   progress_step: number | null;
+  progress_total_steps: number | null;
   progress_color_hex: string | null;
   documents: string[];
   internal_documents: string[];
@@ -138,7 +139,9 @@ export interface ShipmentJobForm {
   assigned_admin_user_ids: string[];
   progress_percent: string;
   progress_step: string;
+  progress_total_steps: number | null;
   progress_color_hex: string;
+  manual_progress_edited: boolean;
   documents: string;
   internal_documents: string;
   document_files: File[];
@@ -325,7 +328,9 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   assigned_admin_user_ids: [],
   progress_percent: "",
   progress_step: "",
+  progress_total_steps: null,
   progress_color_hex: "#059669",
+  manual_progress_edited: false,
   documents: "",
   internal_documents: "",
   document_files: [],
@@ -378,7 +383,9 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
         : "",
     progress_step:
       typeof job.progress_step === "number" ? String(job.progress_step) : "",
+    progress_total_steps: job.progress_total_steps ?? null,
     progress_color_hex: job.progress_color_hex ?? "#059669",
+    manual_progress_edited: false,
     documents: formatDocumentList(job.documents ?? []),
     internal_documents: formatDocumentList(job.internal_documents ?? []),
     document_files: [],
@@ -395,7 +402,9 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
 
 export function formToPayload(form: ShipmentJobForm) {
   return {
-    status: getStatusFromTrackingEvents(form) ?? form.status,
+    status: form.manual_progress_edited
+      ? form.status
+      : (getStatusFromTrackingEvents(form) ?? form.status),
     under_process_from_date: form.under_process_from_date || null,
     under_process_to_date: form.under_process_to_date || null,
     customs_hold_from_date: form.customs_hold_from_date || null,
@@ -421,10 +430,51 @@ export function formToPayload(form: ShipmentJobForm) {
     assigned_admin_user_ids: form.assigned_admin_user_ids,
     progress_percent: normalizeProgressPercent(form.progress_percent),
     progress_step: normalizeProgressStep(form.progress_step),
+    progress_total_steps: form.progress_total_steps,
     progress_color_hex: normalizeStatusColor(form.progress_color_hex),
     documents: getDocumentNames(form, "customer"),
     internal_documents: getDocumentNames(form, "internal"),
     notes: form.notes || null,
+  };
+}
+
+export function linkShipmentProgressFromPercent(
+  value: string,
+  totalSteps: number,
+) {
+  const progressPercent = normalizeProgressPercent(value);
+  if (progressPercent === null) {
+    return { progress_percent: value, progress_step: "" };
+  }
+
+  const boundedTotalSteps = Math.max(1, Math.round(totalSteps));
+  return {
+    progress_percent: String(progressPercent),
+    progress_step: String(
+      Math.max(1, Math.ceil((progressPercent / 100) * boundedTotalSteps)),
+    ),
+  };
+}
+
+export function linkShipmentProgressFromStep(
+  value: string,
+  totalSteps: number,
+) {
+  const parsedStep = Number(value);
+  if (!value.trim() || !Number.isFinite(parsedStep)) {
+    return { progress_percent: "", progress_step: value };
+  }
+
+  const boundedTotalSteps = Math.max(1, Math.round(totalSteps));
+  const progressStep = Math.max(
+    1,
+    Math.min(boundedTotalSteps, Math.round(parsedStep)),
+  );
+  return {
+    progress_percent: String(
+      Math.round((progressStep / boundedTotalSteps) * 100),
+    ),
+    progress_step: String(progressStep),
   };
 }
 
@@ -454,15 +504,36 @@ export async function fetchShipmentJobs(
 
   const shipmentJobs = (jobsData ?? []) as Omit<
     ShipmentJob,
-    "tracking_events"
+    "tracking_events" | "progress_total_steps"
   >[];
-  const trackingEvents = await fetchShipmentTrackingEvents(requesterEmail);
+  const [trackingEvents, progressTotals] = await Promise.all([
+    fetchShipmentTrackingEvents(requesterEmail),
+    fetchShipmentProgressTotals(requesterEmail),
+  ]);
   const trackingEventsByJob = groupTrackingEventsByJob(trackingEvents);
+  const progressTotalsByJob = new Map(
+    progressTotals.map((row) => [row.id, row.progress_total_steps]),
+  );
 
   return shipmentJobs.map((job) => ({
     ...job,
+    progress_total_steps: progressTotalsByJob.get(job.id) ?? null,
     tracking_events: trackingEventsByJob[job.id] ?? [],
   }));
+}
+
+async function fetchShipmentProgressTotals(requesterEmail: string) {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipment_progress_totals",
+    { requester_email: requesterEmail },
+  );
+
+  if (error) throw error;
+
+  return (data ?? []) as {
+    id: string;
+    progress_total_steps: number | null;
+  }[];
 }
 
 export async function fetchShipmentTrackingEvents(
@@ -615,7 +686,7 @@ function normalizeProgressStep(value: string) {
     return null;
   }
 
-  return Math.max(1, Math.min(10, Math.round(parsedValue)));
+  return Math.max(1, Math.round(parsedValue));
 }
 
 export async function fetchShipmentDocuments(
@@ -657,14 +728,18 @@ export async function createShipmentJob(
     buildShipmentDocumentsPayload(jobId, form),
     Promise.resolve(buildShipmentTrackingEventsPayload(jobId, form)),
   ]);
-  const { error } = await supabase.rpc("save_accessible_shipment_job", {
-    requester_email: requesterEmail,
-    target_job_id: jobId,
-    job_payload: formToPayload(form),
-    documents_payload: documentsPayload,
-    events_payload: eventsPayload,
-    create_new: true,
-  });
+  const { error } = await supabase.rpc(
+    "save_accessible_shipment_job_with_progress_total",
+    {
+      requester_email: requesterEmail,
+      target_job_id: jobId,
+      job_payload: formToPayload(form),
+      documents_payload: documentsPayload,
+      events_payload: eventsPayload,
+      create_new: true,
+      total_steps: form.progress_total_steps,
+    },
+  );
 
   if (error) {
     throw error;
@@ -680,14 +755,18 @@ export async function updateShipmentJob(
     buildShipmentDocumentsPayload(id, form, requesterEmail),
     Promise.resolve(buildShipmentTrackingEventsPayload(id, form)),
   ]);
-  const { error } = await supabase.rpc("save_accessible_shipment_job", {
-    requester_email: requesterEmail,
-    target_job_id: id,
-    job_payload: formToPayload(form),
-    documents_payload: documentsPayload,
-    events_payload: eventsPayload,
-    create_new: false,
-  });
+  const { error } = await supabase.rpc(
+    "save_accessible_shipment_job_with_progress_total",
+    {
+      requester_email: requesterEmail,
+      target_job_id: id,
+      job_payload: formToPayload(form),
+      documents_payload: documentsPayload,
+      events_payload: eventsPayload,
+      create_new: false,
+      total_steps: form.progress_total_steps,
+    },
+  );
 
   if (error) {
     throw error;

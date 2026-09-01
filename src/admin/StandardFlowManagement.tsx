@@ -29,6 +29,7 @@ import {
   softDeleteShipmentTrackingEventTemplate,
   statusBadgeClasses,
   statusLabels,
+  standardFlowStatusOptions,
   updateShipmentTrackingEventTemplate,
   type ShipmentStatus,
 } from "../lib/shipmentJobs";
@@ -659,7 +660,7 @@ function StandardFlowStepsModal({
             {t("superAdmin.standardFlow.add")}
           </h4>
           <div className="grid gap-3 lg:grid-cols-[minmax(220px,280px)_minmax(240px,1fr)_110px_92px_170px] lg:items-end">
-            <TemplateTextField
+            <TemplateStatusKeyField
               label={t("superAdmin.standardFlow.key")}
               value={stepForm.name}
               onChange={(value) =>
@@ -740,7 +741,7 @@ function StandardFlowStepsModal({
                       <StatusPreview name={draft.name} />
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <TemplateTextField
+                      <TemplateStatusKeyField
                         label={t("superAdmin.standardFlow.key")}
                         value={draft.name}
                         onChange={(value) =>
@@ -843,6 +844,51 @@ function TemplateTextField({
         onChange={(event) => onChange(event.target.value)}
         className={`${hideLabel ? "" : "mt-2"} w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800`}
       />
+    </label>
+  );
+}
+
+function TemplateStatusKeyField({
+  label,
+  value,
+  hideLabel = false,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  hideLabel?: boolean;
+  onChange: (value: string) => void;
+}) {
+  const isSupportedValue = standardFlowStatusOptions.some(
+    (option) => option.value === value,
+  );
+
+  return (
+    <label className="block">
+      {!hideLabel && (
+        <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+          {label}
+        </span>
+      )}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${hideLabel ? "" : "mt-2"} w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-slate-800`}
+      >
+        <option value="" disabled>
+          {t("common.select")}
+        </option>
+        {value && !isSupportedValue && (
+          <option value={value} disabled>
+            {value}
+          </option>
+        )}
+        {standardFlowStatusOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label} ({option.value})
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

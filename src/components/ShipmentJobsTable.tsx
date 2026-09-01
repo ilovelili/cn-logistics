@@ -1419,16 +1419,24 @@ function ShipmentProgressStatus({
 }
 
 function getShipmentProgressStepCount(job: ShipmentJob) {
+  const totalSteps = getShipmentProgressTotalSteps(job);
+
   if (typeof job.progress_step === "number") {
-    return Math.max(1, Math.min(10, Math.round(job.progress_step)));
+    return Math.max(1, Math.min(totalSteps, Math.round(job.progress_step)));
   }
 
   if (typeof job.progress_percent === "number") {
-    return Math.max(0, Math.min(10, Math.ceil(job.progress_percent / 10)));
+    return Math.max(
+      0,
+      Math.min(
+        totalSteps,
+        Math.ceil((job.progress_percent / 100) * totalSteps),
+      ),
+    );
   }
 
   if (job.status === "completed" || job.status === "delivered") {
-    return 10;
+    return totalSteps;
   }
 
   const latestSortOrder = Math.max(
@@ -1441,7 +1449,7 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
       latestSortOrder >= 10
         ? Math.ceil(latestSortOrder / 10)
         : latestSortOrder + 1;
-    return Math.max(1, Math.min(10, stepCount));
+    return Math.max(1, Math.min(totalSteps, stepCount));
   }
 
   if (job.status === "customs_hold") {
@@ -1449,7 +1457,23 @@ function getShipmentProgressStepCount(job: ShipmentJob) {
   }
 
   const statusIndex = shipmentStatusOrder.indexOf(job.status);
-  return statusIndex >= 0 ? statusIndex + 1 : 1;
+  return statusIndex >= 0 ? Math.min(totalSteps, statusIndex + 1) : 1;
+}
+
+function getShipmentProgressTotalSteps(job: ShipmentJob) {
+  const savedTotalSteps =
+    typeof job.progress_total_steps === "number"
+      ? Math.round(job.progress_total_steps)
+      : 0;
+  const trackingEventCount = job.tracking_events?.length ?? 0;
+  const savedProgressStep =
+    typeof job.progress_step === "number" ? Math.round(job.progress_step) : 0;
+
+  return Math.max(
+    1,
+    savedTotalSteps || trackingEventCount || savedProgressStep,
+    savedProgressStep,
+  );
 }
 
 function getShipmentProgressPercent(job: ShipmentJob, activeStepCount: number) {
@@ -1457,7 +1481,13 @@ function getShipmentProgressPercent(job: ShipmentJob, activeStepCount: number) {
     return Math.max(0, Math.min(100, Math.round(job.progress_percent)));
   }
 
-  return Math.max(0, Math.min(100, activeStepCount * 10));
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round((activeStepCount / getShipmentProgressTotalSteps(job)) * 100),
+    ),
+  );
 }
 
 function getShipmentProgressLabel(
@@ -1469,8 +1499,8 @@ function getShipmentProgressLabel(
     typeof job.progress_percent === "number" ? `${progressPercent}%` : null;
   const progressStep =
     typeof job.progress_step === "number"
-      ? `${Math.max(1, Math.min(10, Math.round(job.progress_step)))}/10`
-      : `${activeStepCount}/10`;
+      ? `${Math.max(1, Math.round(job.progress_step))}/${getShipmentProgressTotalSteps(job)}`
+      : `${activeStepCount}/${getShipmentProgressTotalSteps(job)}`;
 
   return progressPercentLabel
     ? `${progressPercentLabel} (${progressStep})`

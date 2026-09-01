@@ -70,6 +70,7 @@ const ja = {
   "appFeedback.done": "閉じる",
 
   "common.status": "ステータス",
+  "common.select": "選択してください",
   "common.resizeColumn": "{column}列の幅を変更",
   "common.errorDetails": "詳細: {details}",
   "common.shipperName": "荷主名",
@@ -180,6 +181,11 @@ const ja = {
   "tracking.description": "発生内容",
   "tracking.noEvents": "ステータス履歴はまだありません。",
   "progress.manualTitle": "進捗管理",
+  "progress.flowLoading": "標準フローを読み込んでいます...",
+  "progress.flowLoadFailed":
+    "標準フローを読み込めませんでした。再読み込みしてお試しください。",
+  "progress.flowRequired":
+    "進捗を設定するには、先にステータス履歴へ標準フローを追加してください。",
   "progress.percent": "進捗率",
   "progress.step": "進捗ステップ",
   "progress.color": "ステータス色",
@@ -188,7 +194,7 @@ const ja = {
   "progress.color.invalid": "無効",
   "progress.color.alert": "警告",
   "progress.percentHelp": "0〜100%で手動設定できます。",
-  "progress.stepHelp": "1〜10ステップで手動設定できます。",
+  "progress.stepHelp": "1〜{count}ステップで手動設定できます。",
 
   "status.underProcess": "処理中",
   "status.customsHold": "通関保留",
@@ -615,6 +621,7 @@ const en: Messages = {
   "appFeedback.done": "Close",
 
   "common.status": "Status",
+  "common.select": "Select",
   "common.resizeColumn": "Resize {column} column",
   "common.errorDetails": "Details: {details}",
   "common.shipperName": "Shipper",
@@ -727,6 +734,11 @@ const en: Messages = {
   "tracking.description": "Event",
   "tracking.noEvents": "No status history yet.",
   "progress.manualTitle": "Manual progress",
+  "progress.flowLoading": "Loading standard flows...",
+  "progress.flowLoadFailed":
+    "Standard flows could not be loaded. Reload the page and try again.",
+  "progress.flowRequired":
+    "Add a standard flow to status history before setting progress.",
   "progress.percent": "Progress percent",
   "progress.step": "Progress step",
   "progress.color": "Status color",
@@ -735,7 +747,7 @@ const en: Messages = {
   "progress.color.invalid": "Invalid",
   "progress.color.alert": "Alert",
   "progress.percentHelp": "Set manually from 0 to 100%.",
-  "progress.stepHelp": "Set manually from 1 to 10 steps.",
+  "progress.stepHelp": "Set manually from 1 to {count} steps.",
 
   "status.underProcess": "Processing",
   "status.customsHold": "Customs hold",
