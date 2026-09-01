@@ -48,6 +48,8 @@ import TableActionButton from "../components/TableActionButton";
 import AdminPageHeader from "./AdminPageHeader";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useResizableTableColumns } from "../components/useResizableTableColumns";
+import TableColumnResizeHandle from "../components/TableColumnResizeHandle";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 import ShipperUserReadOnlyDetails from "./ShipperUserReadOnlyDetails";
@@ -557,7 +559,7 @@ export default function UserRegistrationForm({
       {
         id: "shipper_name",
         label: t("admin.userRegistration.shipperName"),
-        width: isSuperAdmin ? 16 : 24,
+        width: isSuperAdmin ? 160 : 240,
         sortKey: "shipper_name",
         render: (user) => (
           <span
@@ -571,7 +573,7 @@ export default function UserRegistrationForm({
       {
         id: "contact",
         label: t("admin.userRegistration.contactAndEmail"),
-        width: isSuperAdmin ? 20 : 34,
+        width: isSuperAdmin ? 200 : 340,
         sortKey: "email",
         render: (user) => (
           <div className="min-w-0 space-y-2">
@@ -614,7 +616,7 @@ export default function UserRegistrationForm({
             {
               id: "admins" as const,
               label: t("admin.userRegistration.assignedAdmins"),
-              width: 14,
+              width: 140,
               render: (user: ShipperUserRow) => (
                 <AssignedAdminsSummary
                   assignments={user.admin_assignments ?? []}
@@ -626,7 +628,7 @@ export default function UserRegistrationForm({
       {
         id: "budget",
         label: t("admin.userRegistration.budget"),
-        width: isSuperAdmin ? 10 : 12,
+        width: isSuperAdmin ? 100 : 120,
         sortKey: "budget",
         render: (user) => (
           <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
@@ -638,14 +640,14 @@ export default function UserRegistrationForm({
       {
         id: "approval_status",
         label: t("admin.userRegistration.status"),
-        width: isSuperAdmin ? 9 : 11,
+        width: isSuperAdmin ? 90 : 110,
         sortKey: "approval_status",
         render: (user) => <StatusBadge status={user.approval_status} />,
       },
       {
         id: "created_at",
         label: t("admin.userRegistration.createdAt"),
-        width: 9,
+        width: 90,
         sortKey: "created_at",
         render: (user) => (
           <span className="whitespace-nowrap text-gray-500 dark:text-gray-400">
@@ -659,7 +661,7 @@ export default function UserRegistrationForm({
       userColumns.push({
         id: "action" as const,
         label: t("admin.userRegistration.action"),
-        width: 23,
+        width: 230,
         render: (user: ShipperUserRow) => (
           <ApprovalButtons
             disabled={
@@ -698,6 +700,14 @@ export default function UserRegistrationForm({
     "admin_user_registration_table_columns_v5",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
+  const {
+    widths: columnWidths,
+    resizeColumn,
+    resetColumnWidths,
+  } = useResizableTableColumns(
+    "admin_user_registration_table_widths_v2",
+    columns,
+  );
   const columnsById = new Map(columns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
     .map((column) => columnsById.get(column.id))
@@ -706,10 +716,14 @@ export default function UserRegistrationForm({
     id: column.id,
     label: column.label,
   }));
-  const visibleColumnWeight = visibleTableColumns.reduce(
-    (total, column) => total + column.width,
+  const tableMinWidth = visibleTableColumns.reduce(
+    (total, column) => total + columnWidths[column.id],
     0,
   );
+  const resetTableColumns = () => {
+    resetColumns();
+    resetColumnWidths();
+  };
 
   return (
     <div className="space-y-6">
@@ -773,7 +787,7 @@ export default function UserRegistrationForm({
                 visibleColumnIds={visibleColumnIds}
                 onVisibilityChange={setColumnVisibility}
                 onMoveColumn={moveColumn}
-                onReset={resetColumns}
+                onReset={resetTableColumns}
                 adminTheme
               />
             </div>
@@ -853,15 +867,13 @@ export default function UserRegistrationForm({
                 >
                   <table
                     className="w-full table-fixed text-left text-sm"
-                    style={{ minWidth: "320px" }}
+                    style={{ minWidth: `${Math.max(tableMinWidth, 320)}px` }}
                   >
                     <colgroup>
                       {visibleTableColumns.map((column) => (
                         <col
                           key={column.id}
-                          style={{
-                            width: `${(column.width / visibleColumnWeight) * 100}%`,
-                          }}
+                          style={{ width: `${columnWidths[column.id]}px` }}
                         />
                       ))}
                     </colgroup>
@@ -878,6 +890,10 @@ export default function UserRegistrationForm({
                               activeSortKey={sortKey}
                               direction={sortDirection}
                               onSort={changeSort}
+                              width={columnWidths[column.id]}
+                              onResize={(width) =>
+                                resizeColumn(column.id, width)
+                              }
                               className={`py-3 pr-4 font-bold ${
                                 index === 0
                                   ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
@@ -890,13 +906,20 @@ export default function UserRegistrationForm({
                           ) : (
                             <th
                               key={column.id}
-                              className={`py-3 pr-4 text-left font-bold ${
+                              className={`relative py-3 pr-4 text-left font-bold ${
                                 index === 0
                                   ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
                                   : ""
                               }`}
                             >
                               {column.label}
+                              <TableColumnResizeHandle
+                                label={column.label}
+                                width={columnWidths[column.id]}
+                                onResize={(width) =>
+                                  resizeColumn(column.id, width)
+                                }
+                              />
                             </th>
                           ),
                         )}

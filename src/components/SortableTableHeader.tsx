@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import TableColumnResizeHandle from "./TableColumnResizeHandle";
 
 export type SortDirection = "asc" | "desc";
 
@@ -12,6 +13,8 @@ interface SortableTableHeaderProps<TSortKey extends string> {
   buttonClassName?: string;
   activeClassName?: string;
   inactiveClassName?: string;
+  width?: number;
+  onResize?: (width: number) => void;
 }
 
 export default function SortableTableHeader<TSortKey extends string>({
@@ -24,6 +27,8 @@ export default function SortableTableHeader<TSortKey extends string>({
   buttonClassName = "inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-left transition hover:bg-slate-100 hover:text-slate-900",
   activeClassName = "text-slate-950",
   inactiveClassName = "",
+  width,
+  onResize,
 }: SortableTableHeaderProps<TSortKey>) {
   const isActive = activeSortKey === sortKey;
   const Icon = !isActive
@@ -33,7 +38,7 @@ export default function SortableTableHeader<TSortKey extends string>({
       : ArrowDown;
 
   return (
-    <th className={className}>
+    <th className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}
@@ -44,6 +49,13 @@ export default function SortableTableHeader<TSortKey extends string>({
         {label}
         <Icon className="h-3.5 w-3.5 shrink-0" />
       </button>
+      {width !== undefined && onResize && (
+        <TableColumnResizeHandle
+          label={label}
+          width={width}
+          onResize={onResize}
+        />
+      )}
     </th>
   );
 }

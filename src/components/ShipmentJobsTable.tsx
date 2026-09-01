@@ -51,6 +51,8 @@ import ShipmentJobDeleteConfirmModal from "./ShipmentJobDeleteConfirmModal";
 import InstantTooltip from "./InstantTooltip";
 import { useHorizontalScrollHint } from "./useHorizontalScrollHint";
 import { useTableColumnSettings } from "./useTableColumnSettings";
+import { useResizableTableColumns } from "./useResizableTableColumns";
+import TableColumnResizeHandle from "./TableColumnResizeHandle";
 import {
   getResponsibleAdminAssignments,
   getShipmentJobWorkingDays,
@@ -97,6 +99,7 @@ interface ShipmentDocumentDeleteTarget {
 }
 
 const columnSettingsStorageKey = "shipment_jobs_table_columns_v9";
+const columnWidthsStorageKey = "shipment_jobs_table_column_widths_v1";
 const mobileDetailActionQuery = "(max-width: 639px)";
 
 interface ShipmentJobsTableProps {
@@ -400,6 +403,13 @@ export default function ShipmentJobsTable({
         : "admin"
       : "customer"
   }`;
+  const columnWidthsRoleKey = `${columnWidthsStorageKey}-${
+    adminTheme
+      ? showInternalDocuments
+        ? "admin-internal"
+        : "admin"
+      : "customer"
+  }`;
   const {
     orderedColumns,
     visibleColumns,
@@ -411,6 +421,11 @@ export default function ShipmentJobsTable({
     columnSettingsRoleKey,
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
+  const {
+    widths: columnWidths,
+    resizeColumn,
+    resetColumnWidths,
+  } = useResizableTableColumns(columnWidthsRoleKey, columns);
   const columnsById = new Map(columns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
     .map((column) => columnsById.get(column.id))
@@ -420,9 +435,13 @@ export default function ShipmentJobsTable({
     label: column.label,
   }));
   const tableMinWidth = visibleColumns.reduce(
-    (total, column) => total + (columnsById.get(column.id)?.width ?? 0),
+    (total, column) => total + (columnWidths[column.id] ?? 0),
     0,
   );
+  const resetTableColumns = () => {
+    resetColumns();
+    resetColumnWidths();
+  };
   return (
     <section
       className={`overflow-hidden border bg-white shadow-sm ${
@@ -491,7 +510,7 @@ export default function ShipmentJobsTable({
             visibleColumnIds={visibleColumnIds}
             onVisibilityChange={setColumnVisibility}
             onMoveColumn={moveColumn}
-            onReset={resetColumns}
+            onReset={resetTableColumns}
             adminTheme={adminTheme}
           />
         </div>
@@ -545,7 +564,10 @@ export default function ShipmentJobsTable({
           >
             <colgroup>
               {visibleTableColumns.map((column) => (
-                <col key={column.id} style={{ width: `${column.width}px` }} />
+                <col
+                  key={column.id}
+                  style={{ width: `${columnWidths[column.id]}px` }}
+                />
               ))}
             </colgroup>
             <thead
@@ -578,6 +600,8 @@ export default function ShipmentJobsTable({
                       inactiveClassName={
                         adminTheme ? "text-slate-500 dark:text-gray-400" : ""
                       }
+                      width={columnWidths[column.id]}
+                      onResize={(width) => resizeColumn(column.id, width)}
                       className={
                         index === 0
                           ? `sticky left-0 z-30 whitespace-nowrap py-3 pl-3 pr-5 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
@@ -591,7 +615,7 @@ export default function ShipmentJobsTable({
                   ) : (
                     <th
                       key={column.id}
-                      className={`whitespace-nowrap px-3 py-3 text-left ${
+                      className={`relative whitespace-nowrap px-3 py-3 text-left ${
                         index === 0
                           ? `sticky left-0 z-30 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] ${
                               adminTheme
@@ -602,6 +626,11 @@ export default function ShipmentJobsTable({
                       }`}
                     >
                       {column.label}
+                      <TableColumnResizeHandle
+                        label={column.label}
+                        width={columnWidths[column.id]}
+                        onResize={(width) => resizeColumn(column.id, width)}
+                      />
                     </th>
                   ),
                 )}

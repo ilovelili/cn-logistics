@@ -17,6 +17,8 @@ import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import StickyTableHeaderToggle from "../components/StickyTableHeaderToggle";
 import { useStickyTableHeaderPreference } from "../components/useStickyTableHeaderPreference";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useResizableTableColumns } from "../components/useResizableTableColumns";
+import TableColumnResizeHandle from "../components/TableColumnResizeHandle";
 import { t } from "../lib/i18n";
 import { appendErrorDetails } from "../lib/errors";
 import {
@@ -107,6 +109,14 @@ export default function StandardFlowManagement() {
     "super_admin_standard_flow_flow_columns_v1",
     flowColumns.map((column) => ({ id: column.id, label: column.label })),
   );
+  const {
+    widths: columnWidths,
+    resizeColumn,
+    resetColumnWidths,
+  } = useResizableTableColumns(
+    "super_admin_standard_flow_flow_widths_v1",
+    flowColumns,
+  );
 
   const columnsById = new Map(flowColumns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
@@ -119,9 +129,13 @@ export default function StandardFlowManagement() {
     label: column.label,
   }));
   const tableMinWidth = visibleTableColumns.reduce(
-    (total, column) => total + column.width,
+    (total, column) => total + columnWidths[column.id],
     0,
   );
+  const resetTableColumns = () => {
+    resetColumns();
+    resetColumnWidths();
+  };
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -429,7 +443,7 @@ export default function StandardFlowManagement() {
                 visibleColumnIds={visibleColumnIds}
                 onVisibilityChange={setColumnVisibility}
                 onMoveColumn={moveColumn}
-                onReset={resetColumns}
+                onReset={resetTableColumns}
               />
             </div>
           </div>
@@ -450,7 +464,10 @@ export default function StandardFlowManagement() {
             >
               <colgroup>
                 {visibleTableColumns.map((column) => (
-                  <col key={column.id} style={{ width: `${column.width}px` }} />
+                  <col
+                    key={column.id}
+                    style={{ width: `${columnWidths[column.id]}px` }}
+                  />
                 ))}
               </colgroup>
               <thead
@@ -460,13 +477,18 @@ export default function StandardFlowManagement() {
                   {visibleTableColumns.map((column, index) => (
                     <th
                       key={column.id}
-                      className={`py-3 pr-4 font-bold ${
+                      className={`relative py-3 pr-4 font-bold ${
                         index === 0
                           ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
                           : ""
                       } ${index === visibleTableColumns.length - 1 ? "pr-5" : ""}`}
                     >
                       {column.label}
+                      <TableColumnResizeHandle
+                        label={column.label}
+                        width={columnWidths[column.id]}
+                        onResize={(width) => resizeColumn(column.id, width)}
+                      />
                     </th>
                   ))}
                 </tr>

@@ -70,6 +70,7 @@ const ja = {
   "appFeedback.done": "閉じる",
 
   "common.status": "ステータス",
+  "common.resizeColumn": "{column}列の幅を変更",
   "common.errorDetails": "詳細: {details}",
   "common.shipperName": "荷主名",
   "common.trade": "取引",
@@ -614,6 +615,7 @@ const en: Messages = {
   "appFeedback.done": "Close",
 
   "common.status": "Status",
+  "common.resizeColumn": "Resize {column} column",
   "common.errorDetails": "Details: {details}",
   "common.shipperName": "Shipper",
   "common.trade": "Trade",

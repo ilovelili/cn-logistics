@@ -41,6 +41,8 @@ import TableColumnSettingsButton from "../components/TableColumnSettings";
 import AdminPageHeader from "./AdminPageHeader";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useResizableTableColumns } from "../components/useResizableTableColumns";
+import TableColumnResizeHandle from "../components/TableColumnResizeHandle";
 import { usePagination } from "../components/usePagination";
 import { UserDetailModal } from "./UserRegistrationForm";
 
@@ -550,6 +552,11 @@ export default function AdminOperatorManagement({
     "admin_operators_table_columns_v5",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
+  const {
+    widths: columnWidths,
+    resizeColumn,
+    resetColumnWidths,
+  } = useResizableTableColumns("admin_operators_table_widths_v1", columns);
   const columnsById = new Map(columns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
     .map((column) => columnsById.get(column.id))
@@ -559,9 +566,13 @@ export default function AdminOperatorManagement({
     label: column.label,
   }));
   const tableMinWidth = visibleTableColumns.reduce(
-    (total, column) => total + column.width,
+    (total, column) => total + columnWidths[column.id],
     0,
   );
+  const resetTableColumns = () => {
+    resetColumns();
+    resetColumnWidths();
+  };
 
   return (
     <div className="space-y-6">
@@ -722,7 +733,7 @@ export default function AdminOperatorManagement({
                 visibleColumnIds={visibleColumnIds}
                 onVisibilityChange={setColumnVisibility}
                 onMoveColumn={moveColumn}
-                onReset={resetColumns}
+                onReset={resetTableColumns}
                 adminTheme
               />
             </div>
@@ -755,7 +766,10 @@ export default function AdminOperatorManagement({
             >
               <colgroup>
                 {visibleTableColumns.map((column) => (
-                  <col key={column.id} style={{ width: `${column.width}px` }} />
+                  <col
+                    key={column.id}
+                    style={{ width: `${columnWidths[column.id]}px` }}
+                  />
                 ))}
               </colgroup>
               <thead
@@ -771,6 +785,8 @@ export default function AdminOperatorManagement({
                         activeSortKey={sortKey}
                         direction={sortDirection}
                         onSort={changeSort}
+                        width={columnWidths[column.id]}
+                        onResize={(width) => resizeColumn(column.id, width)}
                         className={
                           index === 0
                             ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
@@ -780,13 +796,18 @@ export default function AdminOperatorManagement({
                     ) : (
                       <th
                         key={column.id}
-                        className={`py-3 pr-4 text-left font-bold ${
+                        className={`relative py-3 pr-4 text-left font-bold ${
                           index === 0
                             ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
                             : ""
                         }`}
                       >
                         {column.label}
+                        <TableColumnResizeHandle
+                          label={column.label}
+                          width={columnWidths[column.id]}
+                          onResize={(width) => resizeColumn(column.id, width)}
+                        />
                       </th>
                     ),
                   )}
@@ -864,6 +885,8 @@ function OperatorSortableHeader({
   activeSortKey,
   direction,
   onSort,
+  width,
+  onResize,
   className = "",
 }: {
   label: string;
@@ -871,6 +894,8 @@ function OperatorSortableHeader({
   activeSortKey: SortKey;
   direction: SortDirection;
   onSort: (sortKey: SortKey) => void;
+  width: number;
+  onResize: (width: number) => void;
   className?: string;
 }) {
   return (
@@ -880,6 +905,8 @@ function OperatorSortableHeader({
       activeSortKey={activeSortKey}
       direction={direction}
       onSort={onSort}
+      width={width}
+      onResize={onResize}
       className={`py-3 pr-4 font-bold ${className}`}
       buttonClassName="inline-flex items-center gap-1.5 rounded-md text-left transition hover:text-gray-900 dark:hover:text-white"
       activeClassName="text-gray-900 dark:text-white"

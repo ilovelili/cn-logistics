@@ -25,6 +25,7 @@ import TableHorizontalScrollHint from "../components/TableHorizontalScrollHint";
 import TableScrollToTopButton from "../components/TableScrollToTopButton";
 import TableColumnSettingsButton from "../components/TableColumnSettings";
 import { useTableColumnSettings } from "../components/useTableColumnSettings";
+import { useResizableTableColumns } from "../components/useResizableTableColumns";
 import { useHorizontalScrollHint } from "../components/useHorizontalScrollHint";
 import { usePagination } from "../components/usePagination";
 import AdminPageHeader from "./AdminPageHeader";
@@ -282,6 +283,11 @@ export default function FeedbackReviewPanel({
     "super_admin_feedback_table_columns_v2",
     columns.map((column) => ({ id: column.id, label: column.label })),
   );
+  const {
+    widths: columnWidths,
+    resizeColumn,
+    resetColumnWidths,
+  } = useResizableTableColumns("super_admin_feedback_table_widths_v1", columns);
   const columnsById = new Map(columns.map((column) => [column.id, column]));
   const visibleTableColumns = visibleColumns
     .map((column) => columnsById.get(column.id))
@@ -291,9 +297,13 @@ export default function FeedbackReviewPanel({
     label: column.label,
   }));
   const tableMinWidth = visibleTableColumns.reduce(
-    (total, column) => total + column.width,
+    (total, column) => total + columnWidths[column.id],
     0,
   );
+  const resetTableColumns = () => {
+    resetColumns();
+    resetColumnWidths();
+  };
   const selectedJob = useMemo(
     () => jobs.find((job) => job.id === selectedShipmentJobId) ?? null,
     [jobs, selectedShipmentJobId],
@@ -359,7 +369,7 @@ export default function FeedbackReviewPanel({
                 visibleColumnIds={visibleColumnIds}
                 onVisibilityChange={setColumnVisibility}
                 onMoveColumn={moveColumn}
-                onReset={resetColumns}
+                onReset={resetTableColumns}
                 adminTheme
               />
             </div>
@@ -392,7 +402,10 @@ export default function FeedbackReviewPanel({
             >
               <colgroup>
                 {visibleTableColumns.map((column) => (
-                  <col key={column.id} style={{ width: `${column.width}px` }} />
+                  <col
+                    key={column.id}
+                    style={{ width: `${columnWidths[column.id]}px` }}
+                  />
                 ))}
               </colgroup>
               <thead
@@ -407,6 +420,8 @@ export default function FeedbackReviewPanel({
                       activeSortKey={sortKey}
                       direction={sortDirection}
                       onSort={handleSort}
+                      width={columnWidths[column.id]}
+                      onResize={(width) => resizeColumn(column.id, width)}
                       className={`py-3 pr-4 text-left ${
                         index === 0
                           ? "sticky left-0 z-30 bg-white pl-4 shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)] dark:bg-gray-900"
