@@ -124,8 +124,7 @@ export default function NotificationsPage({
               const isUnread = !notification.read_at;
               const isExpanded = selectedId === notification.id;
               const notificationTitle = getNotificationTitle(notification);
-              const notificationSummary =
-                getNotificationSummary(notification);
+              const notificationSummary = getNotificationSummary(notification);
 
               return (
                 <button
