@@ -18,10 +18,20 @@ import {
   standardFlowStatusOptions,
 } from "../lib/shipmentJobs";
 import type { ShipperUser } from "../lib/shipperUsers";
+import type { AdminOperator } from "../lib/adminOperators";
+
+type ShipmentShipperOption = Pick<
+  ShipperUser,
+  "shipper_name" | "created_by" | "admin_assignments"
+>;
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
-  shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  shipperOptions?: ShipmentShipperOption[];
+  salesOperators?: Pick<
+    AdminOperator,
+    "email" | "user_name" | "staff_role" | "staff_roles"
+  >[];
   customerSelection?: boolean;
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
@@ -79,6 +89,7 @@ const manualProgressColorOptions = [
 export default function ShipmentJobForm({
   job,
   shipperOptions = [],
+  salesOperators = [],
   customerSelection = false,
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
@@ -254,6 +265,11 @@ export default function ShipmentJobForm({
   const availableAdminAssignments = getShipperAdminAssignments(
     form.shipper_name,
     shipperOptions,
+  );
+  const salesRepresentative = getShipperSalesRepresentative(
+    form.shipper_name,
+    shipperOptions,
+    salesOperators,
   );
   const shipperSelectOptions = buildShipperSelectOptions(
     shipperOptions,
@@ -557,6 +573,8 @@ export default function ShipmentJobForm({
         }
         onToggle={toggleAssignedAdmin}
       />
+
+      <SalesRepresentativeField representative={salesRepresentative} />
 
       {hasDefinedProgressFlow ? (
         <ManualProgressFields
@@ -1036,9 +1054,91 @@ function AssignedAdminFields({
   );
 }
 
+function SalesRepresentativeField({
+  representative,
+}: {
+  representative: { name: string; email: string } | null;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("admin.shipment.salesRepresentative")}
+        </span>
+      </div>
+      {representative ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span
+              className="min-w-0 truncate text-sm font-bold text-slate-900"
+              title={representative.name}
+            >
+              {representative.name}
+            </span>
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700">
+              {t("superAdmin.operators.staffRole.sales")}
+            </span>
+          </div>
+          <span
+            className="mt-1 block truncate text-xs text-slate-500"
+            title={representative.email}
+          >
+            {representative.email}
+          </span>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+          {t("admin.shipment.salesRepresentativeUnset")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getShipperSalesRepresentative(
+  shipperName: string | null,
+  shipperOptions: ShipmentShipperOption[],
+  salesOperators: Pick<
+    AdminOperator,
+    "email" | "user_name" | "staff_role" | "staff_roles"
+  >[],
+) {
+  const matchingShippers = shipperOptions.filter(
+    (shipper) => shipper.shipper_name === shipperName,
+  );
+  const creatorEmail = matchingShippers
+    .map((shipper) => shipper.created_by?.trim() ?? "")
+    .find(Boolean);
+  if (!creatorEmail) return null;
+
+  const creatorAssignment = matchingShippers
+    .flatMap((shipper) => shipper.admin_assignments ?? [])
+    .find(
+      (assignment) =>
+        assignment.email.trim().toLowerCase() === creatorEmail.toLowerCase(),
+    );
+  const creatorOperator = salesOperators.find(
+    (operator) =>
+      operator.email.trim().toLowerCase() === creatorEmail.toLowerCase(),
+  );
+
+  const creatorIsSales = creatorOperator
+    ? creatorOperator.staff_role === "sales" ||
+      creatorOperator.staff_roles.includes("sales")
+    : creatorAssignment?.staff_role === "sales" ||
+      creatorAssignment?.staff_roles?.includes("sales");
+  if (!creatorIsSales) return null;
+
+  return {
+    name:
+      creatorOperator?.user_name || creatorAssignment?.user_name || creatorEmail,
+    email: creatorEmail,
+  };
+}
+
 function getShipperAdminAssignments(
   shipperName: string | null,
-  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[],
+  shipperOptions: ShipmentShipperOption[],
 ) {
   const assignmentsByAdminId = new Map<
     string,
@@ -1079,7 +1179,7 @@ function buildShipperSelectOptions(
 
 function getDefaultAssignedAdminIds(
   shipperName: string,
-  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[],
+  shipperOptions: ShipmentShipperOption[],
   fixedAssignedAdminEmail?: string,
 ) {
   const assignments = getShipperAdminAssignments(shipperName, shipperOptions);

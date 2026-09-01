@@ -91,6 +91,7 @@ export default function AdminPanel({
         )
         .map((user) => ({
           shipper_name: user.shipper_name,
+          created_by: user.created_by,
           admin_assignments: user.admin_assignments,
         })),
     [switchableUsers],

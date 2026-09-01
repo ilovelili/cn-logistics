@@ -352,6 +352,9 @@ const ja = {
   "admin.entry.title": "出荷案件管理",
   "admin.entry.description":
     "出荷案件の登録・更新、進捗、書類承認を一元管理できます。",
+  "admin.shipment.salesRepresentative": "Sales担当",
+  "admin.shipment.salesRepresentativeUnset":
+    "この顧客の登録担当者は設定されていません。",
   "admin.entry.updateExisting": "既存案件を更新",
   "admin.entry.createNew": "新規作成",
   "admin.entry.findJob": "案件を検索",
@@ -911,6 +914,9 @@ const en: Messages = {
   "admin.entry.title": "Shipment management",
   "admin.entry.description":
     "Manage shipment registration, updates, progress, and document approvals in one place.",
+  "admin.shipment.salesRepresentative": "Sales representative",
+  "admin.shipment.salesRepresentativeUnset":
+    "No registering sales representative is recorded for this customer.",
   "admin.entry.updateExisting": "Update existing",
   "admin.entry.createNew": "Create new",
   "admin.entry.findJob": "Search shipment",

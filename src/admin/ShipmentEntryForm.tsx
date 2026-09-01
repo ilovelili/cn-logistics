@@ -64,7 +64,10 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  shipperOptions?: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  shipperOptions?: Pick<
+    ShipperUser,
+    "shipper_name" | "created_by" | "admin_assignments"
+  >[];
   shipperUsers?: ShipperUser[];
   isSuperAdmin?: boolean;
   adminOperators?: AdminOperator[];
@@ -580,6 +583,7 @@ export default function ShipmentEntryForm({
             onSubmit={handleUpdate}
             onRefresh={onRefresh}
             shipperOptions={shipperOptions}
+            salesOperators={adminOperators}
             assignedAdminsReadOnly={!canEditAssignedAdmins}
           />
         </div>
@@ -589,6 +593,7 @@ export default function ShipmentEntryForm({
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <ShipmentJobForm
             shipperOptions={shipperOptions}
+            salesOperators={adminOperators}
             customerSelection
             fixedAssignedAdminEmail={
               canEditAssignedAdmins ? undefined : adminEmail
@@ -660,6 +665,7 @@ function AdminShipmentJobModal({
   adminEmail,
   loading,
   shipperOptions,
+  salesOperators,
   onDeleteJob,
   onClose,
   onSubmit,
@@ -670,7 +676,14 @@ function AdminShipmentJobModal({
   documents: ShipmentDocument[];
   adminEmail: string;
   loading: boolean;
-  shipperOptions: Pick<ShipperUser, "shipper_name" | "admin_assignments">[];
+  shipperOptions: Pick<
+    ShipperUser,
+    "shipper_name" | "created_by" | "admin_assignments"
+  >[];
+  salesOperators?: Pick<
+    AdminOperator,
+    "email" | "user_name" | "staff_role" | "staff_roles"
+  >[];
   onDeleteJob: (job: ShipmentJob) => Promise<void>;
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
@@ -771,6 +784,7 @@ function AdminShipmentJobModal({
           job={job}
           documents={documents}
           shipperOptions={shipperOptions}
+          salesOperators={salesOperators}
           assignedAdminsReadOnly={assignedAdminsReadOnly}
           onPreviewDocument={setPreviewDocument}
           onDeleteDocument={setDeleteTarget}
