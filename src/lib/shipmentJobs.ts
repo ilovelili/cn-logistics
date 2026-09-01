@@ -236,6 +236,30 @@ export const statusLabels = Object.fromEntries(
   ]),
 ) as Record<ShipmentStatus, string>;
 
+export function getLatestCompletedShipmentTrackingEvent(job: ShipmentJob) {
+  return (job.tracking_events ?? []).reduce<
+    ShipmentJob["tracking_events"][number] | null
+  >((latest, event) => {
+    if (!event.event_date || !event.description.trim()) return latest;
+    if (!latest) return event;
+
+    if (event.event_date !== latest.event_date) {
+      return event.event_date > latest.event_date ? event : latest;
+    }
+    if (event.sort_order !== latest.sort_order) {
+      return event.sort_order > latest.sort_order ? event : latest;
+    }
+    return event.created_at > latest.created_at ? event : latest;
+  }, null);
+}
+
+export function getEffectiveShipmentStatus(job: ShipmentJob): ShipmentStatus {
+  if (job.progress_percent === 100) {
+    return "delivered";
+  }
+  return job.status;
+}
+
 export const tradeModeLabels = Object.fromEntries(
   tradeModeOptions.map((option) => [option.value, option.label]),
 ) as Record<TradeMode, string>;

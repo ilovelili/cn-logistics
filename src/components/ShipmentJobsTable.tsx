@@ -24,6 +24,8 @@ import { t } from "../lib/i18n";
 import { appendErrorDetails } from "../lib/errors";
 import {
   completedShipmentProgressColor,
+  getEffectiveShipmentStatus,
+  getLatestCompletedShipmentTrackingEvent,
   isCustomerDocumentDownloadApprovalExpired,
   isCustomerDocumentDownloadable,
   isShipmentDocumentPreviewable,
@@ -1389,18 +1391,19 @@ function ShipmentProgressStatus({
     progressPercent,
   );
   const statusUnset = isShipmentStatusUnset(job);
-  const latestCompletedEvent = getLatestCompletedTrackingEvent(job);
+  const effectiveStatus = getEffectiveShipmentStatus(job);
+  const latestCompletedEvent = getLatestCompletedShipmentTrackingEvent(job);
   const displayStatusLabel = statusUnset
     ? t("common.unset")
     : progressPercent === 100
       ? statusLabels.delivered
-      : latestCompletedEvent?.description.trim() || statusLabels[job.status];
+      : latestCompletedEvent?.description.trim() || statusLabels[effectiveStatus];
   const statusClass = statusUnset
     ? "border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-    : statusBadgeClasses[job.status];
+    : statusBadgeClasses[effectiveStatus];
   const customColor = statusUnset
     ? null
-    : job.progress_color_hex || statusColorMap[job.status];
+    : job.progress_color_hex || statusColorMap[effectiveStatus];
   const badgeColor =
     progressPercent === 100 ? completedShipmentProgressColor : customColor;
   const customBadgeStyle = badgeColor
@@ -1436,27 +1439,11 @@ function ShipmentProgressStatus({
   );
 }
 
-function getLatestCompletedTrackingEvent(job: ShipmentJob) {
-  return (job.tracking_events ?? []).reduce<
-    ShipmentJob["tracking_events"][number] | null
-  >((latest, event) => {
-    if (!event.event_date || !event.description.trim()) return latest;
-    if (!latest) return event;
-
-    if (event.event_date !== latest.event_date) {
-      return event.event_date > latest.event_date ? event : latest;
-    }
-
-    if (event.sort_order !== latest.sort_order) {
-      return event.sort_order > latest.sort_order ? event : latest;
-    }
-
-    return event.created_at > latest.created_at ? event : latest;
-  }, null);
-}
-
 function isShipmentStatusUnset(job: ShipmentJob) {
-  return !getLatestCompletedTrackingEvent(job) && !hasSavedManualProgress(job);
+  return (
+    !getLatestCompletedShipmentTrackingEvent(job) &&
+    !hasSavedManualProgress(job)
+  );
 }
 
 function hasSavedManualProgress(job: ShipmentJob) {

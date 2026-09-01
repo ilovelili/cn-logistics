@@ -38,6 +38,7 @@ import {
 } from "../lib/shipmentFeedback";
 import {
   createShipmentJob,
+  getEffectiveShipmentStatus,
   softDeleteShipmentJob,
   ShipmentDocument,
   ShipmentJob,
@@ -115,7 +116,8 @@ export default function ShipmentJobs({
         !normalizedQuery ||
         buildShipmentJobSearchText(job).includes(normalizedQuery);
       const matchesStatus =
-        statusFilter === "all" || job.status === statusFilter;
+        statusFilter === "all" ||
+        getEffectiveShipmentStatus(job) === statusFilter;
       const matchesTrade =
         tradeFilter === "all" || job.trade_mode === tradeFilter;
       const matchesTransport =
@@ -153,9 +155,11 @@ export default function ShipmentJobs({
   }, [documents, jobs]);
   const summaryStats = useMemo(() => {
     const customsHold = jobs.filter(
-      (job) => job.status === "customs_hold",
+      (job) => getEffectiveShipmentStatus(job) === "customs_hold",
     ).length;
-    const delivered = jobs.filter((job) => job.status === "delivered").length;
+    const delivered = jobs.filter(
+      (job) => getEffectiveShipmentStatus(job) === "delivered",
+    ).length;
     const pendingDocumentApprovals = documents.filter(
       (document) =>
         document.scope === "customer" && document.approval_status === "pending",

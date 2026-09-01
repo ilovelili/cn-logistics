@@ -39,6 +39,7 @@ import {
   createShipmentJob,
   DocumentApprovalStatus,
   fetchShipmentTrackingEventTemplates,
+  getEffectiveShipmentStatus,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatus,
@@ -161,7 +162,7 @@ export default function ShipmentEntryForm({
     return jobs
       .filter((job) => {
         if (activeCriteria.kind === "status") {
-          return job.status === activeCriteria.status;
+          return getEffectiveShipmentStatus(job) === activeCriteria.status;
         }
         if (activeCriteria.kind === "documentApproval") {
           return pendingApprovalJobIds.has(job.id);
@@ -170,7 +171,7 @@ export default function ShipmentEntryForm({
       })
       .filter((job) => {
         if (statusFilter === "all") return true;
-        return job.status === statusFilter;
+        return getEffectiveShipmentStatus(job) === statusFilter;
       })
       .filter((job) => {
         if (tradeFilter === "all") return true;
@@ -239,9 +240,11 @@ export default function ShipmentEntryForm({
   }, [documents, jobs]);
   const summaryStats = useMemo(() => {
     const customsHold = jobs.filter(
-      (job) => job.status === "customs_hold",
+      (job) => getEffectiveShipmentStatus(job) === "customs_hold",
     ).length;
-    const delivered = jobs.filter((job) => job.status === "delivered").length;
+    const delivered = jobs.filter(
+      (job) => getEffectiveShipmentStatus(job) === "delivered",
+    ).length;
     const pendingDocumentApprovals = documents.filter(
       (document) =>
         document.scope === "customer" && document.approval_status === "pending",
