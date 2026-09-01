@@ -1131,7 +1131,9 @@ function getShipperSalesRepresentative(
 
   return {
     name:
-      creatorOperator?.user_name || creatorAssignment?.user_name || creatorEmail,
+      creatorOperator?.user_name ||
+      creatorAssignment?.user_name ||
+      creatorEmail,
     email: creatorEmail,
   };
 }
