@@ -43,6 +43,9 @@ const ja = {
   "notifications.noUnread": "未読のお知らせはありません",
   "notifications.noNotifications": "お知らせはまだありません",
   "notifications.statusUpdated": "船積みスケジュールが更新されました",
+  "notifications.statusSet": "出荷ステータスが設定されました",
+  "notifications.statusSetSummary":
+    "出荷ステータスが{current}に設定されました。",
   "notifications.shipmentCreated": "新規案件が登録されました",
   "notifications.shipmentDetailsUpdated": "案件情報が更新されました",
   "notifications.currentStatusSummary": "現在のステータス: {current}",
@@ -182,6 +185,8 @@ const ja = {
     "選択した標準フローのステップをステータス履歴に追加します。",
   "tracking.date": "日付",
   "tracking.location": "場所",
+  "tracking.completeAllFields":
+    "更新するには、入力を開始したステータス履歴の日付・場所・発生内容をすべて入力してください。",
   "tracking.description": "発生内容",
   "tracking.noEvents": "ステータス履歴はまだありません。",
   "progress.manualTitle": "進捗管理",
@@ -603,6 +608,8 @@ const en: Messages = {
   "notifications.noUnread": "You're all caught up",
   "notifications.noNotifications": "No notifications yet",
   "notifications.statusUpdated": "Shipping schedule updated",
+  "notifications.statusSet": "Shipment status was set",
+  "notifications.statusSetSummary": "Shipment status was set to {current}.",
   "notifications.shipmentCreated": "A new shipment was registered",
   "notifications.shipmentDetailsUpdated": "Shipment details were updated",
   "notifications.currentStatusSummary": "Current status: {current}",
@@ -743,6 +750,8 @@ const en: Messages = {
     "The selected standard flow steps will be added to status history.",
   "tracking.date": "Date",
   "tracking.location": "Location",
+  "tracking.completeAllFields":
+    "Enter the date, location, and event description for each status-history row you started before updating.",
   "tracking.description": "Event",
   "tracking.noEvents": "No status history yet.",
   "progress.manualTitle": "Manual progress",

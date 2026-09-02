@@ -62,7 +62,7 @@ export interface ShipmentJob {
 export interface ShipmentTrackingEvent {
   id: string;
   shipment_job_id: string;
-  event_date: string;
+  event_date: string | null;
   location: string | null;
   description: string;
   sort_order: number;
@@ -242,6 +242,7 @@ export function getLatestCompletedShipmentTrackingEvent(job: ShipmentJob) {
   >((latest, event) => {
     if (!event.event_date || !event.description.trim()) return latest;
     if (!latest) return event;
+    if (!latest.event_date) return event;
 
     if (event.event_date !== latest.event_date) {
       return event.event_date > latest.event_date ? event : latest;
@@ -418,7 +419,7 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     internal_document_files: [],
     tracking_events:
       job.tracking_events?.map((event) => ({
-        event_date: event.event_date,
+        event_date: event.event_date ?? "",
         location: event.location ?? "",
         description: event.description,
       })) ?? [],
@@ -430,12 +431,7 @@ export function formToPayload(form: ShipmentJobForm) {
   const progressPercent = normalizeProgressPercent(form.progress_percent);
 
   return {
-    status:
-      progressPercent === 100
-        ? "delivered"
-        : form.manual_progress_edited
-          ? form.status
-          : (getStatusFromTrackingEvents(form) ?? form.status),
+    status: progressPercent === 100 ? "delivered" : form.status,
     under_process_from_date: form.under_process_from_date || null,
     under_process_to_date: form.under_process_to_date || null,
     customs_hold_from_date: form.customs_hold_from_date || null,
@@ -507,16 +503,6 @@ export function linkShipmentProgressFromStep(
     ),
     progress_step: String(progressStep),
   };
-}
-
-function getStatusFromTrackingEvents(form: ShipmentJobForm) {
-  const latestCompletedEventIndex = form.tracking_events.reduce(
-    (latestIndex, event, index) =>
-      event.event_date && event.description.trim() ? index : latestIndex,
-    -1,
-  );
-
-  return standardFlowStatusOptions[latestCompletedEventIndex]?.value ?? null;
 }
 
 export async function fetchShipmentJobs(
@@ -1327,7 +1313,7 @@ function buildShipmentTrackingEventsPayload(
       description: event.description.trim(),
       sort_order: index,
     }))
-    .filter((event) => event.event_date && event.description);
+    .filter((event) => event.description);
 }
 
 function groupTrackingEventsByJob(events: ShipmentTrackingEvent[]) {

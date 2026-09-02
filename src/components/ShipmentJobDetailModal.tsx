@@ -362,16 +362,19 @@ function TrackingTimeline({
 }
 
 function groupTrackingEventsByDate(events: ShipmentJob["tracking_events"]) {
-  const groups = events.reduce<Record<string, ShipmentJob["tracking_events"]>>(
-    (currentGroups, event) => {
-      currentGroups[event.event_date] = [
-        ...(currentGroups[event.event_date] ?? []),
-        event,
-      ];
-      return currentGroups;
-    },
-    {},
+  const datedEvents = events.filter(
+    (event): event is typeof event & { event_date: string } =>
+      Boolean(event.event_date),
   );
+  const groups = datedEvents.reduce<
+    Record<string, ShipmentJob["tracking_events"]>
+  >((currentGroups, event) => {
+    currentGroups[event.event_date] = [
+      ...(currentGroups[event.event_date] ?? []),
+      event,
+    ];
+    return currentGroups;
+  }, {});
 
   return Object.entries(groups).sort(([firstDate], [secondDate]) =>
     secondDate.localeCompare(firstDate),

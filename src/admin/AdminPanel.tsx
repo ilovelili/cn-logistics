@@ -467,6 +467,7 @@ export default function AdminPanel({
             <UserRegistrationForm
               adminEmail={profileEmail}
               isSuperAdmin={isSuperAdmin}
+              onUsersChange={setSwitchableUsers}
             />
           )}
           {view === "adminOperators" && isSuperAdmin && (

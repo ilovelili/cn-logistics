@@ -266,6 +266,9 @@ function formatNotificationDate(value: string) {
 }
 
 function getNotificationTitle(notification: ShipmentNotification) {
+  if (notification.previous_status === "__status_set__") {
+    return t("notifications.statusSet");
+  }
   if (notification.previous_status === "__created__") {
     return t("notifications.shipmentCreated");
   }
@@ -277,6 +280,9 @@ function getNotificationTitle(notification: ShipmentNotification) {
 
 function getNotificationSummary(notification: ShipmentNotification) {
   const current = getNotificationStatusLabel(notification.current_status);
+  if (notification.previous_status === "__status_set__") {
+    return t("notifications.statusSetSummary", { current });
+  }
   if (
     notification.previous_status === "__created__" ||
     notification.previous_status === "__updated__"
@@ -290,6 +296,9 @@ function getNotificationSummary(notification: ShipmentNotification) {
 }
 
 function getNotificationStatusLabel(status: string) {
+  if (status === "__status_set__") {
+    return t("notifications.statusSet");
+  }
   if (status === "__created__") {
     return t("notifications.shipmentCreated");
   }
@@ -301,6 +310,7 @@ function getNotificationStatusLabel(status: string) {
 
 function isShipmentSaveNotification(notification: ShipmentNotification) {
   return (
+    notification.previous_status === "__status_set__" ||
     notification.previous_status === "__created__" ||
     notification.previous_status === "__updated__"
   );

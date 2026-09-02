@@ -79,6 +79,7 @@ function isSameShipperGroup(first: ShipperUser, second: ShipperUser) {
 interface UserRegistrationFormProps {
   adminEmail: string;
   isSuperAdmin?: boolean;
+  onUsersChange?: (users: ShipperUser[]) => void;
 }
 
 type SortKey =
@@ -110,6 +111,7 @@ interface ShipperUserRow extends ShipperUser {
 export default function UserRegistrationForm({
   adminEmail,
   isSuperAdmin = false,
+  onUsersChange,
 }: UserRegistrationFormProps) {
   const [form, setForm] = useState<ShipperUserForm>(defaultShipperUserForm);
   const [loading, setLoading] = useState(false);
@@ -210,6 +212,12 @@ export default function UserRegistrationForm({
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    if (!usersLoading) {
+      onUsersChange?.(users);
+    }
+  }, [onUsersChange, users, usersLoading]);
 
   useEffect(() => {
     let active = true;

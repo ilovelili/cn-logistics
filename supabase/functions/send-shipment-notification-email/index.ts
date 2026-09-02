@@ -80,6 +80,7 @@ const documentDownloadApprovedTemplateKey = "document_download_approved_user";
 const shipmentDocumentBucket = "shipment-documents";
 const maximumAttachmentBytes = 25 * 1024 * 1024;
 const statusLabels: Record<string, { ja: string; en: string }> = {
+  __status_set__: { ja: "出荷ステータス設定", en: "Shipment status set" },
   under_process: { ja: "処理中", en: "Under process" },
   customs_hold: { ja: "通関保留", en: "Customs hold" },
   completed: { ja: "完了", en: "Completed" },
@@ -365,12 +366,16 @@ async function buildShipmentMessage(
       ? `新規案件登録（現在のステータス：${currentStatus.ja}）`
       : delivery.previous_status === "__updated__"
         ? `案件情報更新（現在のステータス：${currentStatus.ja}）`
+        : delivery.previous_status === "__status_set__"
+          ? `出荷ステータスが「${currentStatus.ja}」に設定されました`
         : `${previousStatus.ja} → ${currentStatus.ja}`;
   const updateEn =
     delivery.previous_status === "__created__"
       ? `New shipment registered (current status: ${currentStatus.en})`
       : delivery.previous_status === "__updated__"
         ? `Shipment details updated (current status: ${currentStatus.en})`
+        : delivery.previous_status === "__status_set__"
+          ? `Shipment status has been set to ${currentStatus.en}`
         : `${previousStatus.en} → ${currentStatus.en}`;
   const values = {
     awb_bl_number: awbBlNumber,

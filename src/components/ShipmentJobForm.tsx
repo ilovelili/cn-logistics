@@ -115,6 +115,8 @@ export default function ShipmentJobForm({
     React.useState("door_to_door");
   const [standardFlowPickerOpen, setStandardFlowPickerOpen] =
     React.useState(false);
+  const [showTrackingValidationWarning, setShowTrackingValidationWarning] =
+    React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -146,50 +148,110 @@ export default function ShipmentJobForm({
     };
   }, []);
 
+  const inferredFlowName = React.useMemo(
+    () => inferStandardFlowName(form.tracking_events, trackingTemplates),
+    [form.tracking_events, trackingTemplates],
+  );
+
   React.useEffect(() => {
-    const inferredFlowName = inferStandardFlowName(
-      form.tracking_events,
-      trackingTemplates,
-    );
     if (inferredFlowName) setSelectedStandardFlowName(inferredFlowName);
-  }, [form.tracking_events, trackingTemplates]);
+  }, [inferredFlowName]);
 
   const progressTemplates = React.useMemo(
     () =>
-      trackingTemplates
-        .filter((template) => template.flow_name === selectedStandardFlowName)
-        .sort((first, second) => first.sort_order - second.sort_order),
-    [selectedStandardFlowName, trackingTemplates],
+      inferredFlowName
+        ? trackingTemplates
+            .filter((template) => template.flow_name === inferredFlowName)
+            .sort((first, second) => first.sort_order - second.sort_order)
+        : [],
+    [inferredFlowName, trackingTemplates],
   );
+  const definedTrackingStepCount = form.tracking_events.filter((event) =>
+    event.description.trim(),
+  ).length;
   const totalProgressSteps = Math.max(
     1,
     progressTemplates.length ||
+      definedTrackingStepCount ||
       form.progress_total_steps ||
-      form.tracking_events.length ||
       Number(form.progress_step) ||
       1,
   );
   const hasDefinedProgressFlow =
-    progressTemplates.length > 0 || form.tracking_events.length > 0;
+    progressTemplates.length > 0 || definedTrackingStepCount > 0;
+  const standardFlowStepDescriptions = React.useMemo(
+    () =>
+      new Set(
+        trackingTemplates
+          .map((template) => template.description.trim())
+          .filter(Boolean),
+      ),
+    [trackingTemplates],
+  );
+  const hasIncompleteTrackingEvent = form.tracking_events.some((event) => {
+    const hasDate = Boolean(event.event_date);
+    const hasLocation = Boolean(event.location.trim());
+    const hasDescription = Boolean(event.description.trim());
+    const isStandardFlowStep = standardFlowStepDescriptions.has(
+      event.description.trim(),
+    );
+
+    if (!hasDescription) return true;
+    if (isStandardFlowStep && !hasDate && !hasLocation) return false;
+    return !hasDate || !hasLocation;
+  });
+
+  React.useEffect(() => {
+    if (!hasIncompleteTrackingEvent) setShowTrackingValidationWarning(false);
+  }, [hasIncompleteTrackingEvent]);
+
+  React.useEffect(() => {
+    if (trackingTemplatesLoading || form.manual_progress_edited) return;
+
+    const trackingStatus = getTrackingStatus(
+      form.tracking_events,
+      trackingTemplates,
+    );
+    const nextStatus = trackingStatus ?? "pickup";
+    if (form.status !== nextStatus) {
+      setForm((current) =>
+        current.manual_progress_edited || current.status === nextStatus
+          ? current
+          : { ...current, status: nextStatus },
+      );
+    }
+  }, [
+    form.manual_progress_edited,
+    form.status,
+    form.tracking_events,
+    setForm,
+    trackingTemplates,
+    trackingTemplatesLoading,
+  ]);
 
   React.useEffect(() => {
     if (!hasDefinedProgressFlow) return;
 
     setForm((current) => {
       const parsedProgressStep = Number(current.progress_step);
-      const boundedProgressStep = current.progress_step.trim()
-        ? String(
-            Math.max(
-              1,
-              Math.min(
-                totalProgressSteps,
-                Number.isFinite(parsedProgressStep)
-                  ? Math.round(parsedProgressStep)
-                  : 1,
+      const boundedProgressStep = current.progress_percent.trim()
+        ? linkShipmentProgressFromPercent(
+            current.progress_percent,
+            totalProgressSteps,
+          ).progress_step
+        : current.progress_step.trim()
+          ? String(
+              Math.max(
+                1,
+                Math.min(
+                  totalProgressSteps,
+                  Number.isFinite(parsedProgressStep)
+                    ? Math.round(parsedProgressStep)
+                    : 1,
+                ),
               ),
-            ),
-          )
-        : current.progress_step;
+            )
+          : current.progress_step;
 
       if (
         current.progress_total_steps === totalProgressSteps &&
@@ -224,9 +286,11 @@ export default function ShipmentJobForm({
         ...linkedProgress,
         progress_total_steps: totalProgressSteps,
         manual_progress_edited: true,
-        status:
-          getFlowStatus(progressTemplates, linkedProgress.progress_step) ??
+        status: getProgressStatus(
+          progressTemplates,
+          linkedProgress,
           current.status,
+        ),
       };
     });
   };
@@ -242,9 +306,11 @@ export default function ShipmentJobForm({
         ...linkedProgress,
         progress_total_steps: totalProgressSteps,
         manual_progress_edited: true,
-        status:
-          getFlowStatus(progressTemplates, linkedProgress.progress_step) ??
+        status: getProgressStatus(
+          progressTemplates,
+          linkedProgress,
           current.status,
+        ),
       };
     });
   };
@@ -343,6 +409,16 @@ export default function ShipmentJobForm({
     }));
   };
 
+  const removeTrackingEvent = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      manual_progress_edited: false,
+      tracking_events: current.tracking_events.filter(
+        (_, eventIndex) => eventIndex !== index,
+      ),
+    }));
+  };
+
   const addDefaultTrackingFlow = (flowName: string) => {
     const selectedTemplates = trackingTemplates.filter(
       (template) => template.flow_name === flowName,
@@ -391,6 +467,11 @@ export default function ShipmentJobForm({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (hasIncompleteTrackingEvent) {
+      setShowTrackingValidationWarning(true);
+      return;
+    }
+    setShowTrackingValidationWarning(false);
     await onSubmit(form);
     if (!job) {
       setForm(defaultShipmentJobForm);
@@ -398,7 +479,7 @@ export default function ShipmentJobForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form noValidate onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {customerSelection || shipperOptions.length > 0 ? (
           <SelectField
@@ -603,10 +684,12 @@ export default function ShipmentJobForm({
 
       <TrackingEventFields
         values={form.tracking_events}
+        standardFlowStepDescriptions={standardFlowStepDescriptions}
         onAdd={addTrackingEvent}
         onAddDefaultFlow={() => setStandardFlowPickerOpen(true)}
         canAddDefaultFlow={trackingTemplates.length > 0}
         onChange={updateTrackingEvent}
+        onRemove={removeTrackingEvent}
       />
 
       {standardFlowPickerOpen && (
@@ -619,6 +702,14 @@ export default function ShipmentJobForm({
       )}
 
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+        {showTrackingValidationWarning && (
+          <p
+            role="alert"
+            className="self-center text-sm font-semibold text-rose-600 sm:mr-auto"
+          >
+            {t("tracking.completeAllFields")}
+          </p>
+        )}
         {onCancel && (
           <button
             type="button"
@@ -631,7 +722,14 @@ export default function ShipmentJobForm({
         <button
           type="submit"
           disabled={loading || (customerSelection && !form.shipper_name)}
-          className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors"
+          title={
+            hasIncompleteTrackingEvent
+              ? t("tracking.completeAllFields")
+              : undefined
+          }
+          className={`px-5 py-2.5 rounded-xl bg-slate-950 text-white font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors ${
+            hasIncompleteTrackingEvent ? "opacity-60" : ""
+          }`}
         >
           {loading ? t("common.saving") : submitLabel}
         </button>
@@ -670,20 +768,65 @@ function inferStandardFlowName(
   events: ShipmentJobFormState["tracking_events"],
   templates: ShipmentTrackingEventTemplate[],
 ) {
-  const descriptions = new Set(events.map((event) => event.description));
-  const matchesByFlow = new Map<string, number>();
+  const eventDescriptions = events.map((event) => event.description.trim());
+  if (
+    eventDescriptions.length === 0 ||
+    eventDescriptions.some((description) => !description)
+  ) {
+    return undefined;
+  }
 
-  templates.forEach((template) => {
-    if (!descriptions.has(template.description)) return;
-    matchesByFlow.set(
-      template.flow_name,
-      (matchesByFlow.get(template.flow_name) ?? 0) + 1,
+  return getStandardFlowOptions(templates).find((flowName) => {
+    const flowDescriptions = templates
+      .filter((template) => template.flow_name === flowName)
+      .sort((first, second) => first.sort_order - second.sort_order)
+      .map((template) => template.description.trim());
+
+    return (
+      flowDescriptions.length === eventDescriptions.length &&
+      flowDescriptions.every(
+        (description, index) => description === eventDescriptions[index],
+      )
     );
   });
+}
 
-  return [...matchesByFlow.entries()].sort(
-    (first, second) => second[1] - first[1],
-  )[0]?.[0];
+function getTrackingStatus(
+  events: ShipmentJobFormState["tracking_events"],
+  templates: ShipmentTrackingEventTemplate[],
+) {
+  const latestEvent = events.reduce<
+    | { event: ShipmentJobFormState["tracking_events"][number]; index: number }
+    | undefined
+  >((latest, event, index) => {
+    if (!event.event_date || !event.description.trim()) return latest;
+    if (!latest) return { event, index };
+    if (event.event_date !== latest.event.event_date) {
+      return event.event_date > latest.event.event_date
+        ? { event, index }
+        : latest;
+    }
+    return index > latest.index ? { event, index } : latest;
+  }, undefined)?.event;
+
+  if (!latestEvent) return undefined;
+
+  const matchingStatuses = new Set(
+    templates
+      .filter(
+        (template) =>
+          template.is_active &&
+          template.description.trim() === latestEvent.description.trim(),
+      )
+      .map((template) =>
+        standardFlowStatusOptions.find(
+          (option) => option.value === template.name,
+        ),
+      )
+      .filter((option) => option !== undefined)
+      .map((option) => option.value),
+  );
+  return matchingStatuses.size === 1 ? [...matchingStatuses][0] : undefined;
 }
 
 function getFlowStatus(
@@ -694,6 +837,30 @@ function getFlowStatus(
   return standardFlowStatusOptions.find(
     (option) => option.value === template?.name,
   )?.value;
+}
+
+function getIncompleteStatus(
+  currentStatus: ShipmentJobFormState["status"],
+  progressPercent: string,
+) {
+  if (progressPercent === "100") return currentStatus;
+  return currentStatus === "completed" || currentStatus === "delivered"
+    ? "pickup"
+    : currentStatus;
+}
+
+function getProgressStatus(
+  templates: ShipmentTrackingEventTemplate[],
+  progress: { progress_percent: string; progress_step: string },
+  currentStatus: ShipmentJobFormState["status"],
+) {
+  const flowStatus = getFlowStatus(templates, progress.progress_step);
+  if (flowStatus === "delivered" && progress.progress_percent !== "100") {
+    return getIncompleteStatus(currentStatus, progress.progress_percent);
+  }
+  return (
+    flowStatus ?? getIncompleteStatus(currentStatus, progress.progress_percent)
+  );
 }
 
 function StandardFlowPickerModal({
@@ -1200,12 +1367,15 @@ function getDefaultAssignedAdminIds(
 
 function TrackingEventFields({
   values,
+  standardFlowStepDescriptions,
   onAdd,
   onAddDefaultFlow,
   canAddDefaultFlow,
   onChange,
+  onRemove,
 }: {
   values: ShipmentJobFormState["tracking_events"];
+  standardFlowStepDescriptions: ReadonlySet<string>;
   onAdd: () => void;
   onAddDefaultFlow: () => void;
   canAddDefaultFlow: boolean;
@@ -1214,6 +1384,7 @@ function TrackingEventFields({
     field: keyof ShipmentJobFormState["tracking_events"][number],
     value: string,
   ) => void;
+  onRemove: (index: number) => void;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1247,40 +1418,63 @@ function TrackingEventFields({
         </div>
       ) : (
         <div className="space-y-3">
-          {values.map((event, index) => (
-            <div
-              key={index}
-              className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[150px_1fr_2fr]"
-            >
-              <input
-                type="date"
-                value={event.event_date}
-                onChange={(inputEvent) =>
-                  onChange(index, "event_date", inputEvent.target.value)
-                }
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                aria-label={t("tracking.date")}
-              />
-              <input
-                type="text"
-                value={event.location}
-                placeholder={t("tracking.location")}
-                onChange={(inputEvent) =>
-                  onChange(index, "location", inputEvent.target.value)
-                }
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
-              />
-              <input
-                type="text"
-                value={event.description}
-                placeholder={t("tracking.description")}
-                onChange={(inputEvent) =>
-                  onChange(index, "description", inputEvent.target.value)
-                }
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
-              />
-            </div>
-          ))}
+          {values.map((event, index) => {
+            const hasStartedStep = Boolean(
+              event.event_date || event.location.trim(),
+            );
+            const isStandardFlowStep = standardFlowStepDescriptions.has(
+              event.description.trim(),
+            );
+            const requiresCompletionFields =
+              !isStandardFlowStep || hasStartedStep;
+
+            return (
+              <div
+                key={index}
+                className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[150px_1fr_2fr_44px]"
+              >
+                <input
+                  type="date"
+                  required={requiresCompletionFields}
+                  value={event.event_date}
+                  onChange={(inputEvent) =>
+                    onChange(index, "event_date", inputEvent.target.value)
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                  aria-label={t("tracking.date")}
+                />
+                <input
+                  type="text"
+                  required={requiresCompletionFields}
+                  value={event.location}
+                  placeholder={t("tracking.location")}
+                  onChange={(inputEvent) =>
+                    onChange(index, "location", inputEvent.target.value)
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                />
+                <input
+                  type="text"
+                  required
+                  value={event.description}
+                  placeholder={t("tracking.description")}
+                  onChange={(inputEvent) =>
+                    onChange(index, "description", inputEvent.target.value)
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => onRemove(index)}
+                  aria-label={t("common.delete")}
+                  title={t("common.delete")}
+                  className="inline-flex h-10 w-10 items-center justify-center self-center rounded-xl border border-rose-200 text-rose-600 transition hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
