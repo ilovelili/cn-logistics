@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Buffer } from "node:buffer";
 // @ts-types="@types/nodemailer"
 import nodemailer from "nodemailer";
+import { buildUpdateDetails, type ShipmentChange } from "./change-details.ts";
 
 interface EmailDelivery {
   id: string;
@@ -12,6 +13,7 @@ interface EmailDelivery {
   awb_bl_number: string | null;
   origin: string | null;
   destination: string | null;
+  change_details?: ShipmentChange[];
 }
 
 interface DeliveryRequest {
@@ -361,7 +363,7 @@ async function buildShipmentMessage(
   const currentStatus = labelFor(delivery.current_status);
   const previousStatus = labelFor(delivery.previous_status);
   const normalizedApplicationUrl = applicationUrl.replace(/\/$/, "");
-  const updateJa =
+  const statusUpdateJa =
     delivery.previous_status === "__created__"
       ? `新規案件登録（現在のステータス：${currentStatus.ja}）`
       : delivery.previous_status === "__updated__"
@@ -369,7 +371,7 @@ async function buildShipmentMessage(
         : delivery.previous_status === "__status_set__"
           ? `出荷ステータスが「${currentStatus.ja}」に設定されました`
           : `${previousStatus.ja} → ${currentStatus.ja}`;
-  const updateEn =
+  const statusUpdateEn =
     delivery.previous_status === "__created__"
       ? `New shipment registered (current status: ${currentStatus.en})`
       : delivery.previous_status === "__updated__"
@@ -377,6 +379,18 @@ async function buildShipmentMessage(
         : delivery.previous_status === "__status_set__"
           ? `Shipment status has been set to ${currentStatus.en}`
           : `${previousStatus.en} → ${currentStatus.en}`;
+  const updateJa = buildUpdateDetails(
+    delivery.previous_status,
+    statusUpdateJa,
+    delivery.change_details,
+    "ja",
+  );
+  const updateEn = buildUpdateDetails(
+    delivery.previous_status,
+    statusUpdateEn,
+    delivery.change_details,
+    "en",
+  );
   const values = {
     awb_bl_number: awbBlNumber,
     origin,
@@ -572,7 +586,12 @@ function renderTemplate(
   escapeValues: boolean,
 ) {
   return Object.entries(values).reduce((rendered, [key, value]) => {
-    const replacement = escapeValues ? escapeHtml(value) : value;
+    const replacement = escapeValues
+      ? escapeHtml(value).replace(
+          key.startsWith("update_details_") ? /\n/g : /$^/g,
+          "<br />",
+        )
+      : value;
     return rendered.split(`{{${key}}}`).join(replacement);
   }, template);
 }
