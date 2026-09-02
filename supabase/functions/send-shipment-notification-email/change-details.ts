@@ -55,23 +55,33 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
   if (Array.isArray(value)) {
     if (value.length === 0) return empty;
     if (field === "booking_details") {
-      return value.filter(isRecord).map((booking) => {
-        const containers = Array.isArray(booking.containers)
-          ? booking.containers.filter(isRecord).map((container) =>
-            `${container.size ?? ""} × ${container.quantity ?? ""}`
-          ).join(", ")
-          : "";
-        return `BOOKING # ${booking.booking_number ?? ""}${
-          containers ? ` (${containers})` : ""
-        }`;
-      }).join("; ");
+      return value
+        .filter(isRecord)
+        .map((booking) => {
+          const containers = Array.isArray(booking.containers)
+            ? booking.containers
+                .filter(isRecord)
+                .map(
+                  (container) =>
+                    `${container.size ?? ""} × ${container.quantity ?? ""}`,
+                )
+                .join(", ")
+            : "";
+          return `BOOKING # ${booking.booking_number ?? ""}${
+            containers ? ` (${containers})` : ""
+          }`;
+        })
+        .join("; ");
     }
     if (field === "tracking_history") {
-      return value.filter(isRecord).map((event) =>
-        [event.date, event.location, event.description]
-          .filter((part) => typeof part === "string" && part.trim())
-          .join(" / ")
-      ).join("; ");
+      return value
+        .filter(isRecord)
+        .map((event) =>
+          [event.date, event.location, event.description]
+            .filter((part) => typeof part === "string" && part.trim())
+            .join(" / "),
+        )
+        .join("; ");
     }
     return value.filter((part) => typeof part === "string").join(", ") || empty;
   }
@@ -86,9 +96,12 @@ export function formatShipmentChanges(
 ): string[] {
   return (changes ?? [])
     .filter((change) => labels[change.field])
-    .map((change) =>
-      `${labels[change.field][language]}: ${
-        display(change.before, change.field, language)
-      } → ${display(change.after, change.field, language)}`
+    .map(
+      (change) =>
+        `${labels[change.field][language]}: ${display(
+          change.before,
+          change.field,
+          language,
+        )} → ${display(change.after, change.field, language)}`,
     );
 }
