@@ -348,6 +348,15 @@ const ja = {
   "form.noFiles": "ファイルが選択されていません",
   "form.notesPlaceholder": "運用メモ、顧客要望、通関状況など",
   "form.addVesselFlight": "追加",
+  "form.bookingNumber": "BOOKING #",
+  "form.bookingDetails": "BOOKING・コンテナ情報",
+  "form.addBooking": "BOOKINGを追加",
+  "form.containerDetails": "コンテナ情報",
+  "form.containerSize": "コンテナサイズ",
+  "form.containerQuantity": "本数",
+  "form.addContainer": "コンテナを追加",
+  "form.containerDetailsRequired":
+    "入力を開始したBOOKINGには、BOOKING #と少なくとも1件のコンテナサイズ・本数を入力してください。本数は1以上の整数で入力してください。",
 
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
@@ -916,6 +925,15 @@ const en: Messages = {
   "form.notesPlaceholder":
     "Operational notes, customer requests, customs status, etc.",
   "form.addVesselFlight": "Add",
+  "form.bookingNumber": "BOOKING #",
+  "form.bookingDetails": "Booking and container details",
+  "form.addBooking": "Add booking",
+  "form.containerDetails": "Container details",
+  "form.containerSize": "Container size",
+  "form.containerQuantity": "Quantity",
+  "form.addContainer": "Add container",
+  "form.containerDetailsRequired":
+    "For each started booking, enter a booking number and at least one complete container size and quantity. Quantity must be a positive whole number.",
 
   "admin.switch.selectUser": "Switch to user",
   "admin.switch.backToAdmin": "Back to admin",

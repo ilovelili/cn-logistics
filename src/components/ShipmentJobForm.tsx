@@ -113,6 +113,8 @@ export default function ShipmentJobForm({
     React.useState(false);
   const [showCnAssignmentWarning, setShowCnAssignmentWarning] =
     React.useState(false);
+  const [showContainerValidationWarning, setShowContainerValidationWarning] =
+    React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -198,6 +200,33 @@ export default function ShipmentJobForm({
   });
   const isCnAssignmentMissing =
     Boolean(job) && form.assigned_admin_user_ids.length === 0;
+  const hasIncompleteContainerDetail = form.booking_details.some((booking) => {
+    const hasBookingNumber = Boolean(booking.booking_number.trim());
+    const startedContainers = booking.containers.filter(
+      (container) => container.size.trim() || container.quantity.trim(),
+    );
+    const hasIncompleteContainer = startedContainers.some((container) => {
+      const quantity = Number(container.quantity);
+      return (
+        !container.size.trim() ||
+        container.quantity.trim() === "" ||
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      );
+    });
+    const hasStartedBooking = hasBookingNumber || startedContainers.length > 0;
+
+    return (
+      hasStartedBooking &&
+      (!hasBookingNumber ||
+        startedContainers.length === 0 ||
+        hasIncompleteContainer)
+    );
+  });
+  const hasBlockingValidationError =
+    hasIncompleteTrackingEvent ||
+    isCnAssignmentMissing ||
+    hasIncompleteContainerDetail;
 
   React.useEffect(() => {
     if (!hasIncompleteTrackingEvent) setShowTrackingValidationWarning(false);
@@ -206,6 +235,12 @@ export default function ShipmentJobForm({
   React.useEffect(() => {
     if (!isCnAssignmentMissing) setShowCnAssignmentWarning(false);
   }, [isCnAssignmentMissing]);
+
+  React.useEffect(() => {
+    if (!hasIncompleteContainerDetail) {
+      setShowContainerValidationWarning(false);
+    }
+  }, [hasIncompleteContainerDetail]);
 
   React.useEffect(() => {
     if (trackingTemplatesLoading || form.manual_progress_edited) return;
@@ -372,6 +407,109 @@ export default function ShipmentJobForm({
     }));
   };
 
+  const updateBookingNumber = (bookingIndex: number, value: string) => {
+    setForm((current) => ({
+      ...current,
+      booking_details: current.booking_details.map((booking, index) =>
+        index === bookingIndex
+          ? { ...booking, booking_number: value }
+          : booking,
+      ),
+    }));
+  };
+
+  const updateContainerDetail = (
+    bookingIndex: number,
+    containerIndex: number,
+    field: "size" | "quantity",
+    value: string,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      booking_details: current.booking_details.map((booking, index) =>
+        index === bookingIndex
+          ? {
+              ...booking,
+              containers: booking.containers.map((container, itemIndex) =>
+                itemIndex === containerIndex
+                  ? { ...container, [field]: value }
+                  : container,
+              ),
+            }
+          : booking,
+      ),
+    }));
+  };
+
+  const addBookingDetail = () => {
+    setForm((current) => ({
+      ...current,
+      booking_details: [
+        ...current.booking_details,
+        {
+          booking_number: "",
+          containers: [{ size: "", quantity: "" }],
+        },
+      ],
+    }));
+  };
+
+  const removeBookingDetail = (bookingIndex: number) => {
+    setForm((current) => {
+      const nextBookings = current.booking_details.filter(
+        (_, index) => index !== bookingIndex,
+      );
+      return {
+        ...current,
+        booking_details:
+          nextBookings.length > 0
+            ? nextBookings
+            : [
+                {
+                  booking_number: "",
+                  containers: [{ size: "", quantity: "" }],
+                },
+              ],
+      };
+    });
+  };
+
+  const addContainerDetail = (bookingIndex: number) => {
+    setForm((current) => ({
+      ...current,
+      booking_details: current.booking_details.map((booking, index) =>
+        index === bookingIndex
+          ? {
+              ...booking,
+              containers: [...booking.containers, { size: "", quantity: "" }],
+            }
+          : booking,
+      ),
+    }));
+  };
+
+  const removeContainerDetail = (
+    bookingIndex: number,
+    containerIndex: number,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      booking_details: current.booking_details.map((booking, index) => {
+        if (index !== bookingIndex) return booking;
+        const nextContainers = booking.containers.filter(
+          (_, itemIndex) => itemIndex !== containerIndex,
+        );
+        return {
+          ...booking,
+          containers:
+            nextContainers.length > 0
+              ? nextContainers
+              : [{ size: "", quantity: "" }],
+        };
+      }),
+    }));
+  };
+
   const removeVesselFlightNumber = (index: number) => {
     setForm((current) => {
       const nextNumbers = current.vessel_flight_numbers.filter(
@@ -470,7 +608,8 @@ export default function ShipmentJobForm({
     event.preventDefault();
     setShowTrackingValidationWarning(hasIncompleteTrackingEvent);
     setShowCnAssignmentWarning(isCnAssignmentMissing);
-    if (hasIncompleteTrackingEvent || isCnAssignmentMissing) {
+    setShowContainerValidationWarning(hasIncompleteContainerDetail);
+    if (hasBlockingValidationError) {
       return;
     }
     await onSubmit(form);
@@ -537,6 +676,16 @@ export default function ShipmentJobForm({
           options={transportModeOptions}
         />
       </div>
+
+      <BookingDetailFields
+        values={form.booking_details}
+        onAddBooking={addBookingDetail}
+        onRemoveBooking={removeBookingDetail}
+        onBookingNumberChange={updateBookingNumber}
+        onAddContainer={addContainerDetail}
+        onRemoveContainer={removeContainerDetail}
+        onContainerChange={updateContainerDetail}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <TextField
@@ -703,7 +852,9 @@ export default function ShipmentJobForm({
       )}
 
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-        {(showTrackingValidationWarning || showCnAssignmentWarning) && (
+        {(showTrackingValidationWarning ||
+          showCnAssignmentWarning ||
+          showContainerValidationWarning) && (
           <div
             role="alert"
             className="space-y-1 self-center text-sm font-semibold text-rose-600 sm:mr-auto"
@@ -713,6 +864,9 @@ export default function ShipmentJobForm({
             )}
             {showCnAssignmentWarning && (
               <p>{t("admin.shipment.cnAssignmentRequired")}</p>
+            )}
+            {showContainerValidationWarning && (
+              <p>{t("form.containerDetailsRequired")}</p>
             )}
           </div>
         )}
@@ -728,17 +882,18 @@ export default function ShipmentJobForm({
         <button
           type="submit"
           disabled={loading || (customerSelection && !form.shipper_name)}
+          aria-disabled={hasBlockingValidationError || undefined}
           title={
             hasIncompleteTrackingEvent
               ? t("tracking.completeAllFields")
               : isCnAssignmentMissing
                 ? t("admin.shipment.cnAssignmentRequired")
-                : undefined
+                : hasIncompleteContainerDetail
+                  ? t("form.containerDetailsRequired")
+                  : undefined
           }
           className={`px-5 py-2.5 rounded-xl bg-slate-950 text-white font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors ${
-            hasIncompleteTrackingEvent || isCnAssignmentMissing
-              ? "opacity-60"
-              : ""
+            hasBlockingValidationError ? "opacity-60" : ""
           }`}
         >
           {loading ? t("common.saving") : submitLabel}
@@ -1470,6 +1625,145 @@ function TrackingEventFields({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function BookingDetailFields({
+  values,
+  onAddBooking,
+  onRemoveBooking,
+  onBookingNumberChange,
+  onAddContainer,
+  onRemoveContainer,
+  onContainerChange,
+}: {
+  values: ShipmentJobFormState["booking_details"];
+  onAddBooking: () => void;
+  onRemoveBooking: (bookingIndex: number) => void;
+  onBookingNumberChange: (bookingIndex: number, value: string) => void;
+  onAddContainer: (bookingIndex: number) => void;
+  onRemoveContainer: (bookingIndex: number, containerIndex: number) => void;
+  onContainerChange: (
+    bookingIndex: number,
+    containerIndex: number,
+    field: "size" | "quantity",
+    value: string,
+  ) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          {t("form.bookingDetails")}
+        </span>
+        <button
+          type="button"
+          onClick={onAddBooking}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("form.addBooking")}
+        </button>
+      </div>
+      <div className="space-y-4">
+        {values.map((booking, bookingIndex) => (
+          <div
+            key={bookingIndex}
+            className="rounded-xl border border-slate-200 bg-white p-4"
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-sm font-bold text-slate-700">
+                {t("form.bookingNumber")} {bookingIndex + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => onRemoveBooking(bookingIndex)}
+                aria-label={t("common.delete")}
+                title={t("common.delete")}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 transition hover:bg-rose-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={booking.booking_number}
+              placeholder="BOOKING-001"
+              onChange={(event) =>
+                onBookingNumberChange(bookingIndex, event.target.value)
+              }
+              className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+              aria-label={`${t("form.bookingNumber")} ${bookingIndex + 1}`}
+            />
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {t("form.containerDetails")}
+              </span>
+              <button
+                type="button"
+                onClick={() => onAddContainer(bookingIndex)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("form.addContainer")}
+              </button>
+            </div>
+            <div className="space-y-3">
+              {booking.containers.map((container, containerIndex) => (
+                <div
+                  key={containerIndex}
+                  className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[minmax(0,1fr)_180px_44px]"
+                >
+                  <input
+                    type="text"
+                    value={container.size}
+                    placeholder={t("form.containerSize")}
+                    onChange={(event) =>
+                      onContainerChange(
+                        bookingIndex,
+                        containerIndex,
+                        "size",
+                        event.target.value,
+                      )
+                    }
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    aria-label={t("form.containerSize")}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={container.quantity}
+                    placeholder={t("form.containerQuantity")}
+                    onChange={(event) =>
+                      onContainerChange(
+                        bookingIndex,
+                        containerIndex,
+                        "quantity",
+                        event.target.value,
+                      )
+                    }
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    aria-label={t("form.containerQuantity")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRemoveContainer(bookingIndex, containerIndex)
+                    }
+                    aria-label={t("common.delete")}
+                    title={t("common.delete")}
+                    className="inline-flex h-10 w-10 items-center justify-center self-center rounded-xl border border-rose-200 text-rose-600 transition hover:bg-rose-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

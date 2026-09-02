@@ -36,6 +36,7 @@ export interface ShipmentJob {
   trade_term: string | null;
   invoice_number: string | null;
   job_number: string | null;
+  booking_details: ShipmentBookingDetail[];
   transport_mode: TransportMode | null;
   shipper_name: string | null;
   consignee_name: string | null;
@@ -75,6 +76,26 @@ export interface ShipmentTrackingEventForm {
   event_date: string;
   location: string;
   description: string;
+}
+
+export interface ShipmentContainerDetail {
+  size: string;
+  quantity: number;
+}
+
+export interface ShipmentBookingDetail {
+  booking_number: string;
+  containers: ShipmentContainerDetail[];
+}
+
+export interface ShipmentContainerDetailForm {
+  size: string;
+  quantity: string;
+}
+
+export interface ShipmentBookingDetailForm {
+  booking_number: string;
+  containers: ShipmentContainerDetailForm[];
 }
 
 export interface ShipmentTrackingEventTemplate {
@@ -128,6 +149,7 @@ export interface ShipmentJobForm {
   trade_term: string;
   invoice_number: string;
   job_number: string;
+  booking_details: ShipmentBookingDetailForm[];
   transport_mode: TransportMode;
   shipper_name: string;
   consignee_name: string;
@@ -342,6 +364,12 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   trade_term: "CIF",
   invoice_number: "",
   job_number: "",
+  booking_details: [
+    {
+      booking_number: "",
+      containers: [{ size: "", quantity: "" }],
+    },
+  ],
   transport_mode: "air",
   shipper_name: "",
   consignee_name: "",
@@ -390,6 +418,21 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     trade_term: job.trade_term ?? "",
     invoice_number: job.invoice_number ?? "",
     job_number: job.job_number ?? "",
+    booking_details:
+      job.booking_details?.length > 0
+        ? job.booking_details.map((booking) => ({
+            booking_number: booking.booking_number,
+            containers: booking.containers.map((container) => ({
+              size: container.size,
+              quantity: String(container.quantity),
+            })),
+          }))
+        : [
+            {
+              booking_number: "",
+              containers: [{ size: "", quantity: "" }],
+            },
+          ],
     transport_mode: job.transport_mode ?? "air",
     shipper_name: job.shipper_name ?? "",
     consignee_name: job.consignee_name ?? "",
@@ -521,22 +564,41 @@ export async function fetchShipmentJobs(
 
   const shipmentJobs = (jobsData ?? []) as Omit<
     ShipmentJob,
-    "tracking_events" | "progress_total_steps"
+    "tracking_events" | "progress_total_steps" | "booking_details"
   >[];
-  const [trackingEvents, progressTotals] = await Promise.all([
+  const [trackingEvents, progressTotals, bookingDetails] = await Promise.all([
     fetchShipmentTrackingEvents(requesterEmail),
     fetchShipmentProgressTotals(requesterEmail),
+    fetchShipmentBookingDetails(requesterEmail),
   ]);
   const trackingEventsByJob = groupTrackingEventsByJob(trackingEvents);
   const progressTotalsByJob = new Map(
     progressTotals.map((row) => [row.id, row.progress_total_steps]),
   );
+  const bookingDetailsByJob = new Map(
+    bookingDetails.map((row) => [row.id, row]),
+  );
 
   return shipmentJobs.map((job) => ({
     ...job,
+    booking_details: bookingDetailsByJob.get(job.id)?.booking_details ?? [],
     progress_total_steps: progressTotalsByJob.get(job.id) ?? null,
     tracking_events: trackingEventsByJob[job.id] ?? [],
   }));
+}
+
+async function fetchShipmentBookingDetails(requesterEmail: string) {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipment_booking_details",
+    { requester_email: requesterEmail },
+  );
+
+  if (error) throw error;
+
+  return (data ?? []) as {
+    id: string;
+    booking_details: ShipmentBookingDetail[];
+  }[];
 }
 
 async function fetchShipmentProgressTotals(requesterEmail: string) {
@@ -746,7 +808,7 @@ export async function createShipmentJob(
     Promise.resolve(buildShipmentTrackingEventsPayload(jobId, form)),
   ]);
   const { error } = await supabase.rpc(
-    "save_accessible_shipment_job_with_progress_total",
+    "save_accessible_shipment_job_with_booking_details",
     {
       requester_email: requesterEmail,
       target_job_id: jobId,
@@ -755,6 +817,7 @@ export async function createShipmentJob(
       events_payload: eventsPayload,
       create_new: true,
       total_steps: form.progress_total_steps,
+      booking_details: buildBookingDetailsPayload(form),
     },
   );
 
@@ -773,7 +836,7 @@ export async function updateShipmentJob(
     Promise.resolve(buildShipmentTrackingEventsPayload(id, form)),
   ]);
   const { error } = await supabase.rpc(
-    "save_accessible_shipment_job_with_progress_total",
+    "save_accessible_shipment_job_with_booking_details",
     {
       requester_email: requesterEmail,
       target_job_id: id,
@@ -782,12 +845,34 @@ export async function updateShipmentJob(
       events_payload: eventsPayload,
       create_new: false,
       total_steps: form.progress_total_steps,
+      booking_details: buildBookingDetailsPayload(form),
     },
   );
 
   if (error) {
     throw error;
   }
+}
+
+function buildBookingDetailsPayload(form: ShipmentJobForm) {
+  return form.booking_details
+    .map((booking) => ({
+      booking_number: booking.booking_number.trim(),
+      containers: booking.containers
+        .map((container) => ({
+          size: container.size.trim(),
+          quantity: Number(container.quantity),
+        }))
+        .filter(
+          (container) =>
+            container.size &&
+            Number.isInteger(container.quantity) &&
+            container.quantity > 0,
+        ),
+    }))
+    .filter(
+      (booking) => booking.booking_number || booking.containers.length > 0,
+    );
 }
 
 export async function softDeleteShipmentJob(
