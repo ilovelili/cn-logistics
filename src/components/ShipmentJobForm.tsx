@@ -111,6 +111,8 @@ export default function ShipmentJobForm({
     React.useState(false);
   const [showTrackingValidationWarning, setShowTrackingValidationWarning] =
     React.useState(false);
+  const [showCnAssignmentWarning, setShowCnAssignmentWarning] =
+    React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -194,10 +196,16 @@ export default function ShipmentJobForm({
     if (isStandardFlowStep && !hasDate && !hasLocation) return false;
     return !hasDate || !hasLocation;
   });
+  const isCnAssignmentMissing =
+    Boolean(job) && form.assigned_admin_user_ids.length === 0;
 
   React.useEffect(() => {
     if (!hasIncompleteTrackingEvent) setShowTrackingValidationWarning(false);
   }, [hasIncompleteTrackingEvent]);
+
+  React.useEffect(() => {
+    if (!isCnAssignmentMissing) setShowCnAssignmentWarning(false);
+  }, [isCnAssignmentMissing]);
 
   React.useEffect(() => {
     if (trackingTemplatesLoading || form.manual_progress_edited) return;
@@ -460,11 +468,11 @@ export default function ShipmentJobForm({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (hasIncompleteTrackingEvent) {
-      setShowTrackingValidationWarning(true);
+    setShowTrackingValidationWarning(hasIncompleteTrackingEvent);
+    setShowCnAssignmentWarning(isCnAssignmentMissing);
+    if (hasIncompleteTrackingEvent || isCnAssignmentMissing) {
       return;
     }
-    setShowTrackingValidationWarning(false);
     await onSubmit(form);
     if (!job) {
       setForm(defaultShipmentJobForm);
@@ -695,13 +703,18 @@ export default function ShipmentJobForm({
       )}
 
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-        {showTrackingValidationWarning && (
-          <p
+        {(showTrackingValidationWarning || showCnAssignmentWarning) && (
+          <div
             role="alert"
-            className="self-center text-sm font-semibold text-rose-600 sm:mr-auto"
+            className="space-y-1 self-center text-sm font-semibold text-rose-600 sm:mr-auto"
           >
-            {t("tracking.completeAllFields")}
-          </p>
+            {showTrackingValidationWarning && (
+              <p>{t("tracking.completeAllFields")}</p>
+            )}
+            {showCnAssignmentWarning && (
+              <p>{t("admin.shipment.cnAssignmentRequired")}</p>
+            )}
+          </div>
         )}
         {onCancel && (
           <button
@@ -718,10 +731,14 @@ export default function ShipmentJobForm({
           title={
             hasIncompleteTrackingEvent
               ? t("tracking.completeAllFields")
-              : undefined
+              : isCnAssignmentMissing
+                ? t("admin.shipment.cnAssignmentRequired")
+                : undefined
           }
           className={`px-5 py-2.5 rounded-xl bg-slate-950 text-white font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors ${
-            hasIncompleteTrackingEvent ? "opacity-60" : ""
+            hasIncompleteTrackingEvent || isCnAssignmentMissing
+              ? "opacity-60"
+              : ""
           }`}
         >
           {loading ? t("common.saving") : submitLabel}

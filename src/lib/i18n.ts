@@ -360,6 +360,8 @@ const ja = {
   "admin.shipment.salesRepresentative": "客先担当",
   "admin.shipment.salesRepresentativeUnset":
     "この顧客の客先担当は設定されていません。",
+  "admin.shipment.cnAssignmentRequired":
+    "更新するには、CN担当を割り当ててください。",
   "admin.entry.updateExisting": "既存案件を更新",
   "admin.entry.createNew": "新規作成",
   "admin.entry.findJob": "案件を検索",
@@ -926,6 +928,8 @@ const en: Messages = {
   "admin.shipment.salesRepresentative": "Customer contact",
   "admin.shipment.salesRepresentativeUnset":
     "No customer contact is configured for this customer.",
+  "admin.shipment.cnAssignmentRequired":
+    "Assign a CN contact before updating this shipment.",
   "admin.entry.updateExisting": "Update existing",
   "admin.entry.createNew": "Create new",
   "admin.entry.findJob": "Search shipment",
