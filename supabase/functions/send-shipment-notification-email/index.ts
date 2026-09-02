@@ -368,7 +368,7 @@ async function buildShipmentMessage(
         ? `案件情報更新（現在のステータス：${currentStatus.ja}）`
         : delivery.previous_status === "__status_set__"
           ? `出荷ステータスが「${currentStatus.ja}」に設定されました`
-        : `${previousStatus.ja} → ${currentStatus.ja}`;
+          : `${previousStatus.ja} → ${currentStatus.ja}`;
   const updateEn =
     delivery.previous_status === "__created__"
       ? `New shipment registered (current status: ${currentStatus.en})`
@@ -376,7 +376,7 @@ async function buildShipmentMessage(
         ? `Shipment details updated (current status: ${currentStatus.en})`
         : delivery.previous_status === "__status_set__"
           ? `Shipment status has been set to ${currentStatus.en}`
-        : `${previousStatus.en} → ${currentStatus.en}`;
+          : `${previousStatus.en} → ${currentStatus.en}`;
   const values = {
     awb_bl_number: awbBlNumber,
     origin,
