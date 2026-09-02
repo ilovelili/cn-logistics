@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   CheckCircle,
+  Edit3,
   Plus,
   RefreshCw,
   Save,
@@ -669,7 +670,7 @@ export default function UserRegistrationForm({
       userColumns.push({
         id: "action" as const,
         label: t("admin.userRegistration.action"),
-        width: 230,
+        width: 300,
         render: (user: ShipperUserRow) => (
           <ApprovalButtons
             disabled={
@@ -680,6 +681,7 @@ export default function UserRegistrationForm({
               )
             }
             deleteDisabled={actionLoadingId === user.id}
+            onEdit={() => setSelectedUser(user)}
             onApprove={() => {
               setPendingAction({ user, action: "approve" });
             }}
@@ -1548,18 +1550,27 @@ export function UserDetailModal({
 function ApprovalButtons({
   disabled,
   deleteDisabled,
+  onEdit,
   onApprove,
   onReject,
   onDelete,
 }: {
   disabled: boolean;
   deleteDisabled: boolean;
+  onEdit: () => void;
   onApprove: () => void;
   onReject: () => void;
   onDelete: () => void;
 }) {
   return (
     <div className="flex flex-nowrap gap-1.5">
+      <TableActionButton
+        variant="success"
+        icon={<Edit3 className="h-3.5 w-3.5" />}
+        onClick={onEdit}
+      >
+        {t("common.edit")}
+      </TableActionButton>
       <TableActionButton
         variant="success"
         icon={<CheckCircle className="h-3.5 w-3.5" />}

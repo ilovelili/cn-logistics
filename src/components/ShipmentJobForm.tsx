@@ -18,20 +18,15 @@ import {
   standardFlowStatusOptions,
 } from "../lib/shipmentJobs";
 import type { ShipperUser } from "../lib/shipperUsers";
-import type { AdminOperator } from "../lib/adminOperators";
 
 type ShipmentShipperOption = Pick<
   ShipperUser,
-  "shipper_name" | "created_by" | "admin_assignments"
+  "shipper_name" | "email" | "contact_person" | "admin_assignments"
 >;
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
   shipperOptions?: ShipmentShipperOption[];
-  salesOperators?: Pick<
-    AdminOperator,
-    "email" | "user_name" | "staff_role" | "staff_roles"
-  >[];
   customerSelection?: boolean;
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
@@ -89,7 +84,6 @@ const manualProgressColorOptions = [
 export default function ShipmentJobForm({
   job,
   shipperOptions = [],
-  salesOperators = [],
   customerSelection = false,
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
@@ -332,10 +326,9 @@ export default function ShipmentJobForm({
     form.shipper_name,
     shipperOptions,
   );
-  const salesRepresentative = getShipperSalesRepresentative(
+  const customerContacts = getShipperCustomerContacts(
     form.shipper_name,
     shipperOptions,
-    salesOperators,
   );
   const shipperSelectOptions = buildShipperSelectOptions(
     shipperOptions,
@@ -655,7 +648,7 @@ export default function ShipmentJobForm({
         onToggle={toggleAssignedAdmin}
       />
 
-      <SalesRepresentativeField representative={salesRepresentative} />
+      <CustomerContactField contacts={customerContacts} />
 
       {hasDefinedProgressFlow ? (
         <ManualProgressFields
@@ -1221,10 +1214,10 @@ function AssignedAdminFields({
   );
 }
 
-function SalesRepresentativeField({
-  representative,
+function CustomerContactField({
+  contacts,
 }: {
-  representative: { name: string; email: string } | null;
+  contacts: { name: string; email: string }[];
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1233,25 +1226,27 @@ function SalesRepresentativeField({
           {t("admin.shipment.salesRepresentative")}
         </span>
       </div>
-      {representative ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span
-              className="min-w-0 truncate text-sm font-bold text-slate-900"
-              title={representative.name}
+      {contacts.length > 0 ? (
+        <div className="grid gap-2 md:grid-cols-2">
+          {contacts.map((contact) => (
+            <div
+              key={contact.email.toLowerCase()}
+              className="rounded-xl border border-slate-200 bg-white p-3"
             >
-              {representative.name}
-            </span>
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700">
-              {t("superAdmin.operators.staffRole.sales")}
-            </span>
-          </div>
-          <span
-            className="mt-1 block truncate text-xs text-slate-500"
-            title={representative.email}
-          >
-            {representative.email}
-          </span>
+              <span
+                className="block min-w-0 truncate text-sm font-bold text-slate-900"
+                title={contact.name}
+              >
+                {contact.name}
+              </span>
+              <span
+                className="mt-1 block truncate text-xs text-slate-500"
+                title={contact.email}
+              >
+                {contact.email}
+              </span>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
@@ -1262,47 +1257,28 @@ function SalesRepresentativeField({
   );
 }
 
-function getShipperSalesRepresentative(
+function getShipperCustomerContacts(
   shipperName: string | null,
   shipperOptions: ShipmentShipperOption[],
-  salesOperators: Pick<
-    AdminOperator,
-    "email" | "user_name" | "staff_role" | "staff_roles"
-  >[],
 ) {
-  const matchingShippers = shipperOptions.filter(
-    (shipper) => shipper.shipper_name === shipperName,
+  const contactsByEmail = new Map<string, { name: string; email: string }>();
+
+  shipperOptions
+    .filter((shipper) => shipper.shipper_name === shipperName)
+    .forEach((shipper) => {
+      const email = shipper.email.trim();
+      if (!email) return;
+      contactsByEmail.set(email.toLowerCase(), {
+        name: shipper.contact_person?.trim() || email,
+        email,
+      });
+    });
+
+  return [...contactsByEmail.values()].sort(
+    (first, second) =>
+      first.name.localeCompare(second.name, "ja-JP") ||
+      first.email.localeCompare(second.email),
   );
-  const creatorEmail = matchingShippers
-    .map((shipper) => shipper.created_by?.trim() ?? "")
-    .find(Boolean);
-  if (!creatorEmail) return null;
-
-  const creatorAssignment = matchingShippers
-    .flatMap((shipper) => shipper.admin_assignments ?? [])
-    .find(
-      (assignment) =>
-        assignment.email.trim().toLowerCase() === creatorEmail.toLowerCase(),
-    );
-  const creatorOperator = salesOperators.find(
-    (operator) =>
-      operator.email.trim().toLowerCase() === creatorEmail.toLowerCase(),
-  );
-
-  const creatorIsSales = creatorOperator
-    ? creatorOperator.staff_role === "sales" ||
-      creatorOperator.staff_roles.includes("sales")
-    : creatorAssignment?.staff_role === "sales" ||
-      creatorAssignment?.staff_roles?.includes("sales");
-  if (!creatorIsSales) return null;
-
-  return {
-    name:
-      creatorOperator?.user_name ||
-      creatorAssignment?.user_name ||
-      creatorEmail,
-    email: creatorEmail,
-  };
 }
 
 function getShipperAdminAssignments(
