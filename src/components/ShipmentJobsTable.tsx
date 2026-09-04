@@ -85,7 +85,11 @@ export type ShipmentJobsTableSortKey =
   | "bl_awb_date";
 
 type ShipmentJobsTableColumnId =
-  ShipmentJobsTableSortKey | "documents" | "internal_documents" | "action";
+  | ShipmentJobsTableSortKey
+  | "cargo_volume"
+  | "documents"
+  | "internal_documents"
+  | "action";
 
 interface ShipmentJobsTableColumn {
   id: ShipmentJobsTableColumnId;
@@ -100,7 +104,7 @@ interface ShipmentDocumentDeleteTarget {
   document: ShipmentDocument;
 }
 
-const columnSettingsStorageKey = "shipment_jobs_table_columns_v9";
+const columnSettingsStorageKey = "shipment_jobs_table_columns_v10";
 const columnWidthsStorageKey = "shipment_jobs_table_column_widths_v1";
 const mobileDetailActionQuery = "(max-width: 639px)";
 
@@ -990,6 +994,18 @@ function buildColumns(
       ),
     },
     {
+      id: "cargo_volume",
+      label: t("common.cargoVolume"),
+      width: 220,
+      render: (job) => (
+        <span
+          className={`block whitespace-pre-line text-xs font-semibold ${mutedText}`}
+        >
+          {formatCargoVolume(job)}
+        </span>
+      ),
+    },
+    {
       id: "consignee_name",
       label: t("common.consignee"),
       width: 145,
@@ -1091,6 +1107,34 @@ function buildColumns(
   return columns;
 }
 
+function formatCargoVolume(job: ShipmentJob) {
+  if (job.transport_mode === "lcl") {
+    const { package_count, gross_weight_kg, volume_m3 } = job.cargo_details;
+    if (
+      package_count === null &&
+      gross_weight_kg === null &&
+      volume_m3 === null
+    ) {
+      return "-";
+    }
+    return [
+      package_count === null ? "-" : `${package_count} PKG`,
+      gross_weight_kg === null ? "-" : `${gross_weight_kg} Kgs`,
+      volume_m3 === null ? "-" : `${volume_m3} M³`,
+    ].join(" / ");
+  }
+  if (job.transport_mode === "fcl") {
+    const lines = job.booking_details.flatMap((booking) =>
+      booking.containers.map(
+        (container) =>
+          `${`${container.length}' ${container.type}`.trim()} × ${container.quantity}`,
+      ),
+    );
+    return lines.length ? lines.join("\n") : "-";
+  }
+  return "-";
+}
+
 function DocumentPills({
   documents,
   expanded,
@@ -1185,6 +1229,15 @@ function DocumentPills({
             <span className="min-w-0 truncate" title={document.name}>
               {document.name}
             </span>
+            {!approvedOnly && document.approval_status === "pending" && (
+              <span
+                className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black leading-none text-white"
+                title={t("documents.approvalPendingIndicator")}
+                aria-label={t("documents.approvalPendingIndicator")}
+              >
+                !
+              </span>
+            )}
           </>
         );
 

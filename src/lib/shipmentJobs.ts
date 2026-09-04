@@ -37,6 +37,7 @@ export interface ShipmentJob {
   invoice_number: string | null;
   job_number: string | null;
   booking_details: ShipmentBookingDetail[];
+  cargo_details: ShipmentCargoDetail;
   transport_mode: TransportMode | null;
   shipper_name: string | null;
   consignee_name: string | null;
@@ -79,8 +80,15 @@ export interface ShipmentTrackingEventForm {
 }
 
 export interface ShipmentContainerDetail {
-  size: string;
+  length: "20" | "40";
+  type: "Dry" | "HQ" | "RF" | "FR" | "OT";
   quantity: number;
+}
+
+export interface ShipmentCargoDetail {
+  package_count: number | null;
+  gross_weight_kg: number | null;
+  volume_m3: number | null;
 }
 
 export interface ShipmentBookingDetail {
@@ -89,7 +97,8 @@ export interface ShipmentBookingDetail {
 }
 
 export interface ShipmentContainerDetailForm {
-  size: string;
+  length: "" | "20" | "40";
+  type: "" | "Dry" | "HQ" | "RF" | "FR" | "OT";
   quantity: string;
 }
 
@@ -150,6 +159,11 @@ export interface ShipmentJobForm {
   invoice_number: string;
   job_number: string;
   booking_details: ShipmentBookingDetailForm[];
+  cargo_details: {
+    package_count: string;
+    gross_weight_kg: string;
+    volume_m3: string;
+  };
   transport_mode: TransportMode;
   shipper_name: string;
   consignee_name: string;
@@ -367,9 +381,14 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   booking_details: [
     {
       booking_number: "",
-      containers: [{ size: "", quantity: "" }],
+      containers: [{ length: "", type: "", quantity: "" }],
     },
   ],
+  cargo_details: {
+    package_count: "",
+    gross_weight_kg: "",
+    volume_m3: "",
+  },
   transport_mode: "air",
   shipper_name: "",
   consignee_name: "",
@@ -423,16 +442,22 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
         ? job.booking_details.map((booking) => ({
             booking_number: booking.booking_number,
             containers: booking.containers.map((container) => ({
-              size: container.size,
+              length: container.length,
+              type: container.type,
               quantity: String(container.quantity),
             })),
           }))
         : [
             {
               booking_number: "",
-              containers: [{ size: "", quantity: "" }],
+              containers: [{ length: "", type: "", quantity: "" }],
             },
           ],
+    cargo_details: {
+      package_count: job.cargo_details?.package_count?.toString() ?? "",
+      gross_weight_kg: job.cargo_details?.gross_weight_kg?.toString() ?? "",
+      volume_m3: job.cargo_details?.volume_m3?.toString() ?? "",
+    },
     transport_mode: job.transport_mode ?? "air",
     shipper_name: job.shipper_name ?? "",
     consignee_name: job.consignee_name ?? "",
@@ -564,7 +589,10 @@ export async function fetchShipmentJobs(
 
   const shipmentJobs = (jobsData ?? []) as Omit<
     ShipmentJob,
-    "tracking_events" | "progress_total_steps" | "booking_details"
+    | "tracking_events"
+    | "progress_total_steps"
+    | "booking_details"
+    | "cargo_details"
   >[];
   const [trackingEvents, progressTotals, bookingDetails] = await Promise.all([
     fetchShipmentTrackingEvents(requesterEmail),
@@ -582,6 +610,11 @@ export async function fetchShipmentJobs(
   return shipmentJobs.map((job) => ({
     ...job,
     booking_details: bookingDetailsByJob.get(job.id)?.booking_details ?? [],
+    cargo_details: bookingDetailsByJob.get(job.id)?.cargo_details ?? {
+      package_count: null,
+      gross_weight_kg: null,
+      volume_m3: null,
+    },
     progress_total_steps: progressTotalsByJob.get(job.id) ?? null,
     tracking_events: trackingEventsByJob[job.id] ?? [],
   }));
@@ -598,6 +631,7 @@ async function fetchShipmentBookingDetails(requesterEmail: string) {
   return (data ?? []) as {
     id: string;
     booking_details: ShipmentBookingDetail[];
+    cargo_details: ShipmentCargoDetail;
   }[];
 }
 
@@ -818,6 +852,7 @@ export async function createShipmentJob(
       create_new: true,
       total_steps: form.progress_total_steps,
       booking_details: buildBookingDetailsPayload(form),
+      cargo_details: buildCargoDetailsPayload(form),
     },
   );
 
@@ -846,6 +881,7 @@ export async function updateShipmentJob(
       create_new: false,
       total_steps: form.progress_total_steps,
       booking_details: buildBookingDetailsPayload(form),
+      cargo_details: buildCargoDetailsPayload(form),
     },
   );
 
@@ -860,12 +896,14 @@ function buildBookingDetailsPayload(form: ShipmentJobForm) {
       booking_number: booking.booking_number.trim(),
       containers: booking.containers
         .map((container) => ({
-          size: container.size.trim(),
+          length: container.length,
+          type: container.type,
           quantity: Number(container.quantity),
         }))
         .filter(
           (container) =>
-            container.size &&
+            container.length &&
+            container.type &&
             Number.isInteger(container.quantity) &&
             container.quantity > 0,
         ),
@@ -873,6 +911,24 @@ function buildBookingDetailsPayload(form: ShipmentJobForm) {
     .filter(
       (booking) => booking.booking_number || booking.containers.length > 0,
     );
+}
+
+function buildCargoDetailsPayload(form: ShipmentJobForm) {
+  const positiveNumber = (value: string) => {
+    const number = Number(value);
+    return value.trim() && Number.isFinite(number) && number > 0
+      ? number
+      : null;
+  };
+  const packageCount = positiveNumber(form.cargo_details.package_count);
+  return {
+    package_count:
+      packageCount !== null && Number.isInteger(packageCount)
+        ? packageCount
+        : null,
+    gross_weight_kg: positiveNumber(form.cargo_details.gross_weight_kg),
+    volume_m3: positiveNumber(form.cargo_details.volume_m3),
+  };
 }
 
 export async function softDeleteShipmentJob(

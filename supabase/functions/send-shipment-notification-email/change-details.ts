@@ -26,6 +26,7 @@ const labels: Record<string, { ja: string; en: string }> = {
     ja: "BOOKING・コンテナ情報",
     en: "Bookings and containers",
   },
+  cargo_details: { ja: "物量", en: "Volume" },
   invoice_number: { ja: "インボイス番号", en: "Invoice number" },
   job_number: { ja: "Job No.", en: "Job No." },
   trade_mode: { ja: "取引形態", en: "Trade mode" },
@@ -63,7 +64,7 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
                 .filter(isRecord)
                 .map(
                   (container) =>
-                    `${container.size ?? ""} × ${container.quantity ?? ""}`,
+                    `${`${container.length ?? ""}' ${container.type ?? ""}`.trim()} × ${container.quantity ?? ""}`,
                 )
                 .join(", ")
             : "";
@@ -84,6 +85,17 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
         .join("; ");
     }
     return value.filter((part) => typeof part === "string").join(", ") || empty;
+  }
+  if (field === "cargo_details" && isRecord(value)) {
+    return (
+      [
+        value.package_count == null ? null : `${value.package_count} PKG`,
+        value.gross_weight_kg == null ? null : `${value.gross_weight_kg} Kgs`,
+        value.volume_m3 == null ? null : `${value.volume_m3} M³`,
+      ]
+        .filter(Boolean)
+        .join(" / ") || empty
+    );
   }
   if (typeof value !== "string" && typeof value !== "number") return empty;
   return field === "progress_percent" ? `${value}%` : String(value);

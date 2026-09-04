@@ -503,6 +503,13 @@ async function buildDocumentDownloadRequestMessage(
   const values = {
     admin_name: delivery.admin_name,
     customer_name: delivery.customer_name,
+    requester_name: delivery.requester_name,
+    requester_email: delivery.requester_email,
+    document_name: delivery.document_name,
+    document_category: "顧客用書類",
+    job_number: delivery.job_number || "-",
+    invoice_number: delivery.invoice_number || "-",
+    awb_bl_number: delivery.awb_bl_number || "-",
     application_url: applicationUrl.replace(/\/$/, ""),
   };
 

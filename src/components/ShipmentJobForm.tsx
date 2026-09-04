@@ -200,15 +200,17 @@ export default function ShipmentJobForm({
   });
   const isCnAssignmentMissing =
     Boolean(job) && form.assigned_admin_user_ids.length === 0;
-  const hasIncompleteContainerDetail = form.booking_details.some((booking) => {
+  const hasIncompleteBookingDetail = form.booking_details.some((booking) => {
     const hasBookingNumber = Boolean(booking.booking_number.trim());
     const startedContainers = booking.containers.filter(
-      (container) => container.size.trim() || container.quantity.trim(),
+      (container) =>
+        container.length || container.type || container.quantity.trim(),
     );
     const hasIncompleteContainer = startedContainers.some((container) => {
       const quantity = Number(container.quantity);
       return (
-        !container.size.trim() ||
+        !container.length ||
+        !container.type ||
         container.quantity.trim() === "" ||
         !Number.isInteger(quantity) ||
         quantity <= 0
@@ -223,6 +225,33 @@ export default function ShipmentJobForm({
         hasIncompleteContainer)
     );
   });
+  const hasCompleteFclBooking = form.booking_details.some(
+    (booking) =>
+      Boolean(booking.booking_number.trim()) &&
+      booking.containers.some((container) => {
+        const quantity = Number(container.quantity);
+        return (
+          Boolean(container.length) &&
+          Boolean(container.type) &&
+          Number.isInteger(quantity) &&
+          quantity > 0
+        );
+      }),
+  );
+  const packageCount = Number(form.cargo_details.package_count);
+  const grossWeight = Number(form.cargo_details.gross_weight_kg);
+  const volume = Number(form.cargo_details.volume_m3);
+  const hasIncompleteContainerDetail =
+    form.transport_mode === "lcl"
+      ? !Number.isInteger(packageCount) ||
+        packageCount <= 0 ||
+        !Number.isFinite(grossWeight) ||
+        grossWeight <= 0 ||
+        !Number.isFinite(volume) ||
+        volume <= 0
+      : form.transport_mode === "fcl"
+        ? hasIncompleteBookingDetail || !hasCompleteFclBooking
+        : false;
   const hasBlockingValidationError =
     hasIncompleteTrackingEvent ||
     isCnAssignmentMissing ||
@@ -418,10 +447,20 @@ export default function ShipmentJobForm({
     }));
   };
 
+  const updateCargoDetail = (
+    field: keyof ShipmentJobFormState["cargo_details"],
+    value: string,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      cargo_details: { ...current.cargo_details, [field]: value },
+    }));
+  };
+
   const updateContainerDetail = (
     bookingIndex: number,
     containerIndex: number,
-    field: "size" | "quantity",
+    field: "length" | "type" | "quantity",
     value: string,
   ) => {
     setForm((current) => ({
@@ -448,7 +487,7 @@ export default function ShipmentJobForm({
         ...current.booking_details,
         {
           booking_number: "",
-          containers: [{ size: "", quantity: "" }],
+          containers: [{ length: "", type: "", quantity: "" }],
         },
       ],
     }));
@@ -467,7 +506,7 @@ export default function ShipmentJobForm({
             : [
                 {
                   booking_number: "",
-                  containers: [{ size: "", quantity: "" }],
+                  containers: [{ length: "", type: "", quantity: "" }],
                 },
               ],
       };
@@ -481,7 +520,10 @@ export default function ShipmentJobForm({
         index === bookingIndex
           ? {
               ...booking,
-              containers: [...booking.containers, { size: "", quantity: "" }],
+              containers: [
+                ...booking.containers,
+                { length: "", type: "", quantity: "" },
+              ],
             }
           : booking,
       ),
@@ -504,7 +546,7 @@ export default function ShipmentJobForm({
           containers:
             nextContainers.length > 0
               ? nextContainers
-              : [{ size: "", quantity: "" }],
+              : [{ length: "", type: "", quantity: "" }],
         };
       }),
     }));
@@ -677,15 +719,22 @@ export default function ShipmentJobForm({
         />
       </div>
 
-      <BookingDetailFields
-        values={form.booking_details}
-        onAddBooking={addBookingDetail}
-        onRemoveBooking={removeBookingDetail}
-        onBookingNumberChange={updateBookingNumber}
-        onAddContainer={addContainerDetail}
-        onRemoveContainer={removeContainerDetail}
-        onContainerChange={updateContainerDetail}
-      />
+      {form.transport_mode === "lcl" ? (
+        <CargoBreakdownFields
+          values={form.cargo_details}
+          onChange={updateCargoDetail}
+        />
+      ) : form.transport_mode === "fcl" ? (
+        <BookingDetailFields
+          values={form.booking_details}
+          onAddBooking={addBookingDetail}
+          onRemoveBooking={removeBookingDetail}
+          onBookingNumberChange={updateBookingNumber}
+          onAddContainer={addContainerDetail}
+          onRemoveContainer={removeContainerDetail}
+          onContainerChange={updateContainerDetail}
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <TextField
@@ -1629,6 +1678,46 @@ function TrackingEventFields({
   );
 }
 
+function CargoBreakdownFields({
+  values,
+  onChange,
+}: {
+  values: ShipmentJobFormState["cargo_details"];
+  onChange: (
+    field: keyof ShipmentJobFormState["cargo_details"],
+    value: string,
+  ) => void;
+}) {
+  const fields = [
+    ["package_count", "form.packageCount", "1"],
+    ["gross_weight_kg", "form.grossWeight", "0.01"],
+    ["volume_m3", "form.volume", "0.001"],
+  ] as const;
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {t("form.cargoBreakdown")}
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {fields.map(([field, label, step]) => (
+          <label key={field} className="space-y-1.5">
+            <span className="text-xs font-bold text-slate-600">{t(label)}</span>
+            <input
+              type="number"
+              min={step}
+              step={step}
+              value={values[field]}
+              onChange={(event) => onChange(field, event.target.value)}
+              placeholder="0"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BookingDetailFields({
   values,
   onAddBooking,
@@ -1647,7 +1736,7 @@ function BookingDetailFields({
   onContainerChange: (
     bookingIndex: number,
     containerIndex: number,
-    field: "size" | "quantity",
+    field: "length" | "type" | "quantity",
     value: string,
   ) => void;
 }) {
@@ -1713,23 +1802,45 @@ function BookingDetailFields({
               {booking.containers.map((container, containerIndex) => (
                 <div
                   key={containerIndex}
-                  className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[minmax(0,1fr)_180px_44px]"
+                  className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[150px_150px_160px_44px]"
                 >
-                  <input
-                    type="text"
-                    value={container.size}
-                    placeholder={t("form.containerSize")}
+                  <select
+                    value={container.length}
                     onChange={(event) =>
                       onContainerChange(
                         bookingIndex,
                         containerIndex,
-                        "size",
+                        "length",
                         event.target.value,
                       )
                     }
                     className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                    aria-label={t("form.containerSize")}
-                  />
+                    aria-label={t("form.containerLength")}
+                  >
+                    <option value="">{t("form.containerLength")}</option>
+                    <option value="20">20&apos;</option>
+                    <option value="40">40&apos;</option>
+                  </select>
+                  <select
+                    value={container.type}
+                    onChange={(event) =>
+                      onContainerChange(
+                        bookingIndex,
+                        containerIndex,
+                        "type",
+                        event.target.value,
+                      )
+                    }
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    aria-label={t("form.containerType")}
+                  >
+                    <option value="">{t("form.containerType")}</option>
+                    {["Dry", "HQ", "RF", "FR", "OT"].map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="number"
                     min="1"
