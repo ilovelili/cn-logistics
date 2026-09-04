@@ -358,12 +358,12 @@ const ja = {
   "form.containerType": "コンテナタイプ",
   "form.containerQuantity": "本数",
   "form.addContainer": "コンテナを追加",
-  "form.cargoBreakdown": "物量 Breakdown",
-  "form.packageCount": "梱包数 (PKG)",
-  "form.grossWeight": "重量 (Kgs)",
-  "form.volume": "容積 (M³)",
+  "form.cargoBreakdown": "物量情報",
+  "form.packageCount": "個数 (PKG)",
+  "form.grossWeight": "Gross Weight (Kgs)",
+  "form.volume": "M³",
   "form.containerDetailsRequired":
-    "LCLはPKG・Kgs・M³を、FCLはBOOKING #・コンテナ長・タイプ・本数をすべて入力してください。数値は0より大きい値で入力してください。",
+    "全輸送モードで個数・Gross Weight・M³を入力してください。FCLはさらにBOOKING #・コンテナ長・タイプ・本数をすべて入力してください。数値は0より大きい値で入力してください。",
 
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
@@ -943,12 +943,12 @@ const en: Messages = {
   "form.containerType": "Container type",
   "form.containerQuantity": "Quantity",
   "form.addContainer": "Add container",
-  "form.cargoBreakdown": "Volume breakdown",
+  "form.cargoBreakdown": "Volume information",
   "form.packageCount": "Packages (PKG)",
   "form.grossWeight": "Weight (Kgs)",
   "form.volume": "Volume (M³)",
   "form.containerDetailsRequired":
-    "For LCL, enter PKG, Kgs, and M³. For FCL, enter the booking number, container length, type, and quantity. Numbers must be greater than zero.",
+    "Enter packages, gross weight, and M³ for every transport mode. For FCL, also enter the booking number, container length, type, and quantity. Numbers must be greater than zero.",
 
   "admin.switch.selectUser": "Switch to user",
   "admin.switch.backToAdmin": "Back to admin",

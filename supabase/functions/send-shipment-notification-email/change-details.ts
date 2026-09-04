@@ -26,7 +26,7 @@ const labels: Record<string, { ja: string; en: string }> = {
     ja: "BOOKING・コンテナ情報",
     en: "Bookings and containers",
   },
-  cargo_details: { ja: "物量", en: "Volume" },
+  cargo_details: { ja: "物量情報", en: "Volume information" },
   invoice_number: { ja: "インボイス番号", en: "Invoice number" },
   job_number: { ja: "Job No.", en: "Job No." },
   trade_mode: { ja: "取引形態", en: "Trade mode" },
@@ -89,9 +89,13 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
   if (field === "cargo_details" && isRecord(value)) {
     return (
       [
-        value.package_count == null ? null : `${value.package_count} PKG`,
-        value.gross_weight_kg == null ? null : `${value.gross_weight_kg} Kgs`,
-        value.volume_m3 == null ? null : `${value.volume_m3} M³`,
+        value.package_count == null ? null : `${value.package_count}/PKG`,
+        value.gross_weight_kg == null
+          ? null
+          : `${Number(value.gross_weight_kg).toFixed(2)} Kgs`,
+        value.volume_m3 == null
+          ? null
+          : `${Number(value.volume_m3).toFixed(3)} M³`,
       ]
         .filter(Boolean)
         .join(" / ") || empty

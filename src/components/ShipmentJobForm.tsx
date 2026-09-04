@@ -241,17 +241,17 @@ export default function ShipmentJobForm({
   const packageCount = Number(form.cargo_details.package_count);
   const grossWeight = Number(form.cargo_details.gross_weight_kg);
   const volume = Number(form.cargo_details.volume_m3);
+  const hasIncompleteCargoDetail =
+    !Number.isInteger(packageCount) ||
+    packageCount <= 0 ||
+    !Number.isFinite(grossWeight) ||
+    grossWeight <= 0 ||
+    !Number.isFinite(volume) ||
+    volume <= 0;
   const hasIncompleteContainerDetail =
-    form.transport_mode === "lcl"
-      ? !Number.isInteger(packageCount) ||
-        packageCount <= 0 ||
-        !Number.isFinite(grossWeight) ||
-        grossWeight <= 0 ||
-        !Number.isFinite(volume) ||
-        volume <= 0
-      : form.transport_mode === "fcl"
-        ? hasIncompleteBookingDetail || !hasCompleteFclBooking
-        : false;
+    hasIncompleteCargoDetail ||
+    (form.transport_mode === "fcl" &&
+      (hasIncompleteBookingDetail || !hasCompleteFclBooking));
   const hasBlockingValidationError =
     hasIncompleteTrackingEvent ||
     isCnAssignmentMissing ||
@@ -719,12 +719,12 @@ export default function ShipmentJobForm({
         />
       </div>
 
-      {form.transport_mode === "lcl" ? (
-        <CargoBreakdownFields
-          values={form.cargo_details}
-          onChange={updateCargoDetail}
-        />
-      ) : form.transport_mode === "fcl" ? (
+      <CargoBreakdownFields
+        values={form.cargo_details}
+        onChange={updateCargoDetail}
+      />
+
+      {form.transport_mode === "fcl" ? (
         <BookingDetailFields
           values={form.booking_details}
           onAddBooking={addBookingDetail}
@@ -1689,9 +1689,9 @@ function CargoBreakdownFields({
   ) => void;
 }) {
   const fields = [
-    ["package_count", "form.packageCount", "1"],
-    ["gross_weight_kg", "form.grossWeight", "0.01"],
-    ["volume_m3", "form.volume", "0.001"],
+    ["package_count", "form.packageCount", "1", 0],
+    ["gross_weight_kg", "form.grossWeight", "0.01", 2],
+    ["volume_m3", "form.volume", "0.001", 3],
   ] as const;
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1699,7 +1699,7 @@ function CargoBreakdownFields({
         {t("form.cargoBreakdown")}
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        {fields.map(([field, label, step]) => (
+        {fields.map(([field, label, step, decimals]) => (
           <label key={field} className="space-y-1.5">
             <span className="text-xs font-bold text-slate-600">{t(label)}</span>
             <input
@@ -1708,6 +1708,16 @@ function CargoBreakdownFields({
               step={step}
               value={values[field]}
               onChange={(event) => onChange(field, event.target.value)}
+              onBlur={(event) => {
+                const number = Number(event.target.value);
+                if (
+                  decimals > 0 &&
+                  event.target.value.trim() &&
+                  Number.isFinite(number)
+                ) {
+                  onChange(field, number.toFixed(decimals));
+                }
+              }}
               placeholder="0"
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
             />

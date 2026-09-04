@@ -1108,21 +1108,12 @@ function buildColumns(
 }
 
 function formatCargoVolume(job: ShipmentJob) {
-  if (job.transport_mode === "lcl") {
-    const { package_count, gross_weight_kg, volume_m3 } = job.cargo_details;
-    if (
-      package_count === null &&
-      gross_weight_kg === null &&
-      volume_m3 === null
-    ) {
-      return "-";
-    }
-    return [
-      package_count === null ? "-" : `${package_count} PKG`,
-      gross_weight_kg === null ? "-" : `${gross_weight_kg} Kgs`,
-      volume_m3 === null ? "-" : `${volume_m3} M³`,
-    ].join(" / ");
-  }
+  const { package_count, gross_weight_kg, volume_m3 } = job.cargo_details;
+  const cargoLine = [
+    package_count === null ? "-" : `${package_count}/PKG`,
+    gross_weight_kg === null ? "-" : `${gross_weight_kg.toFixed(2)} Kgs`,
+    volume_m3 === null ? "-" : `${volume_m3.toFixed(3)} M³`,
+  ].join(" / ");
   if (job.transport_mode === "fcl") {
     const lines = job.booking_details.flatMap((booking) =>
       booking.containers.map(
@@ -1130,9 +1121,9 @@ function formatCargoVolume(job: ShipmentJob) {
           `${`${container.length}' ${container.type}`.trim()} × ${container.quantity}`,
       ),
     );
-    return lines.length ? lines.join("\n") : "-";
+    return lines.length ? [cargoLine, ...lines].join("\n") : cargoLine;
   }
-  return "-";
+  return cargoLine;
 }
 
 function DocumentPills({
