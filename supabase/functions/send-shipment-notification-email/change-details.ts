@@ -27,6 +27,7 @@ const labels: Record<string, { ja: string; en: string }> = {
     en: "Bookings and containers",
   },
   cargo_details: { ja: "物量情報", en: "Volume information" },
+  customer_documents: { ja: "書類（顧客用）", en: "Customer documents" },
   invoice_number: { ja: "インボイス番号", en: "Invoice number" },
   job_number: { ja: "Job No.", en: "Job No." },
   trade_mode: { ja: "取引形態", en: "Trade mode" },
@@ -83,6 +84,18 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
             .join(" / "),
         )
         .join("; ");
+    }
+    if (field === "customer_documents") {
+      return (
+        value
+          .filter(isRecord)
+          .map((document) => document.name)
+          .filter(
+            (name): name is string =>
+              typeof name === "string" && Boolean(name.trim()),
+          )
+          .join(", ") || empty
+      );
     }
     return value.filter((part) => typeof part === "string").join(", ") || empty;
   }

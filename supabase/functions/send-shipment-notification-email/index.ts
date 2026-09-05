@@ -7,6 +7,7 @@ import { buildUpdateDetails, type ShipmentChange } from "./change-details.ts";
 
 interface EmailDelivery {
   id: string;
+  shipment_job_id: string;
   recipient_email: string;
   previous_status: string;
   current_status: string;
@@ -202,7 +203,12 @@ Deno.serve(async (request) => {
               delivery as DocumentDownloadApprovedDelivery,
             ),
           ]
-        : undefined;
+        : deliveryType === "shipment_status"
+          ? await buildShipmentUpdateAttachments(
+              supabase,
+              delivery as EmailDelivery,
+            )
+          : undefined;
     const result = await transporter.sendMail({
       from: `CN Navigator <${senderAddress}>`,
       to: delivery.recipient_email,
@@ -591,6 +597,80 @@ async function buildApprovedDocumentAttachment(
     content: Buffer.from(await data.arrayBuffer()),
     contentType: data.type || undefined,
   };
+}
+
+async function buildShipmentUpdateAttachments(
+  supabase: EmailClient,
+  delivery: EmailDelivery,
+) {
+  const documentChange = delivery.change_details?.find(
+    (change) => change.field === "customer_documents",
+  );
+  const beforeDocuments = customerDocumentSnapshots(documentChange?.before);
+  const changedDocuments = customerDocumentSnapshots(
+    documentChange?.after,
+  ).filter(
+    (document) =>
+      !beforeDocuments.some(
+        (previousDocument) =>
+          previousDocument.name === document.name &&
+          previousDocument.storage_path === document.storage_path,
+      ),
+  );
+  if (!changedDocuments.length) return undefined;
+
+  const attachments: Array<{
+    filename: string;
+    content: Buffer;
+    contentType?: string;
+  }> = [];
+  let totalBytes = 0;
+
+  for (const document of changedDocuments) {
+    const { data: file, error: downloadError } = await supabase.storage
+      .from(shipmentDocumentBucket)
+      .download(document.storage_path);
+    if (downloadError || !file) {
+      throw new Error(
+        "New shipment document attachment could not be downloaded",
+      );
+    }
+    totalBytes += file.size;
+    if (totalBytes > maximumAttachmentBytes) {
+      throw new Error(
+        "New shipment document attachments exceed the email size limit",
+      );
+    }
+    attachments.push({
+      filename: safeAttachmentFilename(document.name),
+      content: Buffer.from(await file.arrayBuffer()),
+      contentType: file.type || undefined,
+    });
+  }
+
+  return attachments.length ? attachments : undefined;
+}
+
+interface CustomerDocumentSnapshot {
+  name: string;
+  storage_path: string;
+}
+
+function customerDocumentSnapshots(value: unknown): CustomerDocumentSnapshot[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      return [];
+    }
+    const snapshot = item as Record<string, unknown>;
+    return typeof snapshot.name === "string" &&
+      snapshot.name.trim() &&
+      typeof snapshot.storage_path === "string" &&
+      snapshot.storage_path.trim()
+      ? [{ name: snapshot.name, storage_path: snapshot.storage_path }]
+      : [];
+  });
 }
 
 function renderTemplate(
