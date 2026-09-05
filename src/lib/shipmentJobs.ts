@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
 import { t } from "./i18n";
 
-export const completedShipmentProgressColor = "#2563eb";
+export const inProgressShipmentProgressColor = "#2563eb";
+export const completedShipmentProgressColor = "#059669";
 
 export type LegacyShipmentStatus =
   "under_process" | "customs_hold" | "completed";
@@ -403,7 +404,7 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   progress_percent: "",
   progress_step: "",
   progress_total_steps: null,
-  progress_color_hex: "#059669",
+  progress_color_hex: inProgressShipmentProgressColor,
   manual_progress_edited: false,
   documents: "",
   internal_documents: "",
@@ -479,7 +480,8 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     progress_step:
       typeof job.progress_step === "number" ? String(job.progress_step) : "",
     progress_total_steps: job.progress_total_steps ?? null,
-    progress_color_hex: job.progress_color_hex ?? "#059669",
+    progress_color_hex:
+      job.progress_color_hex ?? inProgressShipmentProgressColor,
     manual_progress_edited: false,
     documents: formatDocumentList(job.documents ?? []),
     internal_documents: formatDocumentList(job.internal_documents ?? []),

@@ -5,6 +5,7 @@ import InstantTooltip from "./InstantTooltip";
 import {
   defaultShipmentJobForm,
   completedShipmentProgressColor,
+  inProgressShipmentProgressColor,
   fetchShipmentTrackingEventTemplates,
   ShipmentJob,
   ShipmentDocument,
@@ -48,11 +49,10 @@ type PendingFormDelete = {
 
 const manualProgressColorOptions = [
   {
-    value: "#059669",
+    value: inProgressShipmentProgressColor,
     label: t("progress.color.inProgress"),
-    classes:
-      "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
-    activeClasses: "ring-2 ring-emerald-500 ring-offset-2",
+    classes: "border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100",
+    activeClasses: "ring-2 ring-blue-500 ring-offset-2",
   },
   {
     value: "#d97706",
@@ -76,8 +76,8 @@ const manualProgressColorOptions = [
     value: completedShipmentProgressColor,
     label: t("progress.color.completed"),
     classes:
-      "col-span-2 border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100",
-    activeClasses: "ring-2 ring-blue-500 ring-offset-2",
+      "col-span-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+    activeClasses: "ring-2 ring-emerald-500 ring-offset-2",
   },
 ] as const;
 

@@ -24,6 +24,7 @@ import { t } from "../lib/i18n";
 import { appendErrorDetails } from "../lib/errors";
 import {
   completedShipmentProgressColor,
+  inProgressShipmentProgressColor,
   getEffectiveShipmentStatus,
   getLatestCompletedShipmentTrackingEvent,
   isCustomerDocumentDownloadApprovalExpired,
@@ -1588,10 +1589,10 @@ function getDefaultManualProgressColor(job: ShipmentJob) {
   }
 
   if (job.status === "completed" || job.status === "delivered") {
-    return "#059669";
+    return completedShipmentProgressColor;
   }
 
-  return "#059669";
+  return inProgressShipmentProgressColor;
 }
 
 function WorkingDaysBadge({ job }: { job: ShipmentJob }) {
