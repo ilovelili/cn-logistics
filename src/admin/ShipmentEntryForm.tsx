@@ -215,12 +215,28 @@ export default function ShipmentEntryForm({
         getShipmentJobSortValue(
           first,
           sortKey,
-          getResponsibleAdminNames(first, shipperOptions),
+          getResponsibleAdminNames(
+            first,
+            shipperOptions,
+            sortKey === "operations_admins"
+              ? "operations"
+              : sortKey === "sales_admins"
+                ? "sales"
+                : undefined,
+          ),
         ),
         getShipmentJobSortValue(
           second,
           sortKey,
-          getResponsibleAdminNames(second, shipperOptions),
+          getResponsibleAdminNames(
+            second,
+            shipperOptions,
+            sortKey === "operations_admins"
+              ? "operations"
+              : sortKey === "sales_admins"
+                ? "sales"
+                : undefined,
+          ),
         ),
         sortDirection,
         sortKey,

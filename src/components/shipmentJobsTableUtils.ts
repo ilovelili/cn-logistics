@@ -8,6 +8,7 @@ import {
   transportModeLabels,
 } from "../lib/shipmentJobs";
 import type { ShipperUserAdminAssignment } from "../lib/shipperUsers";
+import type { AdminOperatorStaffRole } from "../lib/adminOperators";
 import type { SortDirection } from "./SortableTableHeader";
 import type { ShipmentJobsTableSortKey } from "./ShipmentJobsTable";
 
@@ -58,6 +59,8 @@ export function getShipmentJobSortValue(
     case "shipper_name":
       return job.shipper_name ?? "";
     case "responsible_admins":
+    case "operations_admins":
+    case "sales_admins":
       return responsibleAdminNames.join(" ");
     case "status":
       return statusLabels[job.status];
@@ -148,8 +151,17 @@ export function getShipmentJobWorkingDays(job: ShipmentJob) {
 export function getResponsibleAdminNames(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
+  staffRole?: AdminOperatorStaffRole,
 ) {
   return getResponsibleAdminAssignments(job, shipperOptions)
+    .filter(
+      (assignment) =>
+        !staffRole ||
+        (assignment.staff_roles?.length
+          ? assignment.staff_roles
+          : [assignment.staff_role]
+        ).includes(staffRole),
+    )
     .map((assignment) => assignment.user_name || assignment.email)
     .filter(Boolean);
 }

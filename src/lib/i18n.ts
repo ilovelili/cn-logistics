@@ -436,6 +436,8 @@ const ja = {
   "admin.userRegistration.assignedAdmins": "CN担当",
   "admin.userRegistration.assignedAdminsDescription":
     "担当するCN担当を複数選択できます。",
+  "admin.userRegistration.operationsAssignees": "Ops担当",
+  "admin.userRegistration.salesAssignees": "Sales担当",
   "admin.userRegistration.assignmentUpdated": "CN担当を更新しました",
   "admin.userRegistration.assignmentUpdateFailed": "CN担当の更新に失敗しました",
   "admin.userRegistration.action": "操作",
@@ -1024,6 +1026,8 @@ const en: Messages = {
   "admin.userRegistration.assignedAdmins": "CN contact",
   "admin.userRegistration.assignedAdminsDescription":
     "Select one or more CN contacts to assign.",
+  "admin.userRegistration.operationsAssignees": "Ops contact",
+  "admin.userRegistration.salesAssignees": "Sales contact",
   "admin.userRegistration.assignmentUpdated": "CN contacts updated",
   "admin.userRegistration.assignmentUpdateFailed":
     "Failed to update CN contacts",

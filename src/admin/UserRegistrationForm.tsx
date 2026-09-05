@@ -86,7 +86,13 @@ interface UserRegistrationFormProps {
 type SortKey =
   "id" | "shipper_name" | "email" | "budget" | "approval_status" | "created_at";
 type SortDirection = "asc" | "desc";
-type UserColumnId = SortKey | "contact" | "admins" | "action";
+type UserColumnId =
+  | SortKey
+  | "contact"
+  | "admins"
+  | "operations_admins"
+  | "sales_admins"
+  | "action";
 export type UserAction = "approve" | "reject" | "delete";
 
 interface UserTableColumn {
@@ -622,16 +628,21 @@ export default function UserRegistrationForm({
       },
       ...(isSuperAdmin
         ? [
-            {
-              id: "admins" as const,
-              label: t("admin.userRegistration.assignedAdmins"),
+            ...(["operations", "sales"] as const).map((staffRole) => ({
+              id: `${staffRole}_admins` as const,
+              label: t(
+                staffRole === "operations"
+                  ? "admin.userRegistration.operationsAssignees"
+                  : "admin.userRegistration.salesAssignees",
+              ),
               width: 140,
               render: (user: ShipperUserRow) => (
                 <AssignedAdminsSummary
                   assignments={user.admin_assignments ?? []}
+                  staffRole={staffRole}
                 />
               ),
-            },
+            })),
           ]
         : []),
       {
@@ -1141,7 +1152,7 @@ export default function UserRegistrationForm({
                   {t("admin.userRegistration.assignedAdminsDescription")}
                 </p>
               </div>
-              <AdminOperatorCheckboxGrid
+              <AdminOperatorAssignmentGroups
                 adminOperators={adminOperators}
                 selectedAdminIds={selectedCreateAdminIds}
                 assignmentsReadOnly={false}
@@ -1398,7 +1409,7 @@ export function UserDetailModal({
               )}
             </div>
 
-            <AdminOperatorCheckboxGrid
+            <AdminOperatorAssignmentGroups
               adminOperators={adminOperators}
               selectedAdminIds={selectedAdminIds}
               assignmentsReadOnly={assignmentsReadOnly}
@@ -1601,10 +1612,14 @@ function ApprovalButtons({
 
 function AssignedAdminsSummary({
   assignments,
+  staffRole,
 }: {
   assignments: NonNullable<ShipperUser["admin_assignments"]>;
+  staffRole: AdminOperatorStaffRole;
 }) {
-  return <ResponsibleAdminBadges assignments={assignments} />;
+  return (
+    <ResponsibleAdminBadges assignments={assignments} staffRole={staffRole} />
+  );
 }
 
 function AdminOperatorCheckboxGrid({
@@ -1692,6 +1707,42 @@ function AdminOperatorCheckboxGrid({
           </label>
         );
       })}
+    </div>
+  );
+}
+
+function AdminOperatorAssignmentGroups(
+  props: Parameters<typeof AdminOperatorCheckboxGrid>[0],
+) {
+  const groups = [
+    {
+      role: "operations" as const,
+      label: t("admin.userRegistration.operationsAssignees"),
+    },
+    {
+      role: "sales" as const,
+      label: t("admin.userRegistration.salesAssignees"),
+    },
+  ];
+
+  return (
+    <div className="grid gap-5">
+      {groups.map(({ role, label }) => (
+        <div key={role}>
+          <h5 className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-200">
+            {label}
+          </h5>
+          <AdminOperatorCheckboxGrid
+            {...props}
+            adminOperators={props.adminOperators.filter((operator) =>
+              (operator.staff_roles?.length
+                ? operator.staff_roles
+                : [operator.staff_role]
+              ).includes(role),
+            )}
+          />
+        </div>
+      ))}
     </div>
   );
 }

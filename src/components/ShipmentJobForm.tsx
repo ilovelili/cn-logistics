@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Eye, Plus, Trash2, X } from "lucide-react";
-import { t, type TranslationKey } from "../lib/i18n";
+import { t } from "../lib/i18n";
 import InstantTooltip from "./InstantTooltip";
 import {
   defaultShipmentJobForm,
@@ -1364,6 +1364,16 @@ function AssignedAdminFields({
         selectedAdminIds.includes(assignment.admin_user_id),
       )
     : assignments;
+  const assignmentGroups = [
+    {
+      role: "operations" as const,
+      label: t("admin.userRegistration.operationsAssignees"),
+    },
+    {
+      role: "sales" as const,
+      label: t("admin.userRegistration.salesAssignees"),
+    },
+  ];
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1377,58 +1387,72 @@ function AssignedAdminFields({
           {t("superAdmin.operators.noOperators")}
         </div>
       ) : (
-        <div className="grid gap-2 md:grid-cols-2">
-          {visibleAssignments.map((assignment) => (
-            <label
-              key={assignment.admin_user_id}
-              className={`flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition ${
-                readOnly
-                  ? "cursor-default"
-                  : "cursor-pointer hover:border-cyan-300 hover:bg-cyan-50/50"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selectedAdminIds.includes(assignment.admin_user_id)}
-                disabled={readOnly}
-                onChange={() => {
-                  if (!readOnly) {
-                    onToggle(assignment.admin_user_id);
-                  }
-                }}
-                className="mt-1 h-4 w-4 rounded border-slate-300"
-              />
-              <span className="min-w-0">
-                <span className="flex min-w-0 flex-wrap items-center gap-2">
-                  <span
-                    className="min-w-0 truncate text-sm font-bold text-slate-900"
-                    title={assignment.user_name || assignment.email}
-                  >
-                    {assignment.user_name || assignment.email}
-                  </span>
-                  {(assignment.staff_roles?.length
-                    ? assignment.staff_roles
-                    : [assignment.staff_role]
-                  ).map((role) => (
-                    <span
-                      key={role}
-                      className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700"
-                    >
-                      {t(
-                        `superAdmin.operators.staffRole.${role}` as TranslationKey,
-                      )}
-                    </span>
-                  ))}
-                </span>
-                <span
-                  className="block truncate text-xs text-slate-500"
-                  title={assignment.email}
-                >
-                  {assignment.email}
-                </span>
-              </span>
-            </label>
-          ))}
+        <div className="grid gap-4">
+          {assignmentGroups.map(({ role, label }) => {
+            const roleAssignments = visibleAssignments.filter((assignment) =>
+              (assignment.staff_roles?.length
+                ? assignment.staff_roles
+                : [assignment.staff_role]
+              ).includes(role),
+            );
+
+            return (
+              <section
+                key={role}
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <h4 className="mb-2 text-sm font-bold text-slate-700">
+                  {label}
+                </h4>
+                {roleAssignments.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
+                    {t("superAdmin.operators.noOperators")}
+                  </div>
+                ) : (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {roleAssignments.map((assignment) => (
+                      <label
+                        key={assignment.admin_user_id}
+                        className={`flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition ${
+                          readOnly
+                            ? "cursor-default"
+                            : "cursor-pointer hover:border-cyan-300 hover:bg-cyan-50/50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedAdminIds.includes(
+                            assignment.admin_user_id,
+                          )}
+                          disabled={readOnly}
+                          onChange={() => {
+                            if (!readOnly) {
+                              onToggle(assignment.admin_user_id);
+                            }
+                          }}
+                          className="mt-1 h-4 w-4 rounded border-slate-300"
+                        />
+                        <span className="min-w-0">
+                          <span
+                            className="block truncate text-sm font-bold text-slate-900"
+                            title={assignment.user_name || assignment.email}
+                          >
+                            {assignment.user_name || assignment.email}
+                          </span>
+                          <span
+                            className="block truncate text-xs text-slate-500"
+                            title={assignment.email}
+                          >
+                            {assignment.email}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

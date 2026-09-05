@@ -70,6 +70,8 @@ export type ShipmentJobsTableSortKey =
   | "id"
   | "shipper_name"
   | "responsible_admins"
+  | "operations_admins"
+  | "sales_admins"
   | "status"
   | "working_days"
   | "trade"
@@ -870,21 +872,26 @@ function buildColumns(
     },
     ...(shipperOptions.length > 0
       ? [
-          {
-            id: "responsible_admins" as const,
-            label: t("admin.userRegistration.assignedAdmins"),
-            width: 240,
-            sortKey: "responsible_admins" as const,
+          ...(["operations", "sales"] as const).map((staffRole) => ({
+            id: `${staffRole}_admins` as const,
+            label: t(
+              staffRole === "operations"
+                ? "admin.userRegistration.operationsAssignees"
+                : "admin.userRegistration.salesAssignees",
+            ),
+            width: 190,
+            sortKey: `${staffRole}_admins` as const,
             render: (job: ShipmentJob) => (
               <ResponsibleAdminBadges
                 assignments={getResponsibleAdminAssignments(
                   job,
                   shipperOptions,
                 )}
+                staffRole={staffRole}
                 emptyClassName="text-slate-400"
               />
             ),
-          },
+          })),
         ]
       : []),
     {

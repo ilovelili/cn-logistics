@@ -1,22 +1,34 @@
 import { t, type TranslationKey } from "../lib/i18n";
 import type { ShipperUserAdminAssignment } from "../lib/shipperUsers";
+import type { AdminOperatorStaffRole } from "../lib/adminOperators";
 
 interface ResponsibleAdminBadgesProps {
   assignments: ShipperUserAdminAssignment[];
   emptyClassName?: string;
+  staffRole?: AdminOperatorStaffRole;
 }
 
 export default function ResponsibleAdminBadges({
   assignments,
   emptyClassName = "text-sm text-gray-400 dark:text-gray-500",
+  staffRole,
 }: ResponsibleAdminBadgesProps) {
-  if (assignments.length === 0) {
+  const visibleAssignments = staffRole
+    ? assignments.filter((assignment) =>
+        (assignment.staff_roles?.length
+          ? assignment.staff_roles
+          : [assignment.staff_role]
+        ).includes(staffRole),
+      )
+    : assignments;
+
+  if (visibleAssignments.length === 0) {
     return <span className={emptyClassName}>-</span>;
   }
 
   return (
     <div className="flex flex-col items-start gap-1.5">
-      {assignments.map((assignment) => {
+      {visibleAssignments.map((assignment) => {
         const name = assignment.user_name || assignment.email;
         const roleLabels = (
           assignment.staff_roles?.length
