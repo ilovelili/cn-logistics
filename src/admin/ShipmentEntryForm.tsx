@@ -44,6 +44,7 @@ import {
   ShipmentJob,
   ShipmentStatus,
   ShipmentStatusColorMap,
+  requiresShipmentAttention,
   softDeleteShipmentJob,
   softDeleteShipmentDocument,
   statusOptions,
@@ -59,6 +60,7 @@ function appendAdminErrorDetails(summary: string, error: unknown) {
 export type ShipmentEntryCriteria =
   | { kind: "all" }
   | { kind: "status"; status: ShipmentStatus }
+  | { kind: "attentionRequired" }
   | { kind: "documentApproval"; approvalStatus: DocumentApprovalStatus };
 
 interface ShipmentEntryFormProps {
@@ -167,6 +169,9 @@ export default function ShipmentEntryForm({
         if (activeCriteria.kind === "status") {
           return getEffectiveShipmentStatus(job) === activeCriteria.status;
         }
+        if (activeCriteria.kind === "attentionRequired") {
+          return requiresShipmentAttention(job);
+        }
         if (activeCriteria.kind === "documentApproval") {
           return pendingApprovalJobIds.has(job.id);
         }
@@ -258,9 +263,7 @@ export default function ShipmentEntryForm({
     return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
   const summaryStats = useMemo(() => {
-    const customsHold = jobs.filter(
-      (job) => getEffectiveShipmentStatus(job) === "customs_hold",
-    ).length;
+    const attentionRequired = jobs.filter(requiresShipmentAttention).length;
     const delivered = jobs.filter(
       (job) => getEffectiveShipmentStatus(job) === "delivered",
     ).length;
@@ -271,7 +274,7 @@ export default function ShipmentEntryForm({
 
     return {
       totalJobs: jobs.length,
-      customsHold,
+      attentionRequired,
       delivered,
       pendingDocumentApprovals,
     };
@@ -440,13 +443,11 @@ export default function ShipmentEntryForm({
               onClick={() => openMetricFilter({ kind: "all" })}
             />
             <ShipmentHeaderMetric
-              label={t("status.customsHold")}
-              value={summaryStats.customsHold}
+              label={t("dashboard.attentionRequired")}
+              value={summaryStats.attentionRequired}
               icon={<AlertTriangle className="h-4 w-4" />}
               tone="amber"
-              onClick={() =>
-                openMetricFilter({ kind: "status", status: "customs_hold" })
-              }
+              onClick={() => openMetricFilter({ kind: "attentionRequired" })}
             />
             <ShipmentHeaderMetric
               label={t("status.delivered")}

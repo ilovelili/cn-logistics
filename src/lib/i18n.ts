@@ -229,6 +229,7 @@ const ja = {
 
   "dashboard.completionRate": "完了率",
   "dashboard.totalJobs": "案件数",
+  "dashboard.attentionRequired": "要対応",
   "dashboard.statusPipeline": "ステータス別件数",
   "dashboard.tradeMix": "取引形態別",
   "dashboard.transportMix": "輸送形態別",
@@ -814,6 +815,7 @@ const en: Messages = {
 
   "dashboard.completionRate": "Completion rate",
   "dashboard.totalJobs": "Shipments",
+  "dashboard.attentionRequired": "Needs attention",
   "dashboard.statusPipeline": "Status pipeline",
   "dashboard.tradeMix": "Trade mix",
   "dashboard.transportMix": "Transport mix",

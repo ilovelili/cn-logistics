@@ -3,6 +3,11 @@ import { t } from "./i18n";
 
 export const inProgressShipmentProgressColor = "#2563eb";
 export const completedShipmentProgressColor = "#059669";
+export const attentionShipmentProgressColors = [
+  "#d97706",
+  "#e11d48",
+  "#64748b",
+] as const;
 
 export type LegacyShipmentStatus =
   "under_process" | "customs_hold" | "completed";
@@ -18,6 +23,14 @@ export type StandardFlowShipmentStatus =
   | "delivery"
   | "delivered";
 export type ShipmentStatus = LegacyShipmentStatus | StandardFlowShipmentStatus;
+
+export function requiresShipmentAttention(job: ShipmentJob) {
+  const progressColor = job.progress_color_hex?.toLowerCase();
+  return (
+    job.status === "customs_hold" ||
+    attentionShipmentProgressColors.some((color) => color === progressColor)
+  );
+}
 export type TradeMode = "export" | "import" | "triangle";
 export type TransportMode = "air" | "lcl" | "fcl";
 export type DocumentScope = "customer" | "internal";

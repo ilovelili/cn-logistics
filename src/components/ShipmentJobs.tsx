@@ -48,6 +48,7 @@ import {
   statusOptions,
   tradeModeOptions,
   transportModeOptions,
+  requiresShipmentAttention,
 } from "../lib/shipmentJobs";
 
 type StatusFilter = ShipmentStatus | "all";
@@ -96,6 +97,7 @@ export default function ShipmentJobs({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [attentionOnly, setAttentionOnly] = useState(false);
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [feedbackJob, setFeedbackJob] = useState<ShipmentJob | null>(null);
   const [feedbackSaving, setFeedbackSaving] = useState(false);
@@ -123,9 +125,15 @@ export default function ShipmentJobs({
       const matchesTransport =
         transportFilter === "all" || job.transport_mode === transportFilter;
 
-      return matchesQuery && matchesStatus && matchesTrade && matchesTransport;
+      return (
+        (!attentionOnly || requiresShipmentAttention(job)) &&
+        matchesQuery &&
+        matchesStatus &&
+        matchesTrade &&
+        matchesTransport
+      );
     });
-  }, [jobs, query, statusFilter, tradeFilter, transportFilter]);
+  }, [attentionOnly, jobs, query, statusFilter, tradeFilter, transportFilter]);
 
   const sortedJobs = useMemo(() => {
     if (!sortKey) return filteredJobs;
@@ -154,9 +162,7 @@ export default function ShipmentJobs({
     return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
   const summaryStats = useMemo(() => {
-    const customsHold = jobs.filter(
-      (job) => getEffectiveShipmentStatus(job) === "customs_hold",
-    ).length;
+    const attentionRequired = jobs.filter(requiresShipmentAttention).length;
     const delivered = jobs.filter(
       (job) => getEffectiveShipmentStatus(job) === "delivered",
     ).length;
@@ -167,20 +173,29 @@ export default function ShipmentJobs({
 
     return {
       totalJobs: jobs.length,
-      customsHold,
+      attentionRequired,
       delivered,
       pendingDocumentApprovals,
     };
   }, [documents, jobs]);
 
   const showAllJobs = () => {
+    setAttentionOnly(false);
     onStatusFilterChange("all");
     onTradeFilterChange("all");
     onTransportFilterChange("all");
   };
 
   const showJobsByStatus = (status: StatusFilter) => {
+    setAttentionOnly(false);
     onStatusFilterChange(status);
+    onTradeFilterChange("all");
+    onTransportFilterChange("all");
+  };
+
+  const showJobsRequiringAttention = () => {
+    setAttentionOnly(true);
+    onStatusFilterChange("all");
     onTradeFilterChange("all");
     onTransportFilterChange("all");
   };
@@ -188,6 +203,7 @@ export default function ShipmentJobs({
   useEffect(() => {
     setCurrentPage(1);
   }, [
+    attentionOnly,
     pageSize,
     query,
     sortDirection,
@@ -345,11 +361,11 @@ export default function ShipmentJobs({
             onClick={showAllJobs}
           />
           <ShipmentSummaryCard
-            label={t("status.customsHold")}
-            value={loading ? "-" : summaryStats.customsHold}
+            label={t("dashboard.attentionRequired")}
+            value={loading ? "-" : summaryStats.attentionRequired}
             icon={<AlertTriangle className="h-5 w-5" />}
             tone="amber"
-            onClick={() => showJobsByStatus("customs_hold")}
+            onClick={showJobsRequiringAttention}
           />
           <ShipmentSummaryCard
             label={t("status.delivered")}
@@ -403,7 +419,10 @@ export default function ShipmentJobs({
           <FilterSelect
             icon={<Filter className="h-4 w-4" />}
             value={statusFilter}
-            onChange={(value) => onStatusFilterChange(value as StatusFilter)}
+            onChange={(value) => {
+              setAttentionOnly(false);
+              onStatusFilterChange(value as StatusFilter);
+            }}
             options={[
               { value: "all", label: t("jobs.filter.allStatus") },
               ...statusOptions,
@@ -411,9 +430,10 @@ export default function ShipmentJobs({
           />
           <FilterSelect
             value={tradeFilter}
-            onChange={(value) =>
-              onTradeFilterChange(value as TradeMode | "all")
-            }
+            onChange={(value) => {
+              setAttentionOnly(false);
+              onTradeFilterChange(value as TradeMode | "all");
+            }}
             options={[
               { value: "all", label: t("jobs.filter.allTrade") },
               ...tradeModeOptions,
@@ -421,9 +441,10 @@ export default function ShipmentJobs({
           />
           <FilterSelect
             value={transportFilter}
-            onChange={(value) =>
-              onTransportFilterChange(value as TransportMode | "all")
-            }
+            onChange={(value) => {
+              setAttentionOnly(false);
+              onTransportFilterChange(value as TransportMode | "all");
+            }}
             options={[
               { value: "all", label: t("jobs.filter.allTransport") },
               ...transportModeOptions,
