@@ -10,6 +10,7 @@ interface EmailDelivery {
   recipient_email: string;
   previous_status: string;
   current_status: string;
+  invoice_number: string | null;
   awb_bl_number: string | null;
   origin: string | null;
   destination: string | null;
@@ -357,7 +358,10 @@ async function buildShipmentMessage(
   }
 
   const template = data as EmailTemplate;
+  const invoiceNumber = delivery.invoice_number || "-";
   const awbBlNumber = delivery.awb_bl_number || "-";
+  const shipmentReference =
+    delivery.awb_bl_number || delivery.invoice_number || "-";
   const origin = delivery.origin || "-";
   const destination = delivery.destination || "-";
   const currentStatus = labelFor(delivery.current_status);
@@ -392,6 +396,8 @@ async function buildShipmentMessage(
     "en",
   );
   const values = {
+    shipment_reference: shipmentReference,
+    invoice_number: invoiceNumber,
     awb_bl_number: awbBlNumber,
     origin,
     destination,
