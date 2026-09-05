@@ -42,8 +42,6 @@ const labels: Record<string, { ja: string; en: string }> = {
   hbl_hawb: { ja: "HBL/HAWB", en: "HBL/HAWB" },
   bl_awb_date: { ja: "B/L・AWB日付", en: "B/L / AWB date" },
   progress_percent: { ja: "進捗率", en: "Progress" },
-  progress_step: { ja: "進捗ステップ", en: "Progress step" },
-  progress_total_steps: { ja: "総ステップ数", en: "Total steps" },
   tracking_history: { ja: "ステータス履歴", en: "Status history" },
 };
 

@@ -14,8 +14,6 @@ import {
   tradeModeOptions,
   transportModeOptions,
   jobToForm,
-  linkShipmentProgressFromPercent,
-  linkShipmentProgressFromStep,
   standardFlowStatusOptions,
 } from "../lib/shipmentJobs";
 import type { ShipperUser } from "../lib/shipperUsers";
@@ -103,8 +101,6 @@ export default function ShipmentJobForm({
   >([]);
   const [trackingTemplatesLoading, setTrackingTemplatesLoading] =
     React.useState(true);
-  const [trackingTemplatesFailed, setTrackingTemplatesFailed] =
-    React.useState(false);
   const [selectedStandardFlowName, setSelectedStandardFlowName] =
     React.useState("door_to_door");
   const [standardFlowPickerOpen, setStandardFlowPickerOpen] =
@@ -122,7 +118,6 @@ export default function ShipmentJobForm({
     fetchShipmentTrackingEventTemplates()
       .then((templates) => {
         if (active) {
-          setTrackingTemplatesFailed(false);
           setTrackingTemplates(templates);
           setSelectedStandardFlowName((currentFlowName) =>
             templates.some((template) => template.flow_name === currentFlowName)
@@ -133,7 +128,6 @@ export default function ShipmentJobForm({
       })
       .catch(() => {
         if (active) {
-          setTrackingTemplatesFailed(true);
           setTrackingTemplates([]);
         }
       })
@@ -155,28 +149,6 @@ export default function ShipmentJobForm({
     if (inferredFlowName) setSelectedStandardFlowName(inferredFlowName);
   }, [inferredFlowName]);
 
-  const progressTemplates = React.useMemo(
-    () =>
-      inferredFlowName
-        ? trackingTemplates
-            .filter((template) => template.flow_name === inferredFlowName)
-            .sort((first, second) => first.sort_order - second.sort_order)
-        : [],
-    [inferredFlowName, trackingTemplates],
-  );
-  const definedTrackingStepCount = form.tracking_events.filter((event) =>
-    event.description.trim(),
-  ).length;
-  const totalProgressSteps = Math.max(
-    1,
-    progressTemplates.length ||
-      definedTrackingStepCount ||
-      form.progress_total_steps ||
-      Number(form.progress_step) ||
-      1,
-  );
-  const hasDefinedProgressFlow =
-    progressTemplates.length > 0 || definedTrackingStepCount > 0;
   const standardFlowStepDescriptions = React.useMemo(
     () =>
       new Set(
@@ -295,45 +267,6 @@ export default function ShipmentJobForm({
     trackingTemplatesLoading,
   ]);
 
-  React.useEffect(() => {
-    if (!hasDefinedProgressFlow) return;
-
-    setForm((current) => {
-      const parsedProgressStep = Number(current.progress_step);
-      const boundedProgressStep = current.progress_percent.trim()
-        ? linkShipmentProgressFromPercent(
-            current.progress_percent,
-            totalProgressSteps,
-          ).progress_step
-        : current.progress_step.trim()
-          ? String(
-              Math.max(
-                1,
-                Math.min(
-                  totalProgressSteps,
-                  Number.isFinite(parsedProgressStep)
-                    ? Math.round(parsedProgressStep)
-                    : 1,
-                ),
-              ),
-            )
-          : current.progress_step;
-
-      if (
-        current.progress_total_steps === totalProgressSteps &&
-        current.progress_step === boundedProgressStep
-      ) {
-        return current;
-      }
-
-      return {
-        ...current,
-        progress_step: boundedProgressStep,
-        progress_total_steps: totalProgressSteps,
-      };
-    });
-  }, [hasDefinedProgressFlow, setForm, totalProgressSteps]);
-
   const updateField = <Key extends keyof ShipmentJobFormState>(
     key: Key,
     value: ShipmentJobFormState[Key],
@@ -343,40 +276,14 @@ export default function ShipmentJobForm({
 
   const updateProgressPercent = (value: string) => {
     setForm((current) => {
-      const linkedProgress = linkShipmentProgressFromPercent(
-        value,
-        totalProgressSteps,
-      );
       return {
         ...current,
-        ...linkedProgress,
-        progress_total_steps: totalProgressSteps,
+        progress_percent: value,
         manual_progress_edited: true,
-        status: getProgressStatus(
-          progressTemplates,
-          linkedProgress,
-          current.status,
-        ),
-      };
-    });
-  };
-
-  const updateProgressStep = (value: string) => {
-    setForm((current) => {
-      const linkedProgress = linkShipmentProgressFromStep(
-        value,
-        totalProgressSteps,
-      );
-      return {
-        ...current,
-        ...linkedProgress,
-        progress_total_steps: totalProgressSteps,
-        manual_progress_edited: true,
-        status: getProgressStatus(
-          progressTemplates,
-          linkedProgress,
-          current.status,
-        ),
+        status:
+          Number(value) === 100
+            ? "delivered"
+            : getIncompleteStatus(current.status, value),
       };
     });
   };
@@ -606,22 +513,9 @@ export default function ShipmentJobForm({
     );
 
     setForm((current) => {
-      const selectedTotalSteps = Math.max(1, selectedTemplates.length);
-      const linkedProgress = current.progress_percent.trim()
-        ? linkShipmentProgressFromPercent(
-            current.progress_percent,
-            selectedTotalSteps,
-          )
-        : linkShipmentProgressFromStep(
-            current.progress_step,
-            selectedTotalSteps,
-          );
-
       return {
         ...current,
-        ...linkedProgress,
         manual_progress_edited: false,
-        progress_total_steps: selectedTotalSteps,
         tracking_events: [
           ...current.tracking_events,
           ...selectedTemplates.map((template) => ({
@@ -856,30 +750,12 @@ export default function ShipmentJobForm({
 
       <CustomerContactField contacts={customerContacts} />
 
-      {hasDefinedProgressFlow ? (
-        <ManualProgressFields
-          progressPercent={form.progress_percent}
-          progressStep={form.progress_step}
-          progressColorHex={form.progress_color_hex}
-          totalSteps={totalProgressSteps}
-          onPercentChange={updateProgressPercent}
-          onStepChange={updateProgressStep}
-          onColorChange={(value) => updateField("progress_color_hex", value)}
-        />
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {t("progress.manualTitle")}
-          </span>
-          <p className="mt-3 text-sm font-semibold text-slate-600">
-            {trackingTemplatesLoading
-              ? t("progress.flowLoading")
-              : trackingTemplatesFailed
-                ? t("progress.flowLoadFailed")
-                : t("progress.flowRequired")}
-          </p>
-        </div>
-      )}
+      <ManualProgressFields
+        progressPercent={form.progress_percent}
+        progressColorHex={form.progress_color_hex}
+        onPercentChange={updateProgressPercent}
+        onColorChange={(value) => updateField("progress_color_hex", value)}
+      />
 
       <TrackingEventFields
         values={form.tracking_events}
@@ -1043,16 +919,6 @@ function getTrackingStatus(
   return matchingStatuses.size === 1 ? [...matchingStatuses][0] : undefined;
 }
 
-function getFlowStatus(
-  templates: ShipmentTrackingEventTemplate[],
-  progressStep: string,
-) {
-  const template = templates[Number(progressStep) - 1];
-  return standardFlowStatusOptions.find(
-    (option) => option.value === template?.name,
-  )?.value;
-}
-
 function getIncompleteStatus(
   currentStatus: ShipmentJobFormState["status"],
   progressPercent: string,
@@ -1061,20 +927,6 @@ function getIncompleteStatus(
   return currentStatus === "completed" || currentStatus === "delivered"
     ? "pickup"
     : currentStatus;
-}
-
-function getProgressStatus(
-  templates: ShipmentTrackingEventTemplate[],
-  progress: { progress_percent: string; progress_step: string },
-  currentStatus: ShipmentJobFormState["status"],
-) {
-  const flowStatus = getFlowStatus(templates, progress.progress_step);
-  if (flowStatus === "delivered" && progress.progress_percent !== "100") {
-    return getIncompleteStatus(currentStatus, progress.progress_percent);
-  }
-  return (
-    flowStatus ?? getIncompleteStatus(currentStatus, progress.progress_percent)
-  );
 }
 
 function StandardFlowPickerModal({
@@ -1196,23 +1048,16 @@ function FormDeleteConfirmModal({
 
 function ManualProgressFields({
   progressPercent,
-  progressStep,
   progressColorHex,
-  totalSteps,
   onPercentChange,
-  onStepChange,
   onColorChange,
 }: {
   progressPercent: string;
-  progressStep: string;
   progressColorHex: string;
-  totalSteps: number;
   onPercentChange: (value: string) => void;
-  onStepChange: (value: string) => void;
   onColorChange: (value: string) => void;
 }) {
   const percentValue = clampNumericInput(progressPercent, 0, 100);
-  const stepValue = clampNumericInput(progressStep, 1, totalSteps);
   const colorValue = getManualProgressColorValue(progressColorHex);
   const progressBarColor =
     percentValue === 100 ? completedShipmentProgressColor : colorValue;
@@ -1224,7 +1069,7 @@ function ManualProgressFields({
           {t("progress.manualTitle")}
         </span>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(180px,0.6fr)_minmax(180px,0.5fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(240px,0.5fr)]">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             {t("progress.percent")}
@@ -1253,49 +1098,6 @@ function ManualProgressFields({
             </div>
             <p className="mt-2 text-xs font-medium text-slate-500">
               {t("progress.percentHelp")}
-            </p>
-          </div>
-        </label>
-
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {t("progress.step")}
-          </span>
-          <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min="1"
-                max={totalSteps}
-                value={progressStep}
-                onChange={(event) => onStepChange(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                aria-label={t("progress.step")}
-              />
-              <span className="whitespace-nowrap text-sm font-bold text-slate-500">
-                / {totalSteps}
-              </span>
-            </div>
-            <div
-              className="mt-3 grid gap-1"
-              style={{
-                gridTemplateColumns: `repeat(${totalSteps}, minmax(0, 1fr))`,
-              }}
-              aria-hidden="true"
-            >
-              {Array.from({ length: totalSteps }, (_, index) => (
-                <span
-                  key={index}
-                  className="h-1.5 rounded-full"
-                  style={{
-                    backgroundColor:
-                      index < stepValue ? progressBarColor : "rgb(226 232 240)",
-                  }}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-xs font-medium text-slate-500">
-              {t("progress.stepHelp", { count: totalSteps })}
             </p>
           </div>
         </label>

@@ -1434,13 +1434,8 @@ function ShipmentProgressStatus({
   job: ShipmentJob;
   statusColorMap: ShipmentStatusColorMap;
 }) {
-  const activeStepCount = getShipmentProgressStepCount(job);
-  const progressPercent = getShipmentProgressPercent(job, activeStepCount);
-  const progressLabel = getShipmentProgressLabel(
-    job,
-    activeStepCount,
-    progressPercent,
-  );
+  const progressPercent = getShipmentProgressPercent(job);
+  const progressLabel = `${progressPercent}%`;
   const statusUnset = isShipmentStatusUnset(job);
   const effectiveStatus = getEffectiveShipmentStatus(job);
   const shipmentCompleted =
@@ -1501,85 +1496,17 @@ function isShipmentStatusUnset(job: ShipmentJob) {
 }
 
 function hasSavedManualProgress(job: ShipmentJob) {
-  const hasDefinedFlow = (job.tracking_events?.length ?? 0) > 0;
-  const hasProgressValue =
-    typeof job.progress_percent === "number" ||
-    typeof job.progress_step === "number";
-
-  return hasDefinedFlow && hasProgressValue;
+  return typeof job.progress_percent === "number";
 }
 
-function getShipmentProgressStepCount(job: ShipmentJob) {
-  const totalSteps = getShipmentProgressTotalSteps(job);
-
-  if (isShipmentStatusUnset(job)) return 0;
-
-  if (typeof job.progress_step === "number") {
-    return Math.max(1, Math.min(totalSteps, Math.round(job.progress_step)));
-  }
-
-  if (typeof job.progress_percent === "number") {
-    return Math.max(
-      0,
-      Math.min(
-        totalSteps,
-        Math.ceil((job.progress_percent / 100) * totalSteps),
-      ),
-    );
-  }
-
-  if (job.status === "completed" || job.status === "delivered") {
-    return totalSteps;
-  }
-
-  return 0;
-}
-
-function getShipmentProgressTotalSteps(job: ShipmentJob) {
-  if (isShipmentStatusUnset(job)) return 1;
-
-  const trackingEventCount = job.tracking_events?.length ?? 0;
-  return Math.max(1, trackingEventCount);
-}
-
-function getShipmentProgressPercent(job: ShipmentJob, activeStepCount: number) {
+function getShipmentProgressPercent(job: ShipmentJob) {
   if (isShipmentStatusUnset(job)) return 0;
 
   if (typeof job.progress_percent === "number") {
     return Math.max(0, Math.min(100, Math.round(job.progress_percent)));
   }
 
-  if (typeof job.progress_step === "number") {
-    return Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round(
-          (activeStepCount / getShipmentProgressTotalSteps(job)) * 100,
-        ),
-      ),
-    );
-  }
-
   return job.status === "completed" || job.status === "delivered" ? 100 : 0;
-}
-
-function getShipmentProgressLabel(
-  job: ShipmentJob,
-  activeStepCount: number,
-  progressPercent: number,
-) {
-  if (isShipmentStatusUnset(job)) {
-    return `0/${getShipmentProgressTotalSteps(job)}`;
-  }
-
-  const progressPercentLabel =
-    typeof job.progress_percent === "number" ? `${progressPercent}%` : null;
-  const progressStep = `${activeStepCount}/${getShipmentProgressTotalSteps(job)}`;
-
-  return progressPercentLabel
-    ? `${progressPercentLabel} (${progressStep})`
-    : progressStep;
 }
 
 function getStatusColorBadgeStyle(color: string) {

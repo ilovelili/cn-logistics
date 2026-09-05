@@ -197,7 +197,6 @@ const ja = {
   "progress.flowRequired":
     "進捗を設定するには、先にステータス履歴へ標準フローを追加してください。",
   "progress.percent": "進捗率",
-  "progress.step": "進捗ステップ",
   "progress.color": "ステータス色",
   "progress.color.inProgress": "進行中",
   "progress.color.warning": "注意",
@@ -205,7 +204,6 @@ const ja = {
   "progress.color.alert": "警告",
   "progress.color.completed": "完了",
   "progress.percentHelp": "0〜100%で手動設定できます。",
-  "progress.stepHelp": "1〜{count}ステップで手動設定できます。",
 
   "status.underProcess": "処理中",
   "status.customsHold": "通関保留",
@@ -783,7 +781,6 @@ const en: Messages = {
   "progress.flowRequired":
     "Add a standard flow to status history before setting progress.",
   "progress.percent": "Progress percent",
-  "progress.step": "Progress step",
   "progress.color": "Status color",
   "progress.color.inProgress": "In progress",
   "progress.color.warning": "Warning",
@@ -791,7 +788,6 @@ const en: Messages = {
   "progress.color.alert": "Alert",
   "progress.color.completed": "Completed",
   "progress.percentHelp": "Set manually from 0 to 100%.",
-  "progress.stepHelp": "Set manually from 1 to {count} steps.",
 
   "status.underProcess": "Processing",
   "status.customsHold": "Customs hold",

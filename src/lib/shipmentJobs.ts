@@ -64,8 +64,6 @@ export interface ShipmentJob {
   bl_awb_date: string | null;
   assigned_admin_user_ids: string[];
   progress_percent: number | null;
-  progress_step: number | null;
-  progress_total_steps: number | null;
   progress_color_hex: string | null;
   documents: string[];
   internal_documents: string[];
@@ -190,8 +188,6 @@ export interface ShipmentJobForm {
   bl_awb_date: string;
   assigned_admin_user_ids: string[];
   progress_percent: string;
-  progress_step: string;
-  progress_total_steps: number | null;
   progress_color_hex: string;
   manual_progress_edited: boolean;
   documents: string;
@@ -415,8 +411,6 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   bl_awb_date: "",
   assigned_admin_user_ids: [],
   progress_percent: "",
-  progress_step: "",
-  progress_total_steps: null,
   progress_color_hex: inProgressShipmentProgressColor,
   manual_progress_edited: false,
   documents: "",
@@ -490,9 +484,6 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
       typeof job.progress_percent === "number"
         ? String(job.progress_percent)
         : "",
-    progress_step:
-      typeof job.progress_step === "number" ? String(job.progress_step) : "",
-    progress_total_steps: job.progress_total_steps ?? null,
     progress_color_hex:
       job.progress_color_hex ?? inProgressShipmentProgressColor,
     manual_progress_edited: false,
@@ -539,52 +530,10 @@ export function formToPayload(form: ShipmentJobForm) {
     bl_awb_date: form.bl_awb_date || null,
     assigned_admin_user_ids: form.assigned_admin_user_ids,
     progress_percent: progressPercent,
-    progress_step: normalizeProgressStep(form.progress_step),
-    progress_total_steps: form.progress_total_steps,
     progress_color_hex: normalizeStatusColor(form.progress_color_hex),
     documents: getDocumentNames(form, "customer"),
     internal_documents: getDocumentNames(form, "internal"),
     notes: form.notes || null,
-  };
-}
-
-export function linkShipmentProgressFromPercent(
-  value: string,
-  totalSteps: number,
-) {
-  const progressPercent = normalizeProgressPercent(value);
-  if (progressPercent === null) {
-    return { progress_percent: value, progress_step: "" };
-  }
-
-  const boundedTotalSteps = Math.max(1, Math.round(totalSteps));
-  return {
-    progress_percent: String(progressPercent),
-    progress_step: String(
-      Math.max(1, Math.ceil((progressPercent / 100) * boundedTotalSteps)),
-    ),
-  };
-}
-
-export function linkShipmentProgressFromStep(
-  value: string,
-  totalSteps: number,
-) {
-  const parsedStep = Number(value);
-  if (!value.trim() || !Number.isFinite(parsedStep)) {
-    return { progress_percent: "", progress_step: value };
-  }
-
-  const boundedTotalSteps = Math.max(1, Math.round(totalSteps));
-  const progressStep = Math.max(
-    1,
-    Math.min(boundedTotalSteps, Math.round(parsedStep)),
-  );
-  return {
-    progress_percent: String(
-      Math.round((progressStep / boundedTotalSteps) * 100),
-    ),
-    progress_step: String(progressStep),
   };
 }
 
@@ -604,20 +553,13 @@ export async function fetchShipmentJobs(
 
   const shipmentJobs = (jobsData ?? []) as Omit<
     ShipmentJob,
-    | "tracking_events"
-    | "progress_total_steps"
-    | "booking_details"
-    | "cargo_details"
+    "tracking_events" | "booking_details" | "cargo_details"
   >[];
-  const [trackingEvents, progressTotals, bookingDetails] = await Promise.all([
+  const [trackingEvents, bookingDetails] = await Promise.all([
     fetchShipmentTrackingEvents(requesterEmail),
-    fetchShipmentProgressTotals(requesterEmail),
     fetchShipmentBookingDetails(requesterEmail),
   ]);
   const trackingEventsByJob = groupTrackingEventsByJob(trackingEvents);
-  const progressTotalsByJob = new Map(
-    progressTotals.map((row) => [row.id, row.progress_total_steps]),
-  );
   const bookingDetailsByJob = new Map(
     bookingDetails.map((row) => [row.id, row]),
   );
@@ -630,7 +572,6 @@ export async function fetchShipmentJobs(
       gross_weight_kg: null,
       volume_m3: null,
     },
-    progress_total_steps: progressTotalsByJob.get(job.id) ?? null,
     tracking_events: trackingEventsByJob[job.id] ?? [],
   }));
 }
@@ -647,20 +588,6 @@ async function fetchShipmentBookingDetails(requesterEmail: string) {
     id: string;
     booking_details: ShipmentBookingDetail[];
     cargo_details: ShipmentCargoDetail;
-  }[];
-}
-
-async function fetchShipmentProgressTotals(requesterEmail: string) {
-  const { data, error } = await supabase.rpc(
-    "list_accessible_shipment_progress_totals",
-    { requester_email: requesterEmail },
-  );
-
-  if (error) throw error;
-
-  return (data ?? []) as {
-    id: string;
-    progress_total_steps: number | null;
   }[];
 }
 
@@ -804,19 +731,6 @@ function normalizeProgressPercent(value: string) {
   return Math.max(0, Math.min(100, Math.round(parsedValue)));
 }
 
-function normalizeProgressStep(value: string) {
-  if (!value.trim()) {
-    return null;
-  }
-
-  const parsedValue = Number(value);
-  if (!Number.isFinite(parsedValue)) {
-    return null;
-  }
-
-  return Math.max(1, Math.round(parsedValue));
-}
-
 export async function fetchShipmentDocuments(
   requesterEmail: string,
 ): Promise<ShipmentDocument[]> {
@@ -865,7 +779,6 @@ export async function createShipmentJob(
       documents_payload: documentsPayload,
       events_payload: eventsPayload,
       create_new: true,
-      total_steps: form.progress_total_steps,
       booking_details: buildBookingDetailsPayload(form),
       cargo_details: buildCargoDetailsPayload(form),
     },
@@ -894,7 +807,6 @@ export async function updateShipmentJob(
       documents_payload: documentsPayload,
       events_payload: eventsPayload,
       create_new: false,
-      total_steps: form.progress_total_steps,
       booking_details: buildBookingDetailsPayload(form),
       cargo_details: buildCargoDetailsPayload(form),
     },
