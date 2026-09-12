@@ -81,16 +81,45 @@ export default function DynamicTutorial({
     [profileRole, variant],
   );
   const currentStep = steps[stepIndex] ?? steps[0];
-  const storageKey = `cn_logistics_tutorial_hidden_${variant}_${profileRole}`;
+  const storageKey = `cn_logistics_tutorial_hidden_${variant}`;
+  const legacyStorageKeys = useMemo(
+    () =>
+      variant === "admin"
+        ? [
+            "cn_logistics_tutorial_hidden_admin_admin",
+            "cn_logistics_tutorial_hidden_admin_super_admin",
+          ]
+        : [
+            "cn_logistics_tutorial_hidden_user_normal",
+            "cn_logistics_tutorial_hidden_user_admin",
+            "cn_logistics_tutorial_hidden_user_super_admin",
+          ],
+    [variant],
+  );
+  const isTutorialHidden = useCallback(
+    () =>
+      localStorage.getItem(storageKey) === "true" ||
+      legacyStorageKeys.some(
+        (legacyStorageKey) => localStorage.getItem(legacyStorageKey) === "true",
+      ),
+    [legacyStorageKeys, storageKey],
+  );
+  const removeLegacyPreferences = useCallback(() => {
+    legacyStorageKeys.forEach((legacyStorageKey) =>
+      localStorage.removeItem(legacyStorageKey),
+    );
+  }, [legacyStorageKeys]);
 
   const savePreference = useCallback(() => {
     if (doNotShowAgain) {
       localStorage.setItem(storageKey, "true");
+      removeLegacyPreferences();
       return;
     }
 
     localStorage.removeItem(storageKey);
-  }, [doNotShowAgain, storageKey]);
+    removeLegacyPreferences();
+  }, [doNotShowAgain, removeLegacyPreferences, storageKey]);
 
   const closeTutorial = useCallback(() => {
     savePreference();
@@ -149,7 +178,7 @@ export default function DynamicTutorial({
 
     onStepChange?.(0, steps[0].id);
     setStepIndex(0);
-    setDoNotShowAgain(localStorage.getItem(storageKey) === "true");
+    setDoNotShowAgain(isTutorialHidden());
     setOpen(true);
   };
 
@@ -178,14 +207,24 @@ export default function DynamicTutorial({
     if (autoOpenCheckedRef.current) return;
 
     autoOpenCheckedRef.current = true;
-    if (localStorage.getItem(storageKey) === "true") return;
+    if (isTutorialHidden()) {
+      localStorage.setItem(storageKey, "true");
+      removeLegacyPreferences();
+      return;
+    }
     if (!steps.length) return;
 
     onStepChange?.(0, steps[0].id);
     setStepIndex(0);
     setDoNotShowAgain(false);
     setOpen(true);
-  }, [onStepChange, steps, storageKey]);
+  }, [
+    isTutorialHidden,
+    onStepChange,
+    removeLegacyPreferences,
+    steps,
+    storageKey,
+  ]);
 
   const buttonClass = adminTheme
     ? "rounded-xl bg-gray-100 p-2 text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -257,7 +296,17 @@ export default function DynamicTutorial({
                 <input
                   type="checkbox"
                   checked={doNotShowAgain}
-                  onChange={(event) => setDoNotShowAgain(event.target.checked)}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setDoNotShowAgain(checked);
+                    if (checked) {
+                      localStorage.setItem(storageKey, "true");
+                      removeLegacyPreferences();
+                    } else {
+                      localStorage.removeItem(storageKey);
+                      removeLegacyPreferences();
+                    }
+                  }}
                   className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500 dark:border-gray-700 dark:bg-gray-800"
                 />
                 {t("tutorial.doNotShowAgain")}

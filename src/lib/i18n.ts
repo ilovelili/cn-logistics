@@ -430,14 +430,16 @@ const ja = {
   "admin.userRegistration.loadFailed": "登録済み荷主の読み込みに失敗しました",
   "admin.userRegistration.created": "荷主を登録しました。承認待ちです。",
   "admin.userRegistration.createFailed": "荷主登録に失敗しました",
-  "admin.userRegistration.updated": "荷主情報を更新しました",
+  "admin.userRegistration.updated":
+    "荷主情報を更新しました。再承認されるまで承認待ちとなります。",
   "admin.userRegistration.updateFailed": "荷主情報の更新に失敗しました",
   "admin.userRegistration.assignedAdmins": "CN担当",
   "admin.userRegistration.assignedAdminsDescription":
     "担当するCN担当を複数選択できます。",
   "admin.userRegistration.operationsAssignees": "Ops担当",
   "admin.userRegistration.salesAssignees": "Sales担当",
-  "admin.userRegistration.assignmentUpdated": "CN担当を更新しました",
+  "admin.userRegistration.assignmentUpdated":
+    "CN担当を更新しました。再承認されるまで承認待ちとなります。",
   "admin.userRegistration.assignmentUpdateFailed": "CN担当の更新に失敗しました",
   "admin.userRegistration.action": "操作",
   "admin.userRegistration.approve": "承認",
@@ -1019,14 +1021,16 @@ const en: Messages = {
   "admin.userRegistration.loadFailed": "Failed to load registered shippers",
   "admin.userRegistration.created": "Shipper registered. Approval is pending.",
   "admin.userRegistration.createFailed": "Failed to register shipper",
-  "admin.userRegistration.updated": "Shipper updated",
+  "admin.userRegistration.updated":
+    "Shipper updated and returned to pending approval.",
   "admin.userRegistration.updateFailed": "Failed to update shipper",
   "admin.userRegistration.assignedAdmins": "CN contact",
   "admin.userRegistration.assignedAdminsDescription":
     "Select one or more CN contacts to assign.",
   "admin.userRegistration.operationsAssignees": "Ops contact",
   "admin.userRegistration.salesAssignees": "Sales contact",
-  "admin.userRegistration.assignmentUpdated": "CN contacts updated",
+  "admin.userRegistration.assignmentUpdated":
+    "CN contacts updated and returned to pending approval.",
   "admin.userRegistration.assignmentUpdateFailed":
     "Failed to update CN contacts",
   "admin.userRegistration.approve": "Approve",

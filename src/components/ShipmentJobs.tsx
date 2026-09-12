@@ -50,6 +50,7 @@ import {
   transportModeOptions,
   requiresShipmentAttention,
 } from "../lib/shipmentJobs";
+import type { ShipperAdminAssignmentOption } from "../lib/shipperUsers";
 
 type StatusFilter = ShipmentStatus | "all";
 
@@ -66,6 +67,7 @@ interface ShipmentJobsProps {
   error?: string | null;
   profileEmail: string;
   canManageShipments?: boolean;
+  shipperOptions?: ShipperAdminAssignmentOption[];
   onRefresh: () => Promise<void>;
   statusFilter: StatusFilter;
   tradeFilter: TradeMode | "all";
@@ -82,6 +84,7 @@ export default function ShipmentJobs({
   error,
   profileEmail,
   canManageShipments = false,
+  shipperOptions = [],
   onRefresh,
   statusFilter,
   tradeFilter,
@@ -394,6 +397,7 @@ export default function ShipmentJobs({
             </div>
           </div>
           <ShipmentJobForm
+            shipperOptions={shipperOptions}
             submitLabel={t("common.create")}
             loading={saving}
             onSubmit={handleCreate}
@@ -476,6 +480,7 @@ export default function ShipmentJobs({
         onRefresh={onRefresh}
         adminTheme
         approvedDocumentsOnly={!canManageShipments}
+        shipperOptions={shipperOptions}
       />
       <ShipmentJobDetailModal
         job={selectedJob}
@@ -487,6 +492,7 @@ export default function ShipmentJobs({
         }
         feedbackLoading={feedbackLoading}
         showInternalDocuments={canManageShipments}
+        shipperOptions={shipperOptions}
         onDelete={canManageShipments ? handleDeleteJob : undefined}
         onOpenFeedback={openFeedbackModal}
         onClose={() => setSelectedJob(null)}

@@ -28,6 +28,11 @@ import {
   TradeMode,
   TransportMode,
 } from "./lib/shipmentJobs";
+import {
+  fetchAccessibleShipperAdminAssignments,
+  fetchShipperUsersByAdmin,
+  type ShipperAdminAssignmentOption,
+} from "./lib/shipperUsers";
 
 type View = "jobs" | "notifications";
 type JobsStatusFilter = ShipmentStatus | "all";
@@ -100,6 +105,9 @@ function MainApp({
   const showAdminMode = initialAdminMode;
   const [jobs, setJobs] = useState<ShipmentJob[]>([]);
   const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
+  const [shipperAssignmentOptions, setShipperAssignmentOptions] = useState<
+    ShipperAdminAssignmentOption[]
+  >([]);
   const [jobsStatusFilter, setJobsStatusFilter] =
     useState<JobsStatusFilter>("all");
   const [jobsTradeFilter, setJobsTradeFilter] = useState<TradeMode | "all">(
@@ -157,23 +165,37 @@ function MainApp({
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
     try {
-      const [shipmentJobs, shipmentDocuments] = await Promise.all([
-        fetchShipmentJobs(profileEmail),
-        fetchShipmentDocuments(profileEmail),
-      ]);
+      const [shipmentJobs, shipmentDocuments, assignmentOptions] =
+        await Promise.all([
+          fetchShipmentJobs(profileEmail),
+          fetchShipmentDocuments(profileEmail),
+          profileRole === "normal"
+            ? fetchAccessibleShipperAdminAssignments(profileEmail)
+            : fetchShipperUsersByAdmin(profileEmail),
+        ]);
       setJobs(shipmentJobs);
       setDocuments(shipmentDocuments);
+      setShipperAssignmentOptions(
+        assignmentOptions.map((option) => ({
+          shipper_name: option.shipper_name,
+          email: "email" in option ? option.email : "",
+          contact_person:
+            "contact_person" in option ? option.contact_person : null,
+          admin_assignments: option.admin_assignments ?? [],
+        })),
+      );
       setJobsError(null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t("app.error.unknownSupabase");
       setJobs([]);
       setDocuments([]);
+      setShipperAssignmentOptions([]);
       setJobsError(message);
     } finally {
       setJobsLoading(false);
     }
-  }, [profileEmail]);
+  }, [profileEmail, profileRole]);
 
   useEffect(() => {
     void loadJobs();
@@ -284,6 +306,7 @@ function MainApp({
             canManageShipments={
               profileRole !== "normal" && isAdminAuthenticated
             }
+            shipperOptions={shipperAssignmentOptions}
             onRefresh={loadJobs}
             statusFilter={jobsStatusFilter}
             tradeFilter={jobsTradeFilter}
@@ -314,6 +337,7 @@ function MainApp({
             canManageShipments={
               profileRole !== "normal" && isAdminAuthenticated
             }
+            shipperOptions={shipperAssignmentOptions}
             onRefresh={loadJobs}
             statusFilter={jobsStatusFilter}
             tradeFilter={jobsTradeFilter}

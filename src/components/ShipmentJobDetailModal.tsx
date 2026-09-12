@@ -27,6 +27,10 @@ import {
 import InstantTooltip from "./InstantTooltip";
 import ShipmentJobDeleteConfirmModal from "./ShipmentJobDeleteConfirmModal";
 import TableActionButton from "./TableActionButton";
+import {
+  getResponsibleAdminAssignments,
+  type ShipmentJobsShipperOption,
+} from "./shipmentJobsTableUtils";
 
 interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
@@ -34,6 +38,7 @@ interface ShipmentJobDetailModalProps {
   feedback?: ShipmentFeedback | null;
   feedbackLoading?: boolean;
   showInternalDocuments?: boolean;
+  shipperOptions?: ShipmentJobsShipperOption[];
   onDelete?: (job: ShipmentJob) => Promise<void>;
   onOpenFeedback?: (job: ShipmentJob) => void;
   onClose: () => void;
@@ -45,6 +50,7 @@ export default function ShipmentJobDetailModal({
   feedback,
   feedbackLoading = false,
   showInternalDocuments = false,
+  shipperOptions = [],
   onDelete,
   onOpenFeedback,
   onClose,
@@ -63,6 +69,10 @@ export default function ShipmentJobDetailModal({
 
   const internalDocuments = documents.filter(
     (document) => document.scope === "internal",
+  );
+  const responsibleAssignments = getResponsibleAdminAssignments(
+    job,
+    shipperOptions,
   );
 
   const confirmDelete = async () => {
@@ -227,6 +237,31 @@ export default function ShipmentJobDetailModal({
             </DetailCard>
           </div>
 
+          {shipperOptions.length > 0 && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <DetailCard
+                title={t("admin.userRegistration.operationsAssignees")}
+              >
+                <DetailField
+                  label={t("admin.userRegistration.operationsAssignees")}
+                  value={formatAdminAssignments(
+                    responsibleAssignments,
+                    "operations",
+                  )}
+                />
+              </DetailCard>
+              <DetailCard title={t("admin.userRegistration.salesAssignees")}>
+                <DetailField
+                  label={t("admin.userRegistration.salesAssignees")}
+                  value={formatAdminAssignments(
+                    responsibleAssignments,
+                    "sales",
+                  )}
+                />
+              </DetailCard>
+            </div>
+          )}
+
           <TrackingTimeline events={job.tracking_events} />
 
           {showInternalDocuments && (
@@ -251,6 +286,22 @@ export default function ShipmentJobDetailModal({
       )}
     </div>
   );
+}
+
+function formatAdminAssignments(
+  assignments: ReturnType<typeof getResponsibleAdminAssignments>,
+  role: "operations" | "sales",
+) {
+  const names = assignments
+    .filter((assignment) =>
+      (assignment.staff_roles?.length
+        ? assignment.staff_roles
+        : [assignment.staff_role]
+      ).includes(role),
+    )
+    .map((assignment) => assignment.user_name?.trim() || assignment.email);
+
+  return names.length > 0 ? names.join(", ") : null;
 }
 
 function formatVesselFlightNumbers(values?: string[] | null) {

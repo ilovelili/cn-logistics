@@ -626,25 +626,21 @@ export default function UserRegistrationForm({
           </div>
         ),
       },
-      ...(isSuperAdmin
-        ? [
-            ...(["operations", "sales"] as const).map((staffRole) => ({
-              id: `${staffRole}_admins` as const,
-              label: t(
-                staffRole === "operations"
-                  ? "admin.userRegistration.operationsAssignees"
-                  : "admin.userRegistration.salesAssignees",
-              ),
-              width: 140,
-              render: (user: ShipperUserRow) => (
-                <AssignedAdminsSummary
-                  assignments={user.admin_assignments ?? []}
-                  staffRole={staffRole}
-                />
-              ),
-            })),
-          ]
-        : []),
+      ...(["operations", "sales"] as const).map((staffRole) => ({
+        id: `${staffRole}_admins` as const,
+        label: t(
+          staffRole === "operations"
+            ? "admin.userRegistration.operationsAssignees"
+            : "admin.userRegistration.salesAssignees",
+        ),
+        width: 140,
+        render: (user: ShipperUserRow) => (
+          <AssignedAdminsSummary
+            assignments={user.admin_assignments ?? []}
+            staffRole={staffRole}
+          />
+        ),
+      })),
       {
         id: "budget",
         label: t("admin.userRegistration.budget"),
@@ -1031,8 +1027,14 @@ export default function UserRegistrationForm({
           onNotify={showToast}
           onAssignmentsSaved={(updatedUser) => {
             setUsers((currentUsers) =>
-              currentUsers.map((user) =>
-                user.id === updatedUser.id ? updatedUser : user,
+              currentUsers.map((currentUser) =>
+                isSameShipperGroup(currentUser, selectedUser)
+                  ? {
+                      ...currentUser,
+                      approval_status: updatedUser.approval_status,
+                      admin_assignments: updatedUser.admin_assignments,
+                    }
+                  : currentUser,
               ),
             );
             setSelectedUser(updatedUser);

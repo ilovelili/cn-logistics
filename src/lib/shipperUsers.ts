@@ -51,6 +51,13 @@ export interface ShipperUserAdminAssignment {
   updated_at: string;
 }
 
+export interface ShipperAdminAssignmentOption {
+  shipper_name: string;
+  email: string;
+  contact_person: string | null;
+  admin_assignments: ShipperUserAdminAssignment[];
+}
+
 export const defaultShipperUserForm: ShipperUserForm = {
   email: "",
   shipper_name: "",
@@ -113,6 +120,31 @@ export async function fetchShipperUsersByAdmin(createdBy: string) {
   }
 
   return (data ?? []) as ShipperUser[];
+}
+
+export async function fetchAccessibleShipperAdminAssignments(
+  requesterEmail: string,
+) {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipper_admin_assignments",
+    { requester_email: requesterEmail },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return (
+    (data ?? []) as Pick<
+      ShipperAdminAssignmentOption,
+      "shipper_name" | "admin_assignments"
+    >[]
+  ).map((option) => ({
+    ...option,
+    email: "",
+    contact_person: null,
+    admin_assignments: option.admin_assignments ?? [],
+  }));
 }
 
 export async function updateShipperUser(id: string, form: ShipperUserForm) {
