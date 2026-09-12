@@ -1024,6 +1024,12 @@ export default function UserRegistrationForm({
           showAdminAssignments
           adminOperators={adminOperators}
           requesterEmail={adminEmail}
+          detailsReadOnly={
+            !isSuperAdmin && selectedUser.approval_status === "approved"
+          }
+          assignmentsReadOnly={
+            !isSuperAdmin && selectedUser.approval_status === "approved"
+          }
           onNotify={showToast}
           onAssignmentsSaved={(updatedUser) => {
             setUsers((currentUsers) =>
@@ -1386,6 +1392,12 @@ export function UserDetailModal({
         <div className="mb-6">
           <StatusBadge status={user.approval_status} />
         </div>
+
+        {(detailsReadOnly || assignmentsReadOnly) && (
+          <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            {t("admin.userRegistration.approvedReadOnly")}
+          </div>
+        )}
 
         {showAdminAssignments && (
           <section className="mb-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
