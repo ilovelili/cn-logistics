@@ -197,33 +197,23 @@ export default function ShipmentJobForm({
         hasIncompleteContainer)
     );
   });
-  const hasCompleteFclBooking = form.booking_details.some(
-    (booking) =>
-      Boolean(booking.booking_number.trim()) &&
-      booking.containers.some((container) => {
-        const quantity = Number(container.quantity);
-        return (
-          Boolean(container.length) &&
-          Boolean(container.type) &&
-          Number.isInteger(quantity) &&
-          quantity > 0
-        );
-      }),
+  const hasStartedCargoDetail = Object.values(form.cargo_details).some(
+    (value) => value.trim() !== "",
   );
   const packageCount = Number(form.cargo_details.package_count);
   const grossWeight = Number(form.cargo_details.gross_weight_kg);
   const volume = Number(form.cargo_details.volume_m3);
   const hasIncompleteCargoDetail =
-    !Number.isInteger(packageCount) ||
-    packageCount <= 0 ||
-    !Number.isFinite(grossWeight) ||
-    grossWeight <= 0 ||
-    !Number.isFinite(volume) ||
-    volume <= 0;
+    hasStartedCargoDetail &&
+    (!Number.isInteger(packageCount) ||
+      packageCount <= 0 ||
+      !Number.isFinite(grossWeight) ||
+      grossWeight <= 0 ||
+      !Number.isFinite(volume) ||
+      volume <= 0);
   const hasIncompleteContainerDetail =
     hasIncompleteCargoDetail ||
-    (form.transport_mode === "fcl" &&
-      (hasIncompleteBookingDetail || !hasCompleteFclBooking));
+    (form.transport_mode === "fcl" && hasIncompleteBookingDetail);
   const hasBlockingValidationError =
     hasIncompleteTrackingEvent ||
     isCnAssignmentMissing ||

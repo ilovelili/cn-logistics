@@ -1004,10 +1004,7 @@ export function isCustomerDocumentDownloadApprovalExpired(
 }
 
 export function isShipmentDocumentPreviewable(document: ShipmentDocument) {
-  return (
-    Boolean(document.file_url) &&
-    (document.scope === "internal" || isCustomerDocumentDownloadable(document))
-  );
+  return Boolean(document.file_url);
 }
 
 export interface ShipmentStatusPeriod {

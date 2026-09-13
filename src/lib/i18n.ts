@@ -362,7 +362,7 @@ const ja = {
   "form.grossWeight": "Gross Weight (Kgs)",
   "form.volume": "M³",
   "form.containerDetailsRequired":
-    "全輸送モードで個数・Gross Weight・M³を入力してください。FCLはさらにBOOKING #・コンテナ長・タイプ・本数をすべて入力してください。数値は0より大きい値で入力してください。",
+    "入力を開始した物量情報は、個数・Gross Weight・M³をすべて入力してください。FCLのBOOKING・コンテナ情報も、入力を開始した行はすべて完成させてください。数値は0より大きい値で入力してください。",
 
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
@@ -952,7 +952,7 @@ const en: Messages = {
   "form.grossWeight": "Weight (Kgs)",
   "form.volume": "Volume (M³)",
   "form.containerDetailsRequired":
-    "Enter packages, gross weight, and M³ for every transport mode. For FCL, also enter the booking number, container length, type, and quantity. Numbers must be greater than zero.",
+    "Complete all packages, gross weight, and M³ fields once volume entry has started. For FCL, also complete every booking or container row you start. Numbers must be greater than zero.",
 
   "admin.switch.selectUser": "Switch to user",
   "admin.switch.backToAdmin": "Back to admin",

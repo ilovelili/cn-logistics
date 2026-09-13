@@ -765,15 +765,14 @@ export default function ShipmentJobsTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
-      {previewDocument &&
-        canPreviewDocument(previewDocument, approvedDocumentsOnly) && (
-          <DocumentPreviewModal
-            document={previewDocument}
-            adminTheme={adminTheme}
-            allowNativeToolbar={!approvedDocumentsOnly}
-            onClose={() => setPreviewDocument(null)}
-          />
-        )}
+      {previewDocument && canPreviewDocument(previewDocument) && (
+        <DocumentPreviewModal
+          document={previewDocument}
+          adminTheme={adminTheme}
+          allowNativeToolbar={!approvedDocumentsOnly}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
       {deleteTarget && (
         <ShipmentDocumentDeleteConfirmModal
           target={deleteTarget}
@@ -1191,7 +1190,7 @@ function DocumentPills({
       }`}
     >
       {documents.map((document) => {
-        const canPreview = canPreviewDocument(document, approvedOnly);
+        const canPreview = canPreviewDocument(document);
         const canRequest =
           !muted &&
           approvedOnly &&
@@ -1366,9 +1365,8 @@ function canRequestDocument(document: ShipmentDocument) {
   );
 }
 
-function canPreviewDocument(document: ShipmentDocument, approvedOnly: boolean) {
-  if (!document.file_url) return false;
-  return !approvedOnly || isShipmentDocumentPreviewable(document);
+function canPreviewDocument(document: ShipmentDocument) {
+  return isShipmentDocumentPreviewable(document);
 }
 
 function ShipmentDocumentDeleteConfirmModal({
