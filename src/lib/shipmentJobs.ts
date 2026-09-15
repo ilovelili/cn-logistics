@@ -150,6 +150,7 @@ export interface ShipmentDocument {
   name: string;
   storage_path: string | null;
   file_url: string | null;
+  preview_available?: boolean;
   approval_status: DocumentApprovalStatus;
   rejection_reason: string | null;
   approved_at: string | null;
@@ -734,30 +735,46 @@ function normalizeProgressPercent(value: string) {
 export async function fetchShipmentDocuments(
   requesterEmail: string,
 ): Promise<ShipmentDocument[]> {
-  const { data, error } = await supabase.rpc(
-    "list_accessible_shipment_documents",
-    {
+  const [documentsResult, previewableDocumentsResult] = await Promise.all([
+    supabase.rpc("list_accessible_shipment_documents", {
       requester_email: requesterEmail,
-    },
-  );
+    }),
+    supabase.rpc("list_previewable_shipment_document_ids"),
+  ]);
 
-  if (error) {
-    throw error;
+  if (documentsResult.error) {
+    throw documentsResult.error;
+  }
+  if (previewableDocumentsResult.error) {
+    throw previewableDocumentsResult.error;
   }
 
+  const previewableDocumentIds = new Set(
+    ((previewableDocumentsResult.data ?? []) as Array<{ id: string }>).map(
+      ({ id }) => id,
+    ),
+  );
+
   return Promise.all(
-    ((data ?? []) as ShipmentDocument[]).map(async (document) => {
-      if (!document.storage_path) return document;
+    ((documentsResult.data ?? []) as ShipmentDocument[]).map(
+      async (document) => {
+        const previewAvailable = previewableDocumentIds.has(document.id);
+        if (!document.storage_path) {
+          return { ...document, preview_available: previewAvailable };
+        }
 
-      const { data: signedUrl, error: signedUrlError } = await supabase.storage
-        .from("shipment-documents")
-        .createSignedUrl(document.storage_path, 60 * 15);
+        const { data: signedUrl, error: signedUrlError } =
+          await supabase.storage
+            .from("shipment-documents")
+            .createSignedUrl(document.storage_path, 60 * 15);
 
-      return {
-        ...document,
-        file_url: signedUrlError ? null : signedUrl.signedUrl,
-      };
-    }),
+        return {
+          ...document,
+          file_url: signedUrlError ? null : signedUrl.signedUrl,
+          preview_available: previewAvailable,
+        };
+      },
+    ),
   );
 }
 
@@ -1004,7 +1021,28 @@ export function isCustomerDocumentDownloadApprovalExpired(
 }
 
 export function isShipmentDocumentPreviewable(document: ShipmentDocument) {
-  return Boolean(document.file_url);
+  return Boolean(
+    document.preview_available || document.storage_path || document.file_url,
+  );
+}
+
+export async function prepareShipmentDocumentPreview(
+  document: ShipmentDocument,
+): Promise<ShipmentDocument> {
+  if (document.file_url) return document;
+
+  const { data, error } = await supabase.functions.invoke(
+    "preview-shipment-document",
+    { body: { document_id: document.id } },
+  );
+  const fileUrl =
+    data && typeof data.file_url === "string" ? data.file_url.trim() : "";
+
+  if (error || !fileUrl) {
+    throw error ?? new Error("Document preview is unavailable.");
+  }
+
+  return { ...document, file_url: fileUrl };
 }
 
 export interface ShipmentStatusPeriod {

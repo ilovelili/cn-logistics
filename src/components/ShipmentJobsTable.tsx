@@ -30,6 +30,7 @@ import {
   isCustomerDocumentDownloadApprovalExpired,
   isCustomerDocumentDownloadable,
   isShipmentDocumentPreviewable,
+  prepareShipmentDocumentPreview,
   ShipmentDocument,
   ShipmentJob,
   ShipmentStatusColorMap,
@@ -174,6 +175,9 @@ export default function ShipmentJobsTable({
 }: ShipmentJobsTableProps) {
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
+  const [previewingDocumentId, setPreviewingDocumentId] = useState<
+    string | null
+  >(null);
   const [requestingDocumentId, setRequestingDocumentId] = useState<
     string | null
   >(null);
@@ -248,6 +252,22 @@ export default function ShipmentJobsTable({
       }
     },
     [onRefresh, requesterEmail, showToast],
+  );
+  const previewShipmentDocument = useCallback(
+    async (document: ShipmentDocument) => {
+      setPreviewingDocumentId(document.id);
+      try {
+        setPreviewDocument(await prepareShipmentDocumentPreview(document));
+      } catch (error) {
+        showToast(
+          "error",
+          appendErrorDetails(t("documents.previewFailed"), error),
+        );
+      } finally {
+        setPreviewingDocumentId(null);
+      }
+    },
+    [showToast],
   );
   const approveDocument = useCallback(
     async (document: ShipmentDocument) => {
@@ -339,13 +359,14 @@ export default function ShipmentJobsTable({
       isSuperAdmin,
       adminOperators,
       statusColorMap,
+      previewingDocumentId,
       requestingDocumentId,
       downloadingDocumentId,
       deletingDocumentId,
       canDeleteDocuments,
       expandedDocumentJobId,
       setExpandedDocumentJobId,
-      setPreviewDocument,
+      (document) => void previewShipmentDocument(document),
       requestDocument,
       approveDocument,
       downloadDocument,
@@ -391,12 +412,13 @@ export default function ShipmentJobsTable({
     isSuperAdmin,
     adminOperators,
     statusColorMap,
+    previewingDocumentId,
     requestingDocumentId,
     downloadingDocumentId,
     deletingDocumentId,
     canDeleteDocuments,
     expandedDocumentJobId,
-    setPreviewDocument,
+    previewShipmentDocument,
     requestDocument,
     approveDocument,
     downloadDocument,
@@ -812,6 +834,7 @@ function buildColumns(
   isSuperAdmin: boolean,
   adminOperators: AdminOperator[],
   statusColorMap: ShipmentStatusColorMap,
+  previewingDocumentId: string | null,
   requestingDocumentId: string | null,
   downloadingDocumentId: string | null,
   deletingDocumentId: string | null,
@@ -923,6 +946,7 @@ function buildColumns(
           expanded={expandedDocumentJobId === job.id}
           approvedOnly={approvedDocumentsOnly}
           requesterEmail={requesterEmail}
+          previewingDocumentId={previewingDocumentId}
           requestingDocumentId={requestingDocumentId}
           downloadingDocumentId={downloadingDocumentId}
           deletingDocumentId={deletingDocumentId}
@@ -1139,6 +1163,7 @@ function DocumentPills({
   muted = false,
   approvedOnly = false,
   requesterEmail,
+  previewingDocumentId,
   requestingDocumentId,
   downloadingDocumentId,
   deletingDocumentId,
@@ -1155,6 +1180,7 @@ function DocumentPills({
   muted?: boolean;
   approvedOnly?: boolean;
   requesterEmail?: string;
+  previewingDocumentId?: string | null;
   requestingDocumentId?: string | null;
   downloadingDocumentId?: string | null;
   deletingDocumentId?: string | null;
@@ -1265,6 +1291,7 @@ function DocumentPills({
                           event.stopPropagation();
                           onPreview(document);
                         }}
+                        disabled={previewingDocumentId === document.id}
                         className={`${actionButtonBase} border-cyan-200 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40`}
                         aria-label={t("documents.preview")}
                         aria-describedby={tooltipId}

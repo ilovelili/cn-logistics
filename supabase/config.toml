@@ -23,3 +23,11 @@ entrypoint = "./functions/send-shipment-notification-email/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-shipment-notification-email/*.html" ]
+
+[functions.preview-shipment-document]
+enabled = true
+# Auth0 issues the caller JWT. The function forwards it to PostgREST, where
+# Supabase third-party Auth validates it before the preview path is authorized.
+verify_jwt = false
+import_map = "./functions/preview-shipment-document/deno.json"
+entrypoint = "./functions/preview-shipment-document/index.ts"
