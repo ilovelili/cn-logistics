@@ -42,7 +42,16 @@ const labels: Record<string, { ja: string; en: string }> = {
   hbl_hawb: { ja: "HBL/HAWB", en: "HBL/HAWB" },
   bl_awb_date: { ja: "B/L・AWB日付", en: "B/L / AWB date" },
   progress_percent: { ja: "進捗率", en: "Progress" },
+  progress_color_hex: { ja: "ステータス色", en: "Status color" },
   tracking_history: { ja: "ステータス履歴", en: "Status history" },
+};
+
+const progressColorLabels: Record<string, { ja: string; en: string }> = {
+  "#2563eb": { ja: "進行中", en: "In progress" },
+  "#d97706": { ja: "注意", en: "Warning" },
+  "#64748b": { ja: "無効", en: "Invalid" },
+  "#e11d48": { ja: "警告", en: "Alert" },
+  "#059669": { ja: "完了", en: "Completed" },
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -111,6 +120,9 @@ function display(value: unknown, field: string, language: "ja" | "en"): string {
         .filter(Boolean)
         .join(" / ") || empty
     );
+  }
+  if (field === "progress_color_hex" && typeof value === "string") {
+    return progressColorLabels[value.toLowerCase()]?.[language] ?? value;
   }
   if (typeof value !== "string" && typeof value !== "number") return empty;
   return field === "progress_percent" ? `${value}%` : String(value);
