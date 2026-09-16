@@ -1,5 +1,16 @@
 # CN Navigator
 
+## Shipment feedback
+
+Customer evaluations are recorded for each individual Sales or Operations
+administrator assigned to the shipment. The database validates that every
+rating target is an active administrator listed in the shipment's CN担当
+assignment. The staff member's name, email address, and role are snapshotted on
+the evaluation so the super-administrator review history remains explicit.
+
+The staff-linked feedback migration intentionally removes the former
+role-level evaluation records as part of the approved clean cutover.
+
 ## Email notifications
 
 Shipment status changes create both the in-app notification and an email

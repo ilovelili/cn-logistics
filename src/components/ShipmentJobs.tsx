@@ -31,8 +31,8 @@ import { appendErrorDetails } from "../lib/errors";
 import {
   FeedbackRatingPayload,
   fetchShipmentFeedbackForUser,
-  feedbackTargetRoles,
   ShipmentFeedback,
+  ShipmentFeedbackTarget,
   ShipmentFeedbackTargetRole,
   submitShipmentFeedbackForTargets,
 } from "../lib/shipmentFeedback";
@@ -55,10 +55,7 @@ import type { ShipperAdminAssignmentOption } from "../lib/shipperUsers";
 type StatusFilter = ShipmentStatus | "all";
 
 type FeedbackRatings = FeedbackRatingPayload;
-type FeedbackRatingsByTarget = Record<
-  ShipmentFeedbackTargetRole,
-  FeedbackRatings
->;
+type FeedbackRatingsByTarget = Record<string, FeedbackRatings>;
 
 interface ShipmentJobsProps {
   jobs: ShipmentJob[];
@@ -164,6 +161,13 @@ export default function ShipmentJobs({
   const documentsByJob = useMemo(() => {
     return buildShipmentJobDocumentsByJob(jobs, documents);
   }, [documents, jobs]);
+  const feedbackTargets = useMemo(
+    () =>
+      feedbackJob
+        ? getShipmentFeedbackTargets(feedbackJob, shipperOptions)
+        : [],
+    [feedbackJob, shipperOptions],
+  );
   const summaryStats = useMemo(() => {
     const attentionRequired = jobs.filter(requiresShipmentAttention).length;
     const delivered = jobs.filter(
@@ -256,13 +260,23 @@ export default function ShipmentJobs({
   }, [profileEmail]);
 
   useEffect(() => {
-    if (feedbackJob && isFeedbackComplete(feedbackByJob[feedbackJob.id])) {
+    if (
+      feedbackJob &&
+      isFeedbackComplete(feedbackByJob[feedbackJob.id], feedbackTargets)
+    ) {
       setFeedbackJob(null);
     }
-  }, [feedbackByJob, feedbackJob]);
+  }, [feedbackByJob, feedbackJob, feedbackTargets]);
 
   const openFeedbackModal = (job: ShipmentJob) => {
-    if (feedbackLoading || isFeedbackComplete(feedbackByJob[job.id])) return;
+    if (
+      feedbackLoading ||
+      isFeedbackComplete(
+        feedbackByJob[job.id],
+        getShipmentFeedbackTargets(job, shipperOptions),
+      )
+    )
+      return;
     setFeedbackJob(job);
   };
 
@@ -499,11 +513,16 @@ export default function ShipmentJobs({
       />
       <FeedbackModal
         job={feedbackJob}
+        targets={feedbackTargets}
         initialFeedback={feedbackJob ? feedbackByJob[feedbackJob.id] : null}
         saving={feedbackSaving}
         onClose={() => setFeedbackJob(null)}
         onSubmit={async (jobId, feedback) => {
-          if (isFeedbackComplete(feedbackByJob[jobId])) {
+          const targetJob = jobs.find((job) => job.id === jobId);
+          const currentTargets = targetJob
+            ? getShipmentFeedbackTargets(targetJob, shipperOptions)
+            : [];
+          if (isFeedbackComplete(feedbackByJob[jobId], currentTargets)) {
             setFeedbackJob(null);
             return;
           }
@@ -515,24 +534,26 @@ export default function ShipmentJobs({
               await fetchShipmentFeedbackForUser(profileEmail);
             const existingFeedbackByJob = groupFeedbackByJob(existingFeedback);
 
-            if (isFeedbackComplete(existingFeedbackByJob[jobId])) {
+            if (
+              isFeedbackComplete(existingFeedbackByJob[jobId], currentTargets)
+            ) {
               setFeedbackByJob(existingFeedbackByJob);
               showToast("error", t("feedback.alreadySubmitted"));
               return;
             }
 
             const existingJobFeedback = existingFeedbackByJob[jobId] ?? [];
-            const missingTargetRoles = feedbackTargetRoles.filter(
-              (targetRole) =>
+            const missingTargets = feedback.targets.filter(
+              (target) =>
                 !existingJobFeedback.some(
-                  (item) => item.admin_operator_staff_role === targetRole,
+                  (item) => item.admin_operator_id === target.adminOperatorId,
                 ),
             );
             const savedFeedback = await submitShipmentFeedbackForTargets({
               shipmentJobId: jobId,
               submitterEmail: profileEmail,
               feedbackByTarget: feedback.feedbackByTarget,
-              targetRoles: missingTargetRoles,
+              targets: missingTargets,
               reason: feedback.reason,
             });
             setFeedbackByJob((currentFeedback) => ({
@@ -656,12 +677,14 @@ function FilterSelect({
 
 function FeedbackModal({
   job,
+  targets,
   initialFeedback,
   saving,
   onClose,
   onSubmit,
 }: {
   job: ShipmentJob | null;
+  targets: ShipmentFeedbackTarget[];
   initialFeedback?: ShipmentFeedback[] | null;
   saving: boolean;
   onClose: () => void;
@@ -669,28 +692,32 @@ function FeedbackModal({
     jobId: string,
     feedback: {
       feedbackByTarget: FeedbackRatingsByTarget;
+      targets: ShipmentFeedbackTarget[];
       reason: string;
     },
   ) => Promise<void>;
 }) {
   type PendingFeedbackSubmission = {
     feedbackByTarget: FeedbackRatingsByTarget;
+    targets: ShipmentFeedbackTarget[];
     reason: string;
   };
 
   const [feedbackByTarget, setFeedbackByTarget] =
     useState<FeedbackRatingsByTarget>(() =>
-      getInitialFeedbackRatingsByTarget(initialFeedback),
+      getInitialFeedbackRatingsByTarget(targets, initialFeedback),
     );
   const [reason, setReason] = useState(initialFeedback?.[0]?.reason ?? "");
   const [pendingFeedback, setPendingFeedback] =
     useState<PendingFeedbackSubmission | null>(null);
 
   useEffect(() => {
-    setFeedbackByTarget(getInitialFeedbackRatingsByTarget(initialFeedback));
+    setFeedbackByTarget(
+      getInitialFeedbackRatingsByTarget(targets, initialFeedback),
+    );
     setReason(initialFeedback?.[0]?.reason ?? "");
     setPendingFeedback(null);
-  }, [initialFeedback, job?.id]);
+  }, [initialFeedback, job?.id, targets]);
 
   if (!job) {
     return null;
@@ -698,8 +725,8 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
-  const isAlreadySubmitted = isFeedbackComplete(initialFeedback);
-  const isComplete = isFeedbackByTargetComplete(feedbackByTarget);
+  const isAlreadySubmitted = isFeedbackComplete(initialFeedback, targets);
+  const isComplete = isFeedbackByTargetComplete(feedbackByTarget, targets);
   const feedbackCategories = [
     {
       key: "attitudeRating" as const,
@@ -723,14 +750,14 @@ function FeedbackModal({
     },
   ];
   const setCategoryRating = (
-    targetRole: ShipmentFeedbackTargetRole,
+    targetId: string,
     key: keyof FeedbackRatings,
     ratingValue: number,
   ) => {
     setFeedbackByTarget((currentFeedback) => ({
       ...currentFeedback,
-      [targetRole]: {
-        ...currentFeedback[targetRole],
+      [targetId]: {
+        ...currentFeedback[targetId],
         [key]: ratingValue,
       },
     }));
@@ -777,29 +804,42 @@ function FeedbackModal({
             if (!isComplete || isAlreadySubmitted) return;
             setPendingFeedback({
               feedbackByTarget,
+              targets,
               reason: reason.trim(),
             });
           }}
         >
           <div className="space-y-6">
-            {feedbackTargetRoleOptions.map((option) => (
+            {!targets.length && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                {t("feedback.noTargets")}
+              </div>
+            )}
+            {targets.map((target) => (
               <section
-                key={option.value}
+                key={target.adminOperatorId}
                 className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"
               >
                 <h3 className="text-sm font-black text-gray-900 dark:text-white">
-                  {t(option.labelKey)}
+                  {target.name}
+                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                    {getFeedbackTargetRoleLabel(target.role)} · {target.email}
+                  </span>
                 </h3>
                 <div className="mt-4 space-y-4">
                   {feedbackCategories.map((category) => (
                     <StarRatingInput
                       key={category.key}
                       label={category.label}
-                      value={feedbackByTarget[option.value][category.key]}
+                      value={
+                        feedbackByTarget[target.adminOperatorId]?.[
+                          category.key
+                        ] ?? 0
+                      }
                       disabled={isAlreadySubmitted}
                       onChange={(ratingValue) =>
                         setCategoryRating(
-                          option.value,
+                          target.adminOperatorId,
                           category.key,
                           ratingValue,
                         )
@@ -835,7 +875,9 @@ function FeedbackModal({
             </button>
             <button
               type="submit"
-              disabled={!isComplete || saving || isAlreadySubmitted}
+              disabled={
+                !targets.length || !isComplete || saving || isAlreadySubmitted
+              }
               className="rounded-lg bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isAlreadySubmitted
@@ -931,14 +973,15 @@ function getEmptyFeedbackRatings(): FeedbackRatings {
 }
 
 function getInitialFeedbackRatingsByTarget(
+  targets: ShipmentFeedbackTarget[],
   feedback?: ShipmentFeedback[] | null,
 ): FeedbackRatingsByTarget {
-  return feedbackTargetRoles.reduce((ratingsByTarget, targetRole) => {
+  return targets.reduce((ratingsByTarget, target) => {
     const targetFeedback = feedback?.find(
-      (item) => item.admin_operator_staff_role === targetRole,
+      (item) => item.admin_operator_id === target.adminOperatorId,
     );
 
-    ratingsByTarget[targetRole] = targetFeedback
+    ratingsByTarget[target.adminOperatorId] = targetFeedback
       ? getFeedbackRatings(targetFeedback)
       : getEmptyFeedbackRatings();
 
@@ -956,19 +999,6 @@ function getFeedbackRatings(feedback: ShipmentFeedback): FeedbackRatings {
   };
 }
 
-const feedbackTargetRoleOptions: {
-  value: ShipmentFeedbackTargetRole;
-  labelKey:
-    | "superAdmin.operators.staffRole.sales"
-    | "superAdmin.operators.staffRole.operations";
-}[] = [
-  { value: "sales", labelKey: "superAdmin.operators.staffRole.sales" },
-  {
-    value: "operations",
-    labelKey: "superAdmin.operators.staffRole.operations",
-  },
-];
-
 function groupFeedbackByJob(feedback: ShipmentFeedback[]) {
   return feedback.reduce<Record<string, ShipmentFeedback[]>>(
     (grouped, item) => {
@@ -982,20 +1012,33 @@ function groupFeedbackByJob(feedback: ShipmentFeedback[]) {
   );
 }
 
-function isFeedbackComplete(feedback?: ShipmentFeedback[] | null) {
-  return feedbackTargetRoles.every((targetRole) =>
-    feedback?.some((item) => item.admin_operator_staff_role === targetRole),
+function isFeedbackComplete(
+  feedback: ShipmentFeedback[] | null | undefined,
+  targets: ShipmentFeedbackTarget[],
+) {
+  return (
+    targets.length > 0 &&
+    targets.every((target) =>
+      feedback?.some(
+        (item) => item.admin_operator_id === target.adminOperatorId,
+      ),
+    )
   );
 }
 
-function isFeedbackByTargetComplete(feedbackByTarget: FeedbackRatingsByTarget) {
-  return feedbackTargetRoles.every((targetRole) =>
-    Object.values(feedbackByTarget[targetRole]).every((rating) => rating > 0),
+function isFeedbackByTargetComplete(
+  feedbackByTarget: FeedbackRatingsByTarget,
+  targets: ShipmentFeedbackTarget[],
+) {
+  return targets.every((target) =>
+    Object.values(feedbackByTarget[target.adminOperatorId] ?? {}).every(
+      (rating) => rating > 0,
+    ),
   );
 }
 
 function getFeedbackSummaryForJob(feedback?: ShipmentFeedback[]) {
-  if (!feedback?.length || !isFeedbackComplete(feedback)) {
+  if (!feedback?.length) {
     return null;
   }
 
@@ -1011,6 +1054,53 @@ function getFeedbackSummaryForJob(feedback?: ShipmentFeedback[]) {
     accuracy_rating: averageFeedbackRating(feedback, "accuracy_rating"),
     price_rating: averageFeedbackRating(feedback, "price_rating"),
   };
+}
+
+function getShipmentFeedbackTargets(
+  job: ShipmentJob,
+  shipperOptions: ShipperAdminAssignmentOption[],
+): ShipmentFeedbackTarget[] {
+  const assignedAdminIds = new Set(job.assigned_admin_user_ids ?? []);
+  const targetsById = new Map<string, ShipmentFeedbackTarget>();
+
+  shipperOptions
+    .filter((option) => option.shipper_name === job.shipper_name)
+    .flatMap((option) => option.admin_assignments)
+    .forEach((assignment) => {
+      if (!assignedAdminIds.has(assignment.admin_user_id)) return;
+
+      const roles = assignment.staff_roles?.length
+        ? assignment.staff_roles
+        : [assignment.staff_role];
+      const role = roles.includes("operations")
+        ? "operations"
+        : roles.includes("sales")
+          ? "sales"
+          : null;
+      if (!role) return;
+
+      targetsById.set(assignment.admin_user_id, {
+        adminOperatorId: assignment.admin_user_id,
+        name: assignment.user_name?.trim() || assignment.email,
+        email: assignment.email,
+        role,
+      });
+    });
+
+  return [...targetsById.values()].sort((first, second) => {
+    if (first.role !== second.role) {
+      return first.role === "operations" ? -1 : 1;
+    }
+    return first.name.localeCompare(second.name, "ja-JP");
+  });
+}
+
+function getFeedbackTargetRoleLabel(role: ShipmentFeedbackTargetRole) {
+  return t(
+    role === "sales"
+      ? "superAdmin.operators.staffRole.sales"
+      : "superAdmin.operators.staffRole.operations",
+  );
 }
 
 function averageFeedbackRating(

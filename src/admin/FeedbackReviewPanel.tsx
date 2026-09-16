@@ -117,6 +117,7 @@ export default function FeedbackReviewPanel({
         item.shipment_invoice_number,
         jobsById.get(item.shipment_job_id)?.job_number,
         item.submitter_email,
+        item.admin_operator_name,
         item.admin_operator_email,
         getFeedbackTargetRoleLabel(item.admin_operator_staff_role),
         item.reason,
@@ -176,12 +177,19 @@ export default function FeedbackReviewPanel({
         label: t("superAdmin.feedback.operator"),
         width: 210,
         render: (item) => (
-          <span
-            className="block truncate text-gray-700 dark:text-gray-300"
+          <div
+            className="min-w-0"
             title={item.admin_operator_email ?? undefined}
           >
-            {item.admin_operator_email || "-"}
-          </span>
+            <div className="truncate font-bold text-gray-900 dark:text-white">
+              {item.admin_operator_name || item.admin_operator_email || "-"}
+            </div>
+            {item.admin_operator_email && (
+              <div className="truncate text-xs text-gray-500">
+                {item.admin_operator_email}
+              </div>
+            )}
+          </div>
         ),
       },
       {
@@ -525,7 +533,7 @@ function getFeedbackSortValue(
     case "jobNumber":
       return jobsById?.get(item.shipment_job_id)?.job_number ?? "";
     case "operator":
-      return item.admin_operator_email ?? "";
+      return item.admin_operator_name || item.admin_operator_email || "";
     case "targetRole":
       return getFeedbackTargetRoleLabel(item.admin_operator_staff_role);
     case "submitter":

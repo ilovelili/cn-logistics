@@ -6,6 +6,8 @@ export interface ShipmentFeedback {
   id: string;
   shipment_job_id: string;
   submitter_email: string;
+  admin_operator_id: string;
+  admin_operator_name: string;
   admin_operator_email: string | null;
   admin_operator_staff_role: ShipmentFeedbackTargetRole | null;
   rating: number;
@@ -17,6 +19,13 @@ export interface ShipmentFeedback {
   reason: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ShipmentFeedbackTarget {
+  adminOperatorId: string;
+  name: string;
+  email: string;
+  role: ShipmentFeedbackTargetRole;
 }
 
 export interface ShipmentFeedbackReview extends ShipmentFeedback {
@@ -40,75 +49,31 @@ export async function fetchShipmentFeedbackForUser(
   return (data ?? []) as ShipmentFeedback[];
 }
 
-export async function submitShipmentFeedback({
-  shipmentJobId,
-  submitterEmail,
-  attitudeRating,
-  professionalismRating,
-  speedRating,
-  accuracyRating,
-  priceRating,
-  targetRole,
-  reason,
-}: {
-  shipmentJobId: string;
-  submitterEmail: string;
-  attitudeRating: number;
-  professionalismRating: number;
-  speedRating: number;
-  accuracyRating: number;
-  priceRating: number;
-  targetRole: ShipmentFeedbackTargetRole;
-  reason: string;
-}): Promise<ShipmentFeedback> {
-  const { data, error } = await supabase.rpc("submit_shipment_feedback", {
-    feedback_shipment_job_id: shipmentJobId,
-    feedback_submitter_email: submitterEmail,
-    feedback_attitude_rating: attitudeRating,
-    feedback_professionalism_rating: professionalismRating,
-    feedback_speed_rating: speedRating,
-    feedback_accuracy_rating: accuracyRating,
-    feedback_price_rating: priceRating,
-    feedback_admin_operator_staff_role: targetRole,
-    feedback_reason: reason,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  const [result] = (data ?? []) as ShipmentFeedback[];
-  if (!result) {
-    throw new Error("Feedback was not saved.");
-  }
-
-  return result;
-}
-
 export async function submitShipmentFeedbackForTargets({
   shipmentJobId,
   submitterEmail,
   feedbackByTarget,
-  targetRoles = feedbackTargetRoles,
+  targets,
   reason,
 }: {
   shipmentJobId: string;
   submitterEmail: string;
-  feedbackByTarget: Record<ShipmentFeedbackTargetRole, FeedbackRatingPayload>;
-  targetRoles?: ShipmentFeedbackTargetRole[];
+  feedbackByTarget: Record<string, FeedbackRatingPayload>;
+  targets: ShipmentFeedbackTarget[];
   reason: string;
 }): Promise<ShipmentFeedback[]> {
   const { data, error } = await supabase.rpc("submit_shipment_feedback_batch", {
     feedback_shipment_job_id: shipmentJobId,
     feedback_submitter_email: submitterEmail,
-    feedback_by_target: targetRoles.map((targetRole) => ({
-      target_role: targetRole,
-      attitude_rating: feedbackByTarget[targetRole].attitudeRating,
+    feedback_by_target: targets.map((target) => ({
+      admin_operator_id: target.adminOperatorId,
+      target_role: target.role,
+      attitude_rating: feedbackByTarget[target.adminOperatorId].attitudeRating,
       professionalism_rating:
-        feedbackByTarget[targetRole].professionalismRating,
-      speed_rating: feedbackByTarget[targetRole].speedRating,
-      accuracy_rating: feedbackByTarget[targetRole].accuracyRating,
-      price_rating: feedbackByTarget[targetRole].priceRating,
+        feedbackByTarget[target.adminOperatorId].professionalismRating,
+      speed_rating: feedbackByTarget[target.adminOperatorId].speedRating,
+      accuracy_rating: feedbackByTarget[target.adminOperatorId].accuracyRating,
+      price_rating: feedbackByTarget[target.adminOperatorId].priceRating,
     })),
     feedback_reason: reason,
   });
@@ -119,11 +84,6 @@ export async function submitShipmentFeedbackForTargets({
 
   return (data ?? []) as ShipmentFeedback[];
 }
-
-export const feedbackTargetRoles: ShipmentFeedbackTargetRole[] = [
-  "sales",
-  "operations",
-];
 
 export interface FeedbackRatingPayload {
   attitudeRating: number;

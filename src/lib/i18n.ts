@@ -288,8 +288,9 @@ const ja = {
   "feedback.alreadySubmitted": "この案件はすでに評価済みです",
   "feedback.confirmTitle": "評価を送信しますか？",
   "feedback.confirmBody":
-    "評価は一度だけ送信できます。送信後は営業・オペレーションの評価を変更できません。",
-  "feedback.confirmTargets": "営業・オペレーションの評価を送信します。",
+    "評価は一度だけ送信できます。送信後は各担当者の評価を変更できません。",
+  "feedback.confirmTargets": "案件に登録された各担当者の評価を送信します。",
+  "feedback.noTargets": "この案件には評価対象の担当者が登録されていません。",
   "jobs.pagination.pageSize": "表示件数",
   "jobs.pagination.summary": "{total}件中 {from}-{to}件を表示",
   "jobs.detail.title": "出荷案件詳細",
@@ -902,8 +903,10 @@ const en: Messages = {
     "Feedback has already been submitted for this shipment",
   "feedback.confirmTitle": "Submit feedback?",
   "feedback.confirmBody":
-    "Feedback can only be submitted once. Sales and Operation ratings cannot be changed after submission.",
-  "feedback.confirmTargets": "Sales and Operation feedback will be submitted.",
+    "Feedback can only be submitted once. Each staff member's rating cannot be changed after submission.",
+  "feedback.confirmTargets":
+    "Feedback for each staff member assigned to this shipment will be submitted.",
+  "feedback.noTargets": "No staff member is assigned to this shipment.",
 
   "documents.onHold": "On hold",
   "documents.pendingApproval": "Document DL approval pending",

@@ -394,9 +394,9 @@ BEGIN
     ON CONFLICT (normal_user_id, admin_user_id) DO UPDATE
     SET assigned_by = EXCLUDED.assigned_by, updated_at = now();
 
-    UPDATE public.app_users
+    UPDATE public.app_users AS shipper_user
     SET approval_status = 'approved', updated_at = now()
-    WHERE id = ANY(COALESCE(updated_user_ids, ARRAY[]::uuid[]));
+    WHERE shipper_user.id = ANY(COALESCE(updated_user_ids, ARRAY[]::uuid[]));
   END IF;
 
   UPDATE public.shipper_change_requests AS change_request
