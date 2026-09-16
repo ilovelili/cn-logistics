@@ -35,6 +35,10 @@ import {
   updateShipperUserApprovalStatus,
   updateShipperUserAdminAssignments,
   updateShipperContacts,
+  fetchAccessibleShipperChangeRequests,
+  reviewShipperChangeRequest,
+  submitShipperChangeRequest,
+  type ShipperChangeRequest,
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
 import { appendErrorDetails } from "../lib/errors";
@@ -126,6 +130,9 @@ export default function UserRegistrationForm({
   const [addressLoading, setAddressLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [users, setUsers] = useState<ShipperUser[]>([]);
+  const [changeRequests, setChangeRequests] = useState<ShipperChangeRequest[]>(
+    [],
+  );
   const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
   const [selectedCreateAdminIds, setSelectedCreateAdminIds] = useState<
     string[]
@@ -204,8 +211,12 @@ export default function UserRegistrationForm({
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const registeredUsers = await fetchShipperUsersByAdmin(adminEmail);
+      const [registeredUsers, pendingRequests] = await Promise.all([
+        fetchShipperUsersByAdmin(adminEmail),
+        fetchAccessibleShipperChangeRequests(),
+      ]);
       setUsers(registeredUsers);
+      setChangeRequests(pendingRequests);
     } catch (error) {
       showToast(
         "error",
@@ -701,6 +712,21 @@ export default function UserRegistrationForm({
           />
         ),
       });
+    } else {
+      userColumns.push({
+        id: "action" as const,
+        label: t("admin.userRegistration.action"),
+        width: 100,
+        render: (user: ShipperUserRow) => (
+          <TableActionButton
+            variant="success"
+            icon={<Edit3 className="h-3.5 w-3.5" />}
+            onClick={() => setSelectedUser(user)}
+          >
+            {t("common.edit")}
+          </TableActionButton>
+        ),
+      });
     }
 
     return userColumns;
@@ -1024,6 +1050,46 @@ export default function UserRegistrationForm({
           showAdminAssignments
           adminOperators={adminOperators}
           requesterEmail={adminEmail}
+          changeRequest={changeRequests.find(
+            (request) => request.target_user_id === selectedUser.id,
+          )}
+          canSubmitChangeRequest={
+            !isSuperAdmin &&
+            selectedUser.approval_status === "approved" &&
+            Boolean(
+              selectedUser.admin_assignments?.some(
+                (assignment) =>
+                  assignment.email.toLowerCase() === adminEmail.toLowerCase() &&
+                  (assignment.staff_roles ?? [assignment.staff_role]).includes(
+                    "sales",
+                  ),
+              ),
+            )
+          }
+          onChangeRequested={async () => {
+            await loadUsers();
+            setSelectedUser(null);
+            showToast("success", t("admin.userRegistration.changeRequested"));
+          }}
+          onReviewRequest={
+            isSuperAdmin
+              ? async (requestId, status) => {
+                  const { users: updatedUsers, auth0Provisioned } =
+                    await reviewShipperChangeRequest({ requestId, status });
+                  await loadUsers();
+                  setSelectedUser(null);
+                  showToast(
+                    auth0Provisioned ? "success" : "error",
+                    t(
+                      status === "approved"
+                        ? "admin.userRegistration.changeApproved"
+                        : "admin.userRegistration.changeRejected",
+                    ),
+                  );
+                  return updatedUsers;
+                }
+              : undefined
+          }
           detailsReadOnly={
             !isSuperAdmin && selectedUser.approval_status === "approved"
           }
@@ -1200,6 +1266,10 @@ export function UserDetailModal({
   showAdminAssignments = false,
   adminOperators,
   requesterEmail,
+  changeRequest,
+  canSubmitChangeRequest = false,
+  onChangeRequested,
+  onReviewRequest,
   detailsReadOnly = false,
   assignmentsReadOnly = false,
   onNotify,
@@ -1212,13 +1282,21 @@ export function UserDetailModal({
   showAdminAssignments?: boolean;
   adminOperators: AdminOperator[];
   requesterEmail: string;
+  changeRequest?: ShipperChangeRequest;
+  canSubmitChangeRequest?: boolean;
+  onChangeRequested?: () => void | Promise<void>;
+  onReviewRequest?: (
+    requestId: string,
+    status: "approved" | "rejected",
+  ) => void | Promise<ShipperUser[]>;
   detailsReadOnly?: boolean;
   assignmentsReadOnly?: boolean;
   onNotify?: (type: "success" | "error", message: string) => void;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
 }) {
-  const isEditable = !detailsReadOnly;
+  const isChangeRequestMode = canSubmitChangeRequest && !changeRequest;
+  const isEditable = !detailsReadOnly || isChangeRequestMode;
   const shipperContacts = useMemo(() => {
     const matchingUsers = users.filter((currentUser) =>
       isSameShipperGroup(currentUser, user),
@@ -1246,6 +1324,9 @@ export function UserDetailModal({
   const [addressLoading, setAddressLoading] = useState(false);
   const [error, setError] = useState("");
   const [assignmentError, setAssignmentError] = useState("");
+  const [reviewingStatus, setReviewingStatus] = useState<
+    "approved" | "rejected" | null
+  >(null);
   const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(() =>
     (user.admin_assignments ?? []).map(
       (assignment) => assignment.admin_user_id,
@@ -1308,6 +1389,16 @@ export function UserDetailModal({
     setError("");
 
     try {
+      if (isChangeRequestMode) {
+        await submitShipperChangeRequest({
+          userId: user.id,
+          form,
+          adminUserIds: selectedAdminIds,
+        });
+        await onChangeRequested?.();
+        return;
+      }
+
       const { users: updatedUsers, auth0Provisioned } =
         await updateShipperContacts(user.id, form);
       onSaved(updatedUsers);
@@ -1329,6 +1420,24 @@ export function UserDetailModal({
       onNotify?.("error", message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleReviewRequest = async (status: "approved" | "rejected") => {
+    if (!changeRequest || !onReviewRequest) return;
+    setReviewingStatus(status);
+    setError("");
+    try {
+      await onReviewRequest(changeRequest.id, status);
+    } catch (reviewError) {
+      const message = appendAdminErrorDetails(
+        t("admin.userRegistration.changeReviewFailed"),
+        reviewError,
+      );
+      setError(message);
+      onNotify?.("error", message);
+    } finally {
+      setReviewingStatus(null);
     }
   };
 
@@ -1393,11 +1502,20 @@ export function UserDetailModal({
           <StatusBadge status={user.approval_status} />
         </div>
 
-        {(detailsReadOnly || assignmentsReadOnly) && (
+        {changeRequest ? (
+          <ChangeRequestSummary
+            request={changeRequest}
+            adminOperators={adminOperators}
+          />
+        ) : (detailsReadOnly || assignmentsReadOnly) && !isChangeRequestMode ? (
           <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             {t("admin.userRegistration.approvedReadOnly")}
           </div>
-        )}
+        ) : isChangeRequestMode ? (
+          <div className="mb-6 rounded-xl border border-blue-300 bg-blue-50 p-4 text-sm font-medium text-blue-900 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
+            {t("admin.userRegistration.changeRequestDescription")}
+          </div>
+        ) : null}
 
         {showAdminAssignments && (
           <section className="mb-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
@@ -1410,7 +1528,7 @@ export function UserDetailModal({
                   {t("admin.userRegistration.assignedAdminsDescription")}
                 </p>
               </div>
-              {!assignmentsReadOnly && (
+              {!assignmentsReadOnly && !isChangeRequestMode && (
                 <button
                   type="button"
                   disabled={assignmentsSaving}
@@ -1426,7 +1544,7 @@ export function UserDetailModal({
             <AdminOperatorAssignmentGroups
               adminOperators={adminOperators}
               selectedAdminIds={selectedAdminIds}
-              assignmentsReadOnly={assignmentsReadOnly}
+              assignmentsReadOnly={assignmentsReadOnly && !isChangeRequestMode}
               onToggle={toggleAdminAssignment}
             />
 
@@ -1556,16 +1674,41 @@ export function UserDetailModal({
           >
             {t("common.cancel")}
           </button>
-          {isEditable && (
+          {changeRequest && onReviewRequest ? (
+            <>
+              <button
+                type="button"
+                disabled={reviewingStatus !== null}
+                onClick={() => void handleReviewRequest("rejected")}
+                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950"
+              >
+                {t("admin.userRegistration.unapprove")}
+              </button>
+              <button
+                type="button"
+                disabled={reviewingStatus !== null}
+                onClick={() => void handleReviewRequest("approved")}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
+              >
+                {t("admin.userRegistration.approve")}
+              </button>
+            </>
+          ) : isEditable ? (
             <button
               type="submit"
               disabled={saving}
               className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
             >
               <Save className="h-4 w-4" />
-              {saving ? t("common.saving") : t("common.save")}
+              {saving
+                ? t("common.saving")
+                : t(
+                    isChangeRequestMode
+                      ? "admin.userRegistration.submitChangeRequest"
+                      : "common.save",
+                  )}
             </button>
-          )}
+          ) : null}
         </div>
       </form>
     </div>
@@ -1621,6 +1764,92 @@ function ApprovalButtons({
         {t("common.delete")}
       </TableActionButton>
     </div>
+  );
+}
+
+function ChangeRequestSummary({
+  request,
+  adminOperators,
+}: {
+  request: ShipperChangeRequest;
+  adminOperators: AdminOperator[];
+}) {
+  const before = request.current_snapshot;
+  const after = request.proposed_snapshot;
+  const assignmentLabel = (adminUserIds: string[]) =>
+    adminUserIds
+      .map((adminUserId) => {
+        const operator = adminOperators.find(
+          (candidate) => candidate.id === adminUserId,
+        );
+        return operator?.user_name || operator?.email || adminUserId;
+      })
+      .join(", ");
+  const rows = [
+    [
+      t("admin.userRegistration.shipperName"),
+      before.shipper_name,
+      after.shipper_name,
+    ],
+    [t("admin.userRegistration.zipcode"), before.zipcode, after.zipcode],
+    [
+      t("admin.userRegistration.shipperAddress"),
+      before.shipper_address,
+      after.shipper_address,
+    ],
+    [t("admin.userRegistration.telephone"), before.telephone, after.telephone],
+    [
+      t("admin.userRegistration.budget"),
+      String(before.budget),
+      String(after.budget),
+    ],
+    [t("admin.userRegistration.notes"), before.notes, after.notes],
+    [
+      t("admin.userRegistration.contacts"),
+      before.contacts
+        .map((contact) => `${contact.contact_person} <${contact.email}>`)
+        .join(", "),
+      after.contacts
+        .map((contact) => `${contact.contact_person} <${contact.email}>`)
+        .join(", "),
+    ],
+    [
+      t("admin.userRegistration.assignedAdmins"),
+      assignmentLabel(before.admin_user_ids),
+      assignmentLabel(after.admin_user_ids),
+    ],
+  ].filter(([, previousValue, nextValue]) => previousValue !== nextValue);
+
+  return (
+    <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+      <h4 className="font-bold text-amber-950 dark:text-amber-100">
+        {t("admin.userRegistration.pendingChangeRequest")}
+      </h4>
+      <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+        {t("admin.userRegistration.requestedBy", {
+          email: request.requested_by_email,
+        })}
+      </p>
+      <div className="mt-3 space-y-2">
+        {rows.map(([label, previousValue, nextValue]) => (
+          <div
+            key={label}
+            className="grid gap-1 rounded-lg bg-white/70 p-3 text-sm sm:grid-cols-[140px_1fr_auto_1fr] dark:bg-slate-950/30"
+          >
+            <span className="font-bold text-gray-700 dark:text-gray-200">
+              {label}
+            </span>
+            <span className="break-words text-gray-500 line-through dark:text-gray-400">
+              {previousValue || t("common.unset")}
+            </span>
+            <span className="text-gray-400">→</span>
+            <span className="break-words font-semibold text-gray-900 dark:text-white">
+              {nextValue || t("common.unset")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

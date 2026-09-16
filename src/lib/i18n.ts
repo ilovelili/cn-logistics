@@ -446,6 +446,16 @@ const ja = {
   "admin.userRegistration.assignmentUpdateFailed": "CN担当の更新に失敗しました",
   "admin.userRegistration.approvedReadOnly":
     "承認済みの荷主情報は、通常管理者から変更できません。変更が必要な場合はスーパー管理者に依頼してください。",
+  "admin.userRegistration.changeRequestDescription":
+    "変更内容はすぐには反映されません。変更申請を送信し、スーパー管理者の承認後に反映されます。",
+  "admin.userRegistration.submitChangeRequest": "変更申請を送信",
+  "admin.userRegistration.changeRequested":
+    "荷主情報の変更申請を送信しました。承認されるまで現在の情報が維持されます。",
+  "admin.userRegistration.pendingChangeRequest": "荷主情報の変更申請",
+  "admin.userRegistration.requestedBy": "申請者：{email}",
+  "admin.userRegistration.changeApproved": "荷主情報の変更申請を承認しました。",
+  "admin.userRegistration.changeRejected": "荷主情報の変更申請を却下しました。",
+  "admin.userRegistration.changeReviewFailed": "変更申請の処理に失敗しました",
   "admin.userRegistration.action": "操作",
   "admin.userRegistration.approve": "承認",
   "admin.userRegistration.unapprove": "却下",
@@ -1044,6 +1054,19 @@ const en: Messages = {
     "Failed to update CN contacts",
   "admin.userRegistration.approvedReadOnly":
     "Approved shipper information is read-only for regular admins. Ask a super admin if changes are required.",
+  "admin.userRegistration.changeRequestDescription":
+    "Changes are not applied immediately. Submit a change request; the current information remains active until a super admin approves it.",
+  "admin.userRegistration.submitChangeRequest": "Submit change request",
+  "admin.userRegistration.changeRequested":
+    "The shipper change request was submitted. Current information remains active until approval.",
+  "admin.userRegistration.pendingChangeRequest": "Shipper change request",
+  "admin.userRegistration.requestedBy": "Requested by: {email}",
+  "admin.userRegistration.changeApproved":
+    "The shipper change request was approved.",
+  "admin.userRegistration.changeRejected":
+    "The shipper change request was rejected.",
+  "admin.userRegistration.changeReviewFailed":
+    "Failed to review the change request",
   "admin.userRegistration.approve": "Approve",
   "admin.userRegistration.unapprove": "Reject",
   "admin.userRegistration.approved":

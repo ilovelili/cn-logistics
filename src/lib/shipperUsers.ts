@@ -58,6 +58,28 @@ export interface ShipperAdminAssignmentOption {
   admin_assignments: ShipperUserAdminAssignment[];
 }
 
+export interface ShipperChangeRequestSnapshot {
+  shipper_name: string;
+  zipcode: string;
+  shipper_address: string;
+  telephone: string;
+  budget: number;
+  notes: string;
+  contacts: ShipperUserContact[];
+  admin_user_ids: string[];
+}
+
+export interface ShipperChangeRequest {
+  id: string;
+  target_user_id: string;
+  shipper_name: string;
+  status: "pending" | "approved" | "rejected";
+  requested_by_email: string;
+  current_snapshot: ShipperChangeRequestSnapshot;
+  proposed_snapshot: ShipperChangeRequestSnapshot;
+  created_at: string;
+}
+
 export const defaultShipperUserForm: ShipperUserForm = {
   email: "",
   shipper_name: "",
@@ -272,4 +294,72 @@ export async function updateShipperUserAdminAssignments({
   }
 
   return updatedUser;
+}
+
+export async function fetchAccessibleShipperChangeRequests() {
+  const { data, error } = await supabase.rpc(
+    "list_accessible_shipper_change_requests",
+  );
+
+  if (error) throw error;
+  return (data ?? []) as ShipperChangeRequest[];
+}
+
+export async function submitShipperChangeRequest({
+  userId,
+  form,
+  adminUserIds,
+}: {
+  userId: string;
+  form: ShipperUserForm;
+  adminUserIds: string[];
+}) {
+  const { data, error } = await supabase.rpc("submit_shipper_change_request", {
+    target_user_id: userId,
+    proposed_shipper_name: form.shipper_name.trim(),
+    proposed_zipcode: form.zipcode.trim(),
+    proposed_shipper_address: form.shipper_address.trim(),
+    proposed_telephone: form.telephone.trim(),
+    proposed_budget: Number(form.budget || 0),
+    proposed_contacts: form.contacts
+      .map((contact) => ({
+        id: contact.id,
+        email: contact.email.trim(),
+        contact_person: contact.contact_person.trim(),
+      }))
+      .filter((contact) => contact.email && contact.contact_person),
+    proposed_notes: form.notes.trim(),
+    proposed_admin_user_ids: adminUserIds,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function reviewShipperChangeRequest({
+  requestId,
+  status,
+}: {
+  requestId: string;
+  status: "approved" | "rejected";
+}) {
+  const { data, error } = await supabase.rpc("review_shipper_change_request", {
+    request_id: requestId,
+    next_status: status,
+  });
+
+  if (error) throw error;
+
+  const updatedUsers = (data ?? []) as ShipperUser[];
+  if (status === "approved" && updatedUsers.length > 0) {
+    try {
+      await provisionAuth0Users(
+        updatedUsers.map((user) => ({ email: user.email, role: "normal" })),
+      );
+    } catch {
+      return { users: updatedUsers, auth0Provisioned: false };
+    }
+  }
+
+  return { users: updatedUsers, auth0Provisioned: true };
 }
