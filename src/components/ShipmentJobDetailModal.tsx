@@ -70,10 +70,6 @@ export default function ShipmentJobDetailModal({
   const internalDocuments = documents.filter(
     (document) => document.scope === "internal",
   );
-  const responsibleAssignments = getResponsibleAdminAssignments(
-    job,
-    shipperOptions,
-  );
 
   const confirmDelete = async () => {
     if (!onDelete) return;
@@ -245,8 +241,11 @@ export default function ShipmentJobDetailModal({
                 <DetailField
                   label={t("admin.userRegistration.operationsAssignees")}
                   value={formatAdminAssignments(
-                    responsibleAssignments,
-                    "operations",
+                    getResponsibleAdminAssignments(
+                      job,
+                      shipperOptions,
+                      "operations",
+                    ),
                   )}
                 />
               </DetailCard>
@@ -254,8 +253,11 @@ export default function ShipmentJobDetailModal({
                 <DetailField
                   label={t("admin.userRegistration.salesAssignees")}
                   value={formatAdminAssignments(
-                    responsibleAssignments,
-                    "sales",
+                    getResponsibleAdminAssignments(
+                      job,
+                      shipperOptions,
+                      "sales",
+                    ),
                   )}
                 />
               </DetailCard>
@@ -290,16 +292,10 @@ export default function ShipmentJobDetailModal({
 
 function formatAdminAssignments(
   assignments: ReturnType<typeof getResponsibleAdminAssignments>,
-  role: "operations" | "sales",
 ) {
-  const names = assignments
-    .filter((assignment) =>
-      (assignment.staff_roles?.length
-        ? assignment.staff_roles
-        : [assignment.staff_role]
-      ).includes(role),
-    )
-    .map((assignment) => assignment.user_name?.trim() || assignment.email);
+  const names = assignments.map(
+    (assignment) => assignment.user_name?.trim() || assignment.email,
+  );
 
   return names.length > 0 ? names.join(", ") : null;
 }

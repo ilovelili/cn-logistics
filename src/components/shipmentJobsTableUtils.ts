@@ -153,15 +153,7 @@ export function getResponsibleAdminNames(
   shipperOptions: ShipmentJobsShipperOption[],
   staffRole?: AdminOperatorStaffRole,
 ) {
-  return getResponsibleAdminAssignments(job, shipperOptions)
-    .filter(
-      (assignment) =>
-        !staffRole ||
-        (assignment.staff_roles?.length
-          ? assignment.staff_roles
-          : [assignment.staff_role]
-        ).includes(staffRole),
-    )
+  return getResponsibleAdminAssignments(job, shipperOptions, staffRole)
     .map((assignment) => assignment.user_name || assignment.email)
     .filter(Boolean);
 }
@@ -186,8 +178,15 @@ export function getResponsibleAdminSearchTerms(
 export function getResponsibleAdminAssignments(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
+  staffRole?: AdminOperatorStaffRole,
 ) {
-  const assignedAdminIds = new Set(job.assigned_admin_user_ids ?? []);
+  const assignedAdminIds = new Set(
+    staffRole === "operations"
+      ? (job.operations_admin_user_ids ?? [])
+      : staffRole === "sales"
+        ? (job.sales_admin_user_ids ?? [])
+        : (job.assigned_admin_user_ids ?? []),
+  );
 
   if (assignedAdminIds.size === 0) {
     return [];

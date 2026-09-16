@@ -23,8 +23,15 @@ import DynamicTutorial from "../components/DynamicTutorial";
 import LanguageSelect from "../components/LanguageSelect";
 import InstantTooltip from "../components/InstantTooltip";
 import LogoMark from "../components/LogoMark";
-import { AdminOperator, fetchAdminOperators } from "../lib/adminOperators";
-import { ShipperUser, fetchShipperUsersByAdmin } from "../lib/shipperUsers";
+import {
+  AdminOperator,
+  fetchAssignableAdminOperators,
+} from "../lib/adminOperators";
+import {
+  ShipperUser,
+  fetchApprovedShippersForShipments,
+  fetchShipperUsersByAdmin,
+} from "../lib/shipperUsers";
 import { AppUserRole } from "../lib/auth";
 import { t, type Locale } from "../lib/i18n";
 import { ShipmentDocument, ShipmentJob } from "../lib/shipmentJobs";
@@ -77,26 +84,51 @@ export default function AdminPanel({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [switchableUsers, setSwitchableUsers] = useState<ShipperUser[]>([]);
+  const [shipmentShipperUsers, setShipmentShipperUsers] = useState<
+    Awaited<ReturnType<typeof fetchApprovedShippersForShipments>>
+  >([]);
   const [switchableOperators, setSwitchableOperators] = useState<
     AdminOperator[]
   >([]);
   const [shipmentEntryCriteria, setShipmentEntryCriteria] =
     useState<ShipmentEntryCriteria>({ kind: "all" });
   const isSuperAdmin = profileRole === "super_admin";
-  const shipmentShipperOptions = useMemo(
-    () =>
-      [...switchableUsers]
-        .sort((first, second) =>
-          first.shipper_name.localeCompare(second.shipper_name, "ja-JP"),
-        )
-        .map((user) => ({
-          shipper_name: user.shipper_name,
-          email: user.email,
-          contact_person: user.contact_person,
-          admin_assignments: user.admin_assignments,
-        })),
-    [switchableUsers],
-  );
+  const shipmentShipperOptions = useMemo(() => {
+    const operatorAssignments = switchableOperators.map((operator) => ({
+      admin_user_id: operator.id,
+      email: operator.email,
+      user_name: operator.user_name,
+      staff_role: operator.staff_role,
+      staff_roles: operator.staff_roles,
+      created_at: operator.created_at,
+      updated_at: operator.updated_at,
+    }));
+    const salesIdsByShipper = new Map<string, Set<string>>();
+    shipmentShipperUsers.forEach((user) => {
+      const ids = salesIdsByShipper.get(user.shipper_name) ?? new Set<string>();
+      (user.admin_assignments ?? []).forEach((assignment) => {
+        const roles = assignment.staff_roles?.length
+          ? assignment.staff_roles
+          : [assignment.staff_role];
+        if (roles.includes("sales")) ids.add(assignment.admin_user_id);
+      });
+      salesIdsByShipper.set(user.shipper_name, ids);
+    });
+
+    return [...shipmentShipperUsers]
+      .sort((first, second) =>
+        first.shipper_name.localeCompare(second.shipper_name, "ja-JP"),
+      )
+      .map((user) => ({
+        shipper_name: user.shipper_name,
+        email: user.email,
+        contact_person: user.contact_person,
+        admin_assignments: operatorAssignments,
+        sales_admin_user_ids: [
+          ...(salesIdsByShipper.get(user.shipper_name) ?? []),
+        ],
+      }));
+  }, [shipmentShipperUsers, switchableOperators]);
   useEffect(() => {
     setView("shipmentEntry");
     setShipmentEntryCriteria({ kind: "all" });
@@ -125,15 +157,24 @@ export default function AdminPanel({
   }, [profileEmail]);
 
   useEffect(() => {
-    if (!isSuperAdmin) {
-      setSwitchableOperators([]);
-      return;
-    }
+    let active = true;
+    fetchApprovedShippersForShipments(profileEmail)
+      .then((users) => {
+        if (active) setShipmentShipperUsers(users);
+      })
+      .catch(() => {
+        if (active) setShipmentShipperUsers([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [profileEmail, switchableUsers]);
 
+  useEffect(() => {
     let active = true;
     async function loadSwitchableOperators() {
       try {
-        const operators = await fetchAdminOperators(profileEmail);
+        const operators = await fetchAssignableAdminOperators(profileEmail);
         if (active) {
           setSwitchableOperators(operators);
         }
@@ -149,7 +190,7 @@ export default function AdminPanel({
     return () => {
       active = false;
     };
-  }, [isSuperAdmin, profileEmail]);
+  }, [profileEmail]);
 
   const navItems = [
     {

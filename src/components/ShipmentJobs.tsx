@@ -1060,21 +1060,17 @@ function getShipmentFeedbackTargets(
   job: ShipmentJob,
   shipperOptions: ShipperAdminAssignmentOption[],
 ): ShipmentFeedbackTarget[] {
-  const assignedAdminIds = new Set(job.assigned_admin_user_ids ?? []);
+  const operationsAdminIds = new Set(job.operations_admin_user_ids ?? []);
+  const salesAdminIds = new Set(job.sales_admin_user_ids ?? []);
   const targetsById = new Map<string, ShipmentFeedbackTarget>();
 
   shipperOptions
     .filter((option) => option.shipper_name === job.shipper_name)
     .flatMap((option) => option.admin_assignments)
     .forEach((assignment) => {
-      if (!assignedAdminIds.has(assignment.admin_user_id)) return;
-
-      const roles = assignment.staff_roles?.length
-        ? assignment.staff_roles
-        : [assignment.staff_role];
-      const role = roles.includes("operations")
+      const role = operationsAdminIds.has(assignment.admin_user_id)
         ? "operations"
-        : roles.includes("sales")
+        : salesAdminIds.has(assignment.admin_user_id)
           ? "sales"
           : null;
       if (!role) return;

@@ -908,8 +908,9 @@ function buildColumns(
                 assignments={getResponsibleAdminAssignments(
                   job,
                   shipperOptions,
+                  staffRole,
                 )}
-                staffRole={staffRole}
+                assignmentRole={staffRole}
                 emptyClassName="text-slate-400"
               />
             ),

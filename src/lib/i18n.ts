@@ -367,6 +367,8 @@ const ja = {
   "form.volume": "M³",
   "form.containerDetailsRequired":
     "入力を開始した物量情報は、個数・Gross Weight・M³をすべて入力してください。FCLのBOOKING・コンテナ情報も、入力を開始した行はすべて完成させてください。数値は0より大きい値で入力してください。",
+  "form.salesAssignmentMissing":
+    "この荷主にはSales担当が設定されていません。案件はOps担当のみで登録されます。",
 
   "admin.switch.selectUser": "ユーザーに切替",
   "admin.switch.backToAdmin": "管理画面に戻る",
@@ -439,7 +441,7 @@ const ja = {
   "admin.userRegistration.updateFailed": "荷主情報の更新に失敗しました",
   "admin.userRegistration.assignedAdmins": "CN担当",
   "admin.userRegistration.assignedAdminsDescription":
-    "担当するCN担当を複数選択できます。",
+    "荷主に紐づくSales担当を複数選択できます。",
   "admin.userRegistration.operationsAssignees": "Ops担当",
   "admin.userRegistration.salesAssignees": "Sales担当",
   "admin.userRegistration.assignmentUpdated":
@@ -973,6 +975,8 @@ const en: Messages = {
   "form.volume": "Volume (M³)",
   "form.containerDetailsRequired":
     "Complete all packages, gross weight, and M³ fields once volume entry has started. For FCL, also complete every booking or container row you start. Numbers must be greater than zero.",
+  "form.salesAssignmentMissing":
+    "This shipper has no Sales contact. The shipment will be saved with an Ops contact only.",
 
   "admin.switch.selectUser": "Switch to user",
   "admin.switch.backToAdmin": "Back to admin",
@@ -1048,7 +1052,7 @@ const en: Messages = {
   "admin.userRegistration.updateFailed": "Failed to update shipper",
   "admin.userRegistration.assignedAdmins": "CN contact",
   "admin.userRegistration.assignedAdminsDescription":
-    "Select one or more CN contacts to assign.",
+    "Select one or more Sales contacts assigned to this shipper.",
   "admin.userRegistration.operationsAssignees": "Ops contact",
   "admin.userRegistration.salesAssignees": "Sales contact",
   "admin.userRegistration.assignmentUpdated":

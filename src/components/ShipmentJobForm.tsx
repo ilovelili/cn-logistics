@@ -21,7 +21,7 @@ import type { ShipperUser } from "../lib/shipperUsers";
 type ShipmentShipperOption = Pick<
   ShipperUser,
   "shipper_name" | "email" | "contact_person" | "admin_assignments"
->;
+> & { sales_admin_user_ids?: string[] };
 
 interface ShipmentJobFormProps {
   job?: ShipmentJob | null;
@@ -171,7 +171,7 @@ export default function ShipmentJobForm({
     return !hasDate || !hasLocation;
   });
   const isCnAssignmentMissing =
-    Boolean(job) && form.assigned_admin_user_ids.length === 0;
+    Boolean(job) && form.operations_admin_user_ids.length === 0;
   const hasIncompleteBookingDetail = form.booking_details.some((booking) => {
     const hasBookingNumber = Boolean(booking.booking_number.trim());
     const startedContainers = booking.containers.filter(
@@ -279,7 +279,7 @@ export default function ShipmentJobForm({
   };
 
   const updateShipper = (shipperName: string) => {
-    const selectedAdminIds = getDefaultAssignedAdminIds(
+    const { operationsAdminIds, salesAdminIds } = getDefaultAssignedAdminIds(
       shipperName,
       shipperOptions,
       job ? undefined : fixedAssignedAdminEmail,
@@ -287,7 +287,11 @@ export default function ShipmentJobForm({
     setForm((current) => ({
       ...current,
       shipper_name: shipperName,
-      assigned_admin_user_ids: selectedAdminIds,
+      operations_admin_user_ids: operationsAdminIds,
+      sales_admin_user_ids: salesAdminIds,
+      assigned_admin_user_ids: [
+        ...new Set([...operationsAdminIds, ...salesAdminIds]),
+      ],
     }));
   };
 
@@ -306,14 +310,17 @@ export default function ShipmentJobForm({
   );
   const hasSelectableCustomer = shipperSelectOptions.length > 1;
 
-  const toggleAssignedAdmin = (adminUserId: string) => {
+  const toggleAssignedAdmin = (
+    role: "operations" | "sales",
+    adminUserId: string,
+  ) => {
     setForm((current) => ({
       ...current,
-      assigned_admin_user_ids: current.assigned_admin_user_ids.includes(
+      [`${role}_admin_user_ids`]: current[`${role}_admin_user_ids`].includes(
         adminUserId,
       )
-        ? current.assigned_admin_user_ids.filter((id) => id !== adminUserId)
-        : [...current.assigned_admin_user_ids, adminUserId],
+        ? current[`${role}_admin_user_ids`].filter((id) => id !== adminUserId)
+        : [...current[`${role}_admin_user_ids`], adminUserId],
     }));
   };
 
@@ -731,12 +738,18 @@ export default function ShipmentJobForm({
 
       <AssignedAdminFields
         assignments={availableAdminAssignments}
-        selectedAdminIds={form.assigned_admin_user_ids}
+        operationsAdminIds={form.operations_admin_user_ids}
+        salesAdminIds={form.sales_admin_user_ids}
         readOnly={
           assignedAdminsReadOnly || Boolean(!job && fixedAssignedAdminEmail)
         }
         onToggle={toggleAssignedAdmin}
       />
+      {form.shipper_name && form.sales_admin_user_ids.length === 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+          {t("form.salesAssignmentMissing")}
+        </div>
+      )}
 
       <CustomerContactField contacts={customerContacts} />
 
@@ -1142,28 +1155,27 @@ function clampNumericInput(value: string, min: number, max: number) {
 
 function AssignedAdminFields({
   assignments,
-  selectedAdminIds,
+  operationsAdminIds,
+  salesAdminIds,
   readOnly = false,
   onToggle,
 }: {
   assignments: NonNullable<ShipperUser["admin_assignments"]>;
-  selectedAdminIds: string[];
+  operationsAdminIds: string[];
+  salesAdminIds: string[];
   readOnly?: boolean;
-  onToggle: (adminUserId: string) => void;
+  onToggle: (role: "operations" | "sales", adminUserId: string) => void;
 }) {
-  const visibleAssignments = readOnly
-    ? assignments.filter((assignment) =>
-        selectedAdminIds.includes(assignment.admin_user_id),
-      )
-    : assignments;
   const assignmentGroups = [
     {
       role: "operations" as const,
       label: t("admin.userRegistration.operationsAssignees"),
+      selectedAdminIds: operationsAdminIds,
     },
     {
       role: "sales" as const,
       label: t("admin.userRegistration.salesAssignees"),
+      selectedAdminIds: salesAdminIds,
     },
   ];
 
@@ -1174,19 +1186,26 @@ function AssignedAdminFields({
           {t("admin.userRegistration.assignedAdmins")}
         </span>
       </div>
-      {visibleAssignments.length === 0 ? (
+      {assignments.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
           {t("superAdmin.operators.noOperators")}
         </div>
       ) : (
         <div className="grid gap-4">
-          {assignmentGroups.map(({ role, label }) => {
-            const roleAssignments = visibleAssignments.filter((assignment) =>
-              (assignment.staff_roles?.length
-                ? assignment.staff_roles
-                : [assignment.staff_role]
-              ).includes(role),
-            );
+          {assignmentGroups.map(({ role, label, selectedAdminIds }) => {
+            const roleAssignments = readOnly
+              ? assignments.filter((assignment) =>
+                  selectedAdminIds.includes(assignment.admin_user_id),
+                )
+              : assignments.filter((assignment) => {
+                  const staffRoles = assignment.staff_roles?.length
+                    ? assignment.staff_roles
+                    : [assignment.staff_role];
+                  return (
+                    staffRoles.includes(role) ||
+                    selectedAdminIds.includes(assignment.admin_user_id)
+                  );
+                });
 
             return (
               <section
@@ -1219,7 +1238,7 @@ function AssignedAdminFields({
                           disabled={readOnly}
                           onChange={() => {
                             if (!readOnly) {
-                              onToggle(assignment.admin_user_id);
+                              onToggle(role, assignment.admin_user_id);
                             }
                           }}
                           className="mt-1 h-4 w-4 rounded border-slate-300"
@@ -1365,17 +1384,24 @@ function getDefaultAssignedAdminIds(
   fixedAssignedAdminEmail?: string,
 ) {
   const assignments = getShipperAdminAssignments(shipperName, shipperOptions);
+  const salesAdminIds = [
+    ...new Set(
+      shipperOptions
+        .filter((option) => option.shipper_name === shipperName)
+        .flatMap((option) => option.sales_admin_user_ids ?? []),
+    ),
+  ];
+  const normalizedEmail = fixedAssignedAdminEmail?.trim().toLowerCase();
+  const operationsAdminIds = normalizedEmail
+    ? assignments
+        .filter(
+          (assignment) =>
+            assignment.email.trim().toLowerCase() === normalizedEmail,
+        )
+        .map((assignment) => assignment.admin_user_id)
+    : [];
 
-  if (!fixedAssignedAdminEmail) {
-    return assignments.map((assignment) => assignment.admin_user_id);
-  }
-
-  const normalizedEmail = fixedAssignedAdminEmail.trim().toLowerCase();
-  return assignments
-    .filter(
-      (assignment) => assignment.email.trim().toLowerCase() === normalizedEmail,
-    )
-    .map((assignment) => assignment.admin_user_id);
+  return { operationsAdminIds, salesAdminIds };
 }
 
 function TrackingEventFields({

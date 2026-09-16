@@ -6,12 +6,14 @@ interface ResponsibleAdminBadgesProps {
   assignments: ShipperUserAdminAssignment[];
   emptyClassName?: string;
   staffRole?: AdminOperatorStaffRole;
+  assignmentRole?: AdminOperatorStaffRole;
 }
 
 export default function ResponsibleAdminBadges({
   assignments,
   emptyClassName = "text-sm text-gray-400 dark:text-gray-500",
   staffRole,
+  assignmentRole,
 }: ResponsibleAdminBadgesProps) {
   const visibleAssignments = staffRole
     ? assignments.filter((assignment) =>
@@ -31,9 +33,11 @@ export default function ResponsibleAdminBadges({
       {visibleAssignments.map((assignment) => {
         const name = assignment.user_name || assignment.email;
         const roleLabels = (
-          assignment.staff_roles?.length
-            ? assignment.staff_roles
-            : [assignment.staff_role]
+          assignmentRole
+            ? [assignmentRole]
+            : assignment.staff_roles?.length
+              ? assignment.staff_roles
+              : [assignment.staff_role]
         ).map((role) =>
           t(`superAdmin.operators.staffRole.${role}` as TranslationKey),
         );

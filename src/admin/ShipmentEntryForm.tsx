@@ -66,10 +66,10 @@ export type ShipmentEntryCriteria =
 interface ShipmentEntryFormProps {
   jobs: ShipmentJob[];
   documents: ShipmentDocument[];
-  shipperOptions?: Pick<
+  shipperOptions?: (Pick<
     ShipperUser,
     "shipper_name" | "email" | "contact_person" | "admin_assignments"
-  >[];
+  > & { sales_admin_user_ids?: string[] })[];
   shipperUsers?: ShipperUser[];
   isSuperAdmin?: boolean;
   adminOperators?: AdminOperator[];
@@ -690,10 +690,10 @@ function AdminShipmentJobModal({
   documents: ShipmentDocument[];
   adminEmail: string;
   loading: boolean;
-  shipperOptions: Pick<
+  shipperOptions: (Pick<
     ShipperUser,
     "shipper_name" | "email" | "contact_person" | "admin_assignments"
-  >[];
+  > & { sales_admin_user_ids?: string[] })[];
   onDeleteJob: (job: ShipmentJob) => Promise<void>;
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;

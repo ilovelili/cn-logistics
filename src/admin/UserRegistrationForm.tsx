@@ -637,13 +637,9 @@ export default function UserRegistrationForm({
           </div>
         ),
       },
-      ...(["operations", "sales"] as const).map((staffRole) => ({
+      ...(["sales"] as const).map((staffRole) => ({
         id: `${staffRole}_admins` as const,
-        label: t(
-          staffRole === "operations"
-            ? "admin.userRegistration.operationsAssignees"
-            : "admin.userRegistration.salesAssignees",
-        ),
+        label: t("admin.userRegistration.salesAssignees"),
         width: 140,
         render: (user: ShipperUserRow) => (
           <AssignedAdminsSummary
@@ -1210,7 +1206,7 @@ export default function UserRegistrationForm({
             <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
               <div className="mb-3">
                 <h4 className="font-bold text-gray-900 dark:text-white">
-                  {t("admin.userRegistration.assignedAdmins")}
+                  {t("admin.userRegistration.salesAssignees")}
                 </h4>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t("admin.userRegistration.assignedAdminsDescription")}
@@ -1513,7 +1509,7 @@ export function UserDetailModal({
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white">
-                  {t("admin.userRegistration.assignedAdmins")}
+                  {t("admin.userRegistration.salesAssignees")}
                 </h4>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t("admin.userRegistration.assignedAdminsDescription")}
@@ -1805,7 +1801,7 @@ function ChangeRequestSummary({
         .join(", "),
     ],
     [
-      t("admin.userRegistration.assignedAdmins"),
+      t("admin.userRegistration.salesAssignees"),
       assignmentLabel(before.admin_user_ids),
       assignmentLabel(after.admin_user_ids),
     ],
@@ -1949,10 +1945,6 @@ function AdminOperatorAssignmentGroups(
   props: Parameters<typeof AdminOperatorCheckboxGrid>[0],
 ) {
   const groups = [
-    {
-      role: "operations" as const,
-      label: t("admin.userRegistration.operationsAssignees"),
-    },
     {
       role: "sales" as const,
       label: t("admin.userRegistration.salesAssignees"),

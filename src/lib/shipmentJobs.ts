@@ -63,6 +63,9 @@ export interface ShipmentJob {
   hbl_hawb: string | null;
   bl_awb_date: string | null;
   assigned_admin_user_ids: string[];
+  operations_admin_user_ids: string[];
+  sales_admin_user_ids: string[];
+  created_by_admin_user_id: string | null;
   progress_percent: number | null;
   progress_color_hex: string | null;
   documents: string[];
@@ -188,6 +191,8 @@ export interface ShipmentJobForm {
   hbl_hawb: string;
   bl_awb_date: string;
   assigned_admin_user_ids: string[];
+  operations_admin_user_ids: string[];
+  sales_admin_user_ids: string[];
   progress_percent: string;
   progress_color_hex: string;
   manual_progress_edited: boolean;
@@ -411,6 +416,8 @@ export const defaultShipmentJobForm: ShipmentJobForm = {
   hbl_hawb: "",
   bl_awb_date: "",
   assigned_admin_user_ids: [],
+  operations_admin_user_ids: [],
+  sales_admin_user_ids: [],
   progress_percent: "",
   progress_color_hex: inProgressShipmentProgressColor,
   manual_progress_edited: false,
@@ -481,6 +488,8 @@ export function jobToForm(job: ShipmentJob): ShipmentJobForm {
     hbl_hawb: job.hbl_hawb ?? "",
     bl_awb_date: job.bl_awb_date ?? "",
     assigned_admin_user_ids: job.assigned_admin_user_ids ?? [],
+    operations_admin_user_ids: job.operations_admin_user_ids ?? [],
+    sales_admin_user_ids: job.sales_admin_user_ids ?? [],
     progress_percent:
       typeof job.progress_percent === "number"
         ? String(job.progress_percent)
@@ -530,6 +539,8 @@ export function formToPayload(form: ShipmentJobForm) {
     hbl_hawb: form.hbl_hawb || null,
     bl_awb_date: form.bl_awb_date || null,
     assigned_admin_user_ids: form.assigned_admin_user_ids,
+    operations_admin_user_ids: form.operations_admin_user_ids,
+    sales_admin_user_ids: form.sales_admin_user_ids,
     progress_percent: progressPercent,
     progress_color_hex: normalizeStatusColor(form.progress_color_hex),
     documents: getDocumentNames(form, "customer"),
