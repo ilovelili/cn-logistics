@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Eye, Plus, Trash2, X } from "lucide-react";
+import { Eye, Plus, Trash2, UploadCloud, X } from "lucide-react";
 import { t } from "../lib/i18n";
 import InstantTooltip from "./InstantTooltip";
 import {
@@ -1891,6 +1891,28 @@ function FileUploadField({
   onChange: (files: File[]) => void;
 }) {
   const inputId = React.useId();
+  const dragDepthRef = React.useRef(0);
+  const [isDraggingFiles, setIsDraggingFiles] = React.useState(false);
+
+  const addFiles = React.useCallback(
+    (incomingFiles: File[]) => {
+      if (!incomingFiles.length) return;
+
+      const nextFiles = [...files];
+      const existingFileKeys = new Set(files.map(getFileSelectionKey));
+      for (const file of incomingFiles) {
+        const key = getFileSelectionKey(file);
+        if (existingFileKeys.has(key)) continue;
+        existingFileKeys.add(key);
+        nextFiles.push(file);
+      }
+      onChange(nextFiles);
+    },
+    [files, onChange],
+  );
+
+  const hasDraggedFiles = (event: React.DragEvent<HTMLElement>) =>
+    Array.from(event.dataTransfer.types).includes("Files");
 
   return (
     <div className="block">
@@ -1899,20 +1921,56 @@ function FileUploadField({
       </span>
       <label
         htmlFor={inputId}
-        className="mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-slate-500 hover:bg-white"
+        onDragEnter={(event) => {
+          if (!hasDraggedFiles(event)) return;
+          event.preventDefault();
+          dragDepthRef.current += 1;
+          setIsDraggingFiles(true);
+        }}
+        onDragOver={(event) => {
+          if (!hasDraggedFiles(event)) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDragLeave={(event) => {
+          if (!hasDraggedFiles(event)) return;
+          event.preventDefault();
+          dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+          if (dragDepthRef.current === 0) setIsDraggingFiles(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          dragDepthRef.current = 0;
+          setIsDraggingFiles(false);
+          addFiles(Array.from(event.dataTransfer.files));
+        }}
+        className={`mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center transition ${
+          isDraggingFiles
+            ? "border-cyan-500 bg-cyan-50 ring-4 ring-cyan-100"
+            : "border-slate-300 bg-slate-50 hover:border-slate-500 hover:bg-white"
+        }`}
       >
+        <UploadCloud
+          className={`mb-3 h-7 w-7 ${
+            isDraggingFiles ? "text-cyan-600" : "text-slate-400"
+          }`}
+          aria-hidden="true"
+        />
         <span className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white">
-          {t("form.selectFiles")}
+          {isDraggingFiles ? t("form.dropFilesHere") : t("form.selectFiles")}
         </span>
         <span className="mt-3 text-xs text-slate-500">
-          {t("form.uploadHelp")}
+          {isDraggingFiles ? t("form.dropFilesHelp") : t("form.uploadHelp")}
         </span>
         <input
           id={inputId}
           type="file"
           multiple
           className="sr-only"
-          onChange={(event) => onChange(Array.from(event.target.files ?? []))}
+          onChange={(event) => {
+            addFiles(Array.from(event.target.files ?? []));
+            event.currentTarget.value = "";
+          }}
         />
       </label>
 
@@ -1932,6 +1990,10 @@ function FileUploadField({
       />
     </div>
   );
+}
+
+function getFileSelectionKey(file: File) {
+  return `${file.name}\u0000${file.size}\u0000${file.lastModified}`;
 }
 
 function DocumentNameList({

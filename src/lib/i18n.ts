@@ -344,7 +344,9 @@ const ja = {
   "form.selectShipper": "荷主を選択",
   "form.selectFiles": "ファイルを選択",
   "form.uploadHelp":
-    "PDF、画像、Excelなどの書類ファイルをアップロードできます。",
+    "クリックして選択、またはPDF・画像・Excelなどをここにドラッグ＆ドロップできます。",
+  "form.dropFilesHere": "ここにファイルをドロップ",
+  "form.dropFilesHelp": "ドロップすると追加予定の書類に登録されます。",
   "form.existingFiles": "登録済み",
   "form.selectedFiles": "追加予定",
   "form.noFiles": "ファイルが選択されていません",
@@ -934,7 +936,10 @@ const en: Messages = {
   "form.selectCustomer": "Select customer",
   "form.selectShipper": "Select shipper",
   "form.selectFiles": "Select files",
-  "form.uploadHelp": "Upload PDF, image, Excel, and other document files.",
+  "form.uploadHelp":
+    "Click to select, or drag and drop PDF, image, Excel, and other document files here.",
+  "form.dropFilesHere": "Drop files here",
+  "form.dropFilesHelp": "Dropped files will be added to the upload list.",
   "form.existingFiles": "Existing",
   "form.selectedFiles": "Selected",
   "form.noFiles": "No files selected",
