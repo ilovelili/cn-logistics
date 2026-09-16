@@ -446,7 +446,7 @@ const ja = {
     "CN担当を更新しました。再承認されるまで承認待ちとなります。",
   "admin.userRegistration.assignmentUpdateFailed": "CN担当の更新に失敗しました",
   "admin.userRegistration.approvedReadOnly":
-    "承認済みの荷主情報は、通常管理者から変更できません。変更が必要な場合はスーパー管理者に依頼してください。",
+    "承認済みの荷主情報を変更するには、変更申請とスーパー管理者の承認が必要です。",
   "admin.userRegistration.changeRequestDescription":
     "変更内容はすぐには反映されません。変更申請を送信し、スーパー管理者の承認後に反映されます。",
   "admin.userRegistration.submitChangeRequest": "変更申請を送信",
@@ -1056,7 +1056,7 @@ const en: Messages = {
   "admin.userRegistration.assignmentUpdateFailed":
     "Failed to update CN contacts",
   "admin.userRegistration.approvedReadOnly":
-    "Approved shipper information is read-only for regular admins. Ask a super admin if changes are required.",
+    "Changes to approved shipper information require a change request and super-admin approval.",
   "admin.userRegistration.changeRequestDescription":
     "Changes are not applied immediately. Submit a change request; the current information remains active until a super admin approves it.",
   "admin.userRegistration.submitChangeRequest": "Submit change request",

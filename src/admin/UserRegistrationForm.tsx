@@ -1054,17 +1054,7 @@ export default function UserRegistrationForm({
             (request) => request.target_user_id === selectedUser.id,
           )}
           canSubmitChangeRequest={
-            !isSuperAdmin &&
-            selectedUser.approval_status === "approved" &&
-            Boolean(
-              selectedUser.admin_assignments?.some(
-                (assignment) =>
-                  assignment.email.toLowerCase() === adminEmail.toLowerCase() &&
-                  (assignment.staff_roles ?? [assignment.staff_role]).includes(
-                    "sales",
-                  ),
-              ),
-            )
+            !isSuperAdmin && selectedUser.approval_status === "approved"
           }
           onChangeRequested={async () => {
             await loadUsers();
@@ -1392,6 +1382,7 @@ export function UserDetailModal({
       if (isChangeRequestMode) {
         await submitShipperChangeRequest({
           userId: user.id,
+          requesterEmail,
           form,
           adminUserIds: selectedAdminIds,
         });

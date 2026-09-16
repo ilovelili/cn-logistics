@@ -307,10 +307,12 @@ export async function fetchAccessibleShipperChangeRequests() {
 
 export async function submitShipperChangeRequest({
   userId,
+  requesterEmail,
   form,
   adminUserIds,
 }: {
   userId: string;
+  requesterEmail: string;
   form: ShipperUserForm;
   adminUserIds: string[];
 }) {
@@ -330,6 +332,7 @@ export async function submitShipperChangeRequest({
       .filter((contact) => contact.email && contact.contact_person),
     proposed_notes: form.notes.trim(),
     proposed_admin_user_ids: adminUserIds,
+    requester_email: requesterEmail,
   });
 
   if (error) throw error;
