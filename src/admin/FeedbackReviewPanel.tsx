@@ -39,6 +39,7 @@ interface FeedbackReviewPanelProps {
 type FeedbackColumnId =
   | "invoice"
   | "jobNumber"
+  | "shipperName"
   | "operator"
   | "targetRole"
   | "submitter"
@@ -116,6 +117,7 @@ export default function FeedbackReviewPanel({
         item.shipment_job_id,
         item.shipment_invoice_number,
         jobsById.get(item.shipment_job_id)?.job_number,
+        jobsById.get(item.shipment_job_id)?.shipper_name,
         item.submitter_email,
         item.admin_operator_name,
         item.admin_operator_email,
@@ -169,6 +171,16 @@ export default function FeedbackReviewPanel({
         render: (item) => (
           <span className="font-mono font-bold text-gray-900 dark:text-white">
             {jobsById.get(item.shipment_job_id)?.job_number || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "shipperName",
+        label: t("common.shipperName"),
+        width: 180,
+        render: (item) => (
+          <span className="block truncate font-bold text-gray-900 dark:text-white">
+            {jobsById.get(item.shipment_job_id)?.shipper_name || "-"}
           </span>
         ),
       },
@@ -532,6 +544,8 @@ function getFeedbackSortValue(
       return item.shipment_invoice_number ?? item.shipment_job_id;
     case "jobNumber":
       return jobsById?.get(item.shipment_job_id)?.job_number ?? "";
+    case "shipperName":
+      return jobsById?.get(item.shipment_job_id)?.shipper_name ?? "";
     case "operator":
       return item.admin_operator_name || item.admin_operator_email || "";
     case "targetRole":
