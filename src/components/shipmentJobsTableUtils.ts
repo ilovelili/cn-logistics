@@ -177,13 +177,11 @@ export function getResponsibleAdminSearchTerms(
         shipperOptions,
         undefined,
         adminOperators,
-      ).flatMap(
-        (assignment) => [
-          ...(assignment.user_name ? [assignment.user_name] : []),
-          assignment.email,
-          assignment.staff_role,
-        ],
-      ),
+      ).flatMap((assignment) => [
+        ...(assignment.user_name ? [assignment.user_name] : []),
+        assignment.email,
+        assignment.staff_role,
+      ]),
     ),
   ];
 }
