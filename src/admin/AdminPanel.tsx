@@ -89,10 +89,12 @@ export default function AdminPanel({
   const [shipmentShipperUsers, setShipmentShipperUsers] = useState<
     Awaited<ReturnType<typeof fetchApprovedShippersForShipments>>
   >([]);
-  const [accessibleShipmentShipperContacts, setAccessibleShipmentShipperContacts] =
-    useState<Awaited<ReturnType<typeof fetchAccessibleShipmentShipperContacts>>>(
-      [],
-    );
+  const [
+    accessibleShipmentShipperContacts,
+    setAccessibleShipmentShipperContacts,
+  ] = useState<
+    Awaited<ReturnType<typeof fetchAccessibleShipmentShipperContacts>>
+  >([]);
   const [switchableOperators, setSwitchableOperators] = useState<
     AdminOperator[]
   >([]);
