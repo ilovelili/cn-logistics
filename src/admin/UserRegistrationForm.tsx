@@ -38,6 +38,7 @@ import {
   fetchAccessibleShipperChangeRequests,
   reviewShipperChangeRequest,
   submitShipperChangeRequest,
+  submitShipmentAssignmentChangeRequest,
   type ShipperChangeRequest,
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
@@ -1290,6 +1291,9 @@ export function UserDetailModal({
   detailsReadOnly = false,
   assignmentsReadOnly = false,
   initialSelectedAdminIds,
+  initialSelectedOperationsAdminIds,
+  initialSelectedSalesAdminIds,
+  assignmentShipmentJobId,
   onNotify,
   onAssignmentsSaved,
   onClose,
@@ -1310,6 +1314,9 @@ export function UserDetailModal({
   detailsReadOnly?: boolean;
   assignmentsReadOnly?: boolean;
   initialSelectedAdminIds?: string[];
+  initialSelectedOperationsAdminIds?: string[];
+  initialSelectedSalesAdminIds?: string[];
+  assignmentShipmentJobId?: string;
   onNotify?: (type: "success" | "error", message: string) => void;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
@@ -1353,6 +1360,12 @@ export function UserDetailModal({
         (assignment) => assignment.admin_user_id,
       ),
   );
+  const [selectedOperationsAdminIds, setSelectedOperationsAdminIds] = useState<
+    string[]
+  >(() => initialSelectedOperationsAdminIds ?? []);
+  const [selectedSalesAdminIds, setSelectedSalesAdminIds] = useState<string[]>(
+    () => initialSelectedSalesAdminIds ?? [],
+  );
 
   useEffect(() => {
     setSelectedAdminIds(
@@ -1362,6 +1375,15 @@ export function UserDetailModal({
         ),
     );
   }, [initialSelectedAdminIds, user.admin_assignments, user.id]);
+
+  useEffect(() => {
+    setSelectedOperationsAdminIds(initialSelectedOperationsAdminIds ?? []);
+    setSelectedSalesAdminIds(initialSelectedSalesAdminIds ?? []);
+  }, [
+    initialSelectedOperationsAdminIds,
+    initialSelectedSalesAdminIds,
+    user.id,
+  ]);
 
   useEffect(() => {
     setForm({
@@ -1412,12 +1434,22 @@ export function UserDetailModal({
 
     try {
       if (isChangeRequestMode) {
-        await submitShipperChangeRequest({
-          userId: user.id,
-          requesterEmail,
-          form,
-          adminUserIds: selectedAdminIds,
-        });
+        if (assignmentShipmentJobId) {
+          await submitShipmentAssignmentChangeRequest({
+            userId: user.id,
+            shipmentJobId: assignmentShipmentJobId,
+            operationsAdminUserIds: selectedOperationsAdminIds,
+            salesAdminUserIds: selectedSalesAdminIds,
+            requesterEmail,
+          });
+        } else {
+          await submitShipperChangeRequest({
+            userId: user.id,
+            requesterEmail,
+            form,
+            adminUserIds: selectedAdminIds,
+          });
+        }
         await onChangeRequested?.();
         return;
       }
@@ -1470,6 +1502,22 @@ export function UserDetailModal({
         ? currentIds.filter((currentId) => currentId !== adminUserId)
         : [...currentIds, adminUserId],
     );
+  };
+
+  const toggleShipmentAdminAssignment = (
+    role: AdminOperatorStaffRole,
+    adminUserId: string,
+  ) => {
+    const updateSelection = (currentIds: string[]) =>
+      currentIds.includes(adminUserId)
+        ? currentIds.filter((currentId) => currentId !== adminUserId)
+        : [...currentIds, adminUserId];
+
+    if (role === "operations") {
+      setSelectedOperationsAdminIds(updateSelection);
+    } else if (role === "sales") {
+      setSelectedSalesAdminIds(updateSelection);
+    }
   };
 
   const handleSaveAssignments = async () => {
@@ -1570,8 +1618,21 @@ export function UserDetailModal({
             <AdminOperatorAssignmentGroups
               adminOperators={adminOperators}
               selectedAdminIds={selectedAdminIds}
+              selectedOperationsAdminIds={
+                assignmentShipmentJobId
+                  ? selectedOperationsAdminIds
+                  : undefined
+              }
+              selectedSalesAdminIds={
+                assignmentShipmentJobId ? selectedSalesAdminIds : undefined
+              }
               assignmentsReadOnly={assignmentsReadOnly && !isChangeRequestMode}
               onToggle={toggleAdminAssignment}
+              onToggleForRole={
+                assignmentShipmentJobId
+                  ? toggleShipmentAdminAssignment
+                  : undefined
+              }
             />
 
             {assignmentError && (
@@ -1981,7 +2042,14 @@ function AdminOperatorCheckboxGrid({
 }
 
 function AdminOperatorAssignmentGroups(
-  props: Parameters<typeof AdminOperatorCheckboxGrid>[0],
+  props: Parameters<typeof AdminOperatorCheckboxGrid>[0] & {
+    selectedOperationsAdminIds?: string[];
+    selectedSalesAdminIds?: string[];
+    onToggleForRole?: (
+      role: AdminOperatorStaffRole,
+      operatorId: string,
+    ) => void;
+  },
 ) {
   const groups = [
     {
@@ -2003,6 +2071,18 @@ function AdminOperatorAssignmentGroups(
           </h5>
           <AdminOperatorCheckboxGrid
             {...props}
+            selectedAdminIds={
+              role === "operations"
+                ? (props.selectedOperationsAdminIds ?? props.selectedAdminIds)
+                : (props.selectedSalesAdminIds ?? props.selectedAdminIds)
+            }
+            onToggle={(operatorId) => {
+              if (props.onToggleForRole) {
+                props.onToggleForRole(role, operatorId);
+              } else {
+                props.onToggle(operatorId);
+              }
+            }}
             adminOperators={props.adminOperators.filter((operator) =>
               (operator.staff_roles?.length
                 ? operator.staff_roles

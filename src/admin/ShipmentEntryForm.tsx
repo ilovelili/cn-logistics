@@ -106,8 +106,10 @@ export default function ShipmentEntryForm({
   const [shipperFilter, setShipperFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
   const [assignmentChangeTarget, setAssignmentChangeTarget] = useState<{
+    shipmentJobId: string;
     shipperName: string;
-    adminUserIds: string[];
+    operationsAdminUserIds: string[];
+    salesAdminUserIds: string[];
   } | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
@@ -631,11 +633,11 @@ export default function ShipmentEntryForm({
                 ? undefined
                 : (job) =>
                     setAssignmentChangeTarget({
+                      shipmentJobId: job.id,
                       shipperName: job.shipper_name!,
-                      adminUserIds: [
-                        ...(job.operations_admin_user_ids ?? []),
-                        ...(job.sales_admin_user_ids ?? []),
-                      ],
+                      operationsAdminUserIds:
+                        job.operations_admin_user_ids ?? [],
+                      salesAdminUserIds: job.sales_admin_user_ids ?? [],
                     })
             }
           />
@@ -643,7 +645,13 @@ export default function ShipmentEntryForm({
             <ShipperAssignmentChangeRequestModal
               adminEmail={adminEmail}
               shipperName={assignmentChangeTarget.shipperName}
-              initialAdminUserIds={assignmentChangeTarget.adminUserIds}
+              shipmentJobId={assignmentChangeTarget.shipmentJobId}
+              initialOperationsAdminUserIds={
+                assignmentChangeTarget.operationsAdminUserIds
+              }
+              initialSalesAdminUserIds={
+                assignmentChangeTarget.salesAdminUserIds
+              }
               onClose={() => setAssignmentChangeTarget(null)}
               onRequested={() => {
                 setAssignmentChangeTarget(null);

@@ -385,6 +385,34 @@ export async function submitShipperChangeRequest({
   return data as string;
 }
 
+export async function submitShipmentAssignmentChangeRequest({
+  userId,
+  shipmentJobId,
+  operationsAdminUserIds,
+  salesAdminUserIds,
+  requesterEmail,
+}: {
+  userId: string;
+  shipmentJobId: string;
+  operationsAdminUserIds: string[];
+  salesAdminUserIds: string[];
+  requesterEmail: string;
+}) {
+  const { data, error } = await supabase.rpc(
+    "submit_shipment_assignment_change_request",
+    {
+      target_user_id: userId,
+      shipment_job_id: shipmentJobId,
+      proposed_operations_admin_user_ids: operationsAdminUserIds,
+      proposed_sales_admin_user_ids: salesAdminUserIds,
+      requester_email: requesterEmail,
+    },
+  );
+
+  if (error) throw error;
+  return data as string;
+}
+
 export async function reviewShipperChangeRequest({
   requestId,
   status,
