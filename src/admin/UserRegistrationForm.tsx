@@ -1346,11 +1346,12 @@ export function UserDetailModal({
   const [reviewingStatus, setReviewingStatus] = useState<
     "approved" | "rejected" | null
   >(null);
-  const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(() =>
-    initialSelectedAdminIds ??
-    (user.admin_assignments ?? []).map(
-      (assignment) => assignment.admin_user_id,
-    ),
+  const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(
+    () =>
+      initialSelectedAdminIds ??
+      (user.admin_assignments ?? []).map(
+        (assignment) => assignment.admin_user_id,
+      ),
   );
 
   useEffect(() => {
