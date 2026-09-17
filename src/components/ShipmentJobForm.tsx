@@ -17,6 +17,7 @@ import {
   standardFlowStatusOptions,
 } from "../lib/shipmentJobs";
 import type { ShipperUser } from "../lib/shipperUsers";
+import type { AdminOperator } from "../lib/adminOperators";
 
 type ShipmentShipperOption = Pick<
   ShipperUser,
@@ -29,6 +30,7 @@ interface ShipmentJobFormProps {
   customerSelection?: boolean;
   fixedAssignedAdminEmail?: string;
   assignedAdminsReadOnly?: boolean;
+  adminOperators?: AdminOperator[];
   documents?: ShipmentDocument[];
   onPreviewDocument?: (document: ShipmentDocument) => void;
   onDeleteDocument?: (document: ShipmentDocument) => void;
@@ -86,6 +88,7 @@ export default function ShipmentJobForm({
   customerSelection = false,
   fixedAssignedAdminEmail,
   assignedAdminsReadOnly = false,
+  adminOperators = [],
   documents = [],
   onPreviewDocument,
   onDeleteDocument,
@@ -300,6 +303,8 @@ export default function ShipmentJobForm({
   const availableAdminAssignments = getShipperAdminAssignments(
     form.shipper_name,
     shipperOptions,
+    adminOperators,
+    [...form.operations_admin_user_ids, ...form.sales_admin_user_ids],
   );
   const customerContacts = getShipperCustomerContacts(
     form.shipper_name,
@@ -1353,6 +1358,8 @@ function getShipperCustomerContacts(
 function getShipperAdminAssignments(
   shipperName: string | null,
   shipperOptions: ShipmentShipperOption[],
+  adminOperators: AdminOperator[] = [],
+  selectedAdminIds: string[] = [],
 ) {
   const assignmentsByAdminId = new Map<
     string,
@@ -1364,6 +1371,23 @@ function getShipperAdminAssignments(
     .flatMap((shipperUser) => shipperUser.admin_assignments ?? [])
     .forEach((assignment) => {
       assignmentsByAdminId.set(assignment.admin_user_id, assignment);
+    });
+
+  const selectedAdminIdSet = new Set(selectedAdminIds);
+  adminOperators
+    .filter((operator) => selectedAdminIdSet.has(operator.id))
+    .forEach((operator) => {
+      if (!assignmentsByAdminId.has(operator.id)) {
+        assignmentsByAdminId.set(operator.id, {
+          admin_user_id: operator.id,
+          email: operator.email,
+          user_name: operator.user_name,
+          staff_role: operator.staff_role,
+          staff_roles: operator.staff_roles,
+          created_at: operator.created_at,
+          updated_at: operator.updated_at,
+        });
+      }
     });
 
   return [...assignmentsByAdminId.values()];

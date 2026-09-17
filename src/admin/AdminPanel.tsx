@@ -30,6 +30,7 @@ import {
 } from "../lib/adminOperators";
 import {
   ShipperUser,
+  fetchAccessibleShipmentShipperContacts,
   fetchApprovedShippersForShipments,
   fetchShipperUsersByAdmin,
 } from "../lib/shipperUsers";
@@ -88,6 +89,10 @@ export default function AdminPanel({
   const [shipmentShipperUsers, setShipmentShipperUsers] = useState<
     Awaited<ReturnType<typeof fetchApprovedShippersForShipments>>
   >([]);
+  const [accessibleShipmentShipperContacts, setAccessibleShipmentShipperContacts] =
+    useState<Awaited<ReturnType<typeof fetchAccessibleShipmentShipperContacts>>>(
+      [],
+    );
   const [switchableOperators, setSwitchableOperators] = useState<
     AdminOperator[]
   >([]);
@@ -130,6 +135,47 @@ export default function AdminPanel({
         ],
       }));
   }, [shipmentShipperUsers, switchableOperators]);
+  const shipmentDisplayShipperOptions = useMemo(() => {
+    const existingKeys = new Set(
+      shipmentShipperOptions.map(
+        (option) => `${option.shipper_name}\u0000${option.email}`,
+      ),
+    );
+    const operatorAssignments = switchableOperators.map((operator) => ({
+      admin_user_id: operator.id,
+      email: operator.email,
+      user_name: operator.user_name,
+      staff_role: operator.staff_role,
+      staff_roles: operator.staff_roles,
+      created_at: operator.created_at,
+      updated_at: operator.updated_at,
+    }));
+
+    return [
+      ...shipmentShipperOptions,
+      ...accessibleShipmentShipperContacts
+        .filter(
+          (contact) =>
+            !existingKeys.has(`${contact.shipper_name}\u0000${contact.email}`),
+        )
+        .map((contact) => ({
+          ...contact,
+          admin_assignments: operatorAssignments,
+          sales_admin_user_ids: (contact.admin_assignments ?? [])
+            .filter((assignment) =>
+              (assignment.staff_roles?.length
+                ? assignment.staff_roles
+                : [assignment.staff_role]
+              ).includes("sales"),
+            )
+            .map((assignment) => assignment.admin_user_id),
+        })),
+    ];
+  }, [
+    accessibleShipmentShipperContacts,
+    shipmentShipperOptions,
+    switchableOperators,
+  ]);
   useEffect(() => {
     setView("shipmentEntry");
     setShipmentEntryCriteria({ kind: "all" });
@@ -170,6 +216,20 @@ export default function AdminPanel({
       active = false;
     };
   }, [profileEmail, switchableUsers]);
+
+  useEffect(() => {
+    let active = true;
+    fetchAccessibleShipmentShipperContacts(profileEmail)
+      .then((contacts) => {
+        if (active) setAccessibleShipmentShipperContacts(contacts);
+      })
+      .catch(() => {
+        if (active) setAccessibleShipmentShipperContacts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [profileEmail]);
 
   useEffect(() => {
     let active = true;
@@ -500,6 +560,7 @@ export default function AdminPanel({
               adminEmail={profileEmail}
               canEditAssignedAdmins={isSuperAdmin}
               shipperOptions={shipmentShipperOptions}
+              displayShipperOptions={shipmentDisplayShipperOptions}
               shipperUsers={switchableUsers}
               isSuperAdmin={isSuperAdmin}
               adminOperators={switchableOperators}

@@ -71,6 +71,10 @@ interface ShipmentEntryFormProps {
     ShipperUser,
     "shipper_name" | "email" | "contact_person" | "admin_assignments"
   > & { sales_admin_user_ids?: string[] })[];
+  displayShipperOptions?: (Pick<
+    ShipperUser,
+    "shipper_name" | "email" | "contact_person" | "admin_assignments"
+  > & { sales_admin_user_ids?: string[] })[];
   shipperUsers?: ShipperUser[];
   isSuperAdmin?: boolean;
   adminOperators?: AdminOperator[];
@@ -84,6 +88,7 @@ export default function ShipmentEntryForm({
   jobs,
   documents,
   shipperOptions = [],
+  displayShipperOptions = shipperOptions,
   shipperUsers = [],
   isSuperAdmin = false,
   adminOperators = [],
@@ -202,13 +207,18 @@ export default function ShipmentEntryForm({
         if (!normalizedQuery) return true;
         return buildShipmentJobSearchText(
           job,
-          getResponsibleAdminSearchTerms(job, shipperOptions, adminOperators),
+          getResponsibleAdminSearchTerms(
+            job,
+            displayShipperOptions,
+            adminOperators,
+          ),
         ).includes(normalizedQuery);
       });
   }, [
     adminOperators,
     shipperFilter,
     shipperOptions,
+    displayShipperOptions,
     activeCriteria,
     documents,
     jobs,
@@ -228,7 +238,7 @@ export default function ShipmentEntryForm({
           sortKey,
           getResponsibleAdminNames(
             first,
-            shipperOptions,
+            displayShipperOptions,
             sortKey === "operations_admins"
               ? "operations"
               : sortKey === "sales_admins"
@@ -242,7 +252,7 @@ export default function ShipmentEntryForm({
           sortKey,
           getResponsibleAdminNames(
             second,
-            shipperOptions,
+            displayShipperOptions,
             sortKey === "operations_admins"
               ? "operations"
               : sortKey === "sales_admins"
@@ -255,7 +265,13 @@ export default function ShipmentEntryForm({
         sortKey,
       ),
     );
-  }, [adminOperators, shipperOptions, filteredJobs, sortDirection, sortKey]);
+  }, [
+    adminOperators,
+    displayShipperOptions,
+    filteredJobs,
+    sortDirection,
+    sortKey,
+  ]);
 
   const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
   const safeCurrentPage = Math.min(currentPage, pageCount);
@@ -584,7 +600,7 @@ export default function ShipmentEntryForm({
             visibleTo={visibleTo}
             adminTheme
             showInternalDocuments
-            shipperOptions={shipperOptions}
+            shipperOptions={displayShipperOptions}
             shipperUsers={shipperUsers}
             requesterEmail={adminEmail}
             isSuperAdmin={isSuperAdmin}
@@ -607,7 +623,8 @@ export default function ShipmentEntryForm({
             onClose={() => setSelectedJob(null)}
             onSubmit={handleUpdate}
             onRefresh={onRefresh}
-            shipperOptions={shipperOptions}
+            shipperOptions={displayShipperOptions}
+            adminOperators={adminOperators}
             assignedAdminsReadOnly={!canEditAssignedAdmins}
             onRequestShipperAssignmentChange={
               isSuperAdmin
@@ -715,6 +732,7 @@ function AdminShipmentJobModal({
   adminEmail,
   loading,
   shipperOptions,
+  adminOperators,
   onDeleteJob,
   onClose,
   onSubmit,
@@ -730,6 +748,7 @@ function AdminShipmentJobModal({
     ShipperUser,
     "shipper_name" | "email" | "contact_person" | "admin_assignments"
   > & { sales_admin_user_ids?: string[] })[];
+  adminOperators: AdminOperator[];
   onDeleteJob: (job: ShipmentJob) => Promise<void>;
   onClose: () => void;
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
@@ -831,6 +850,7 @@ function AdminShipmentJobModal({
           job={job}
           documents={documents}
           shipperOptions={shipperOptions}
+          adminOperators={adminOperators}
           assignedAdminsReadOnly={assignedAdminsReadOnly}
           onPreviewDocument={setPreviewDocument}
           onDeleteDocument={setDeleteTarget}
