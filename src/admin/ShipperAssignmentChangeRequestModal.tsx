@@ -15,6 +15,7 @@ import { UserDetailModal } from "./UserRegistrationForm";
 interface ShipperAssignmentChangeRequestModalProps {
   adminEmail: string;
   shipperName: string;
+  initialAdminUserIds: string[];
   onClose: () => void;
   onRequested: () => void;
 }
@@ -22,6 +23,7 @@ interface ShipperAssignmentChangeRequestModalProps {
 export default function ShipperAssignmentChangeRequestModal({
   adminEmail,
   shipperName,
+  initialAdminUserIds,
   onClose,
   onRequested,
 }: ShipperAssignmentChangeRequestModalProps) {
@@ -102,6 +104,7 @@ export default function ShipperAssignmentChangeRequestModal({
       onChangeRequested={onRequested}
       detailsReadOnly
       assignmentsReadOnly
+      initialSelectedAdminIds={initialAdminUserIds}
       onAssignmentsSaved={() => undefined}
       onClose={onClose}
     />

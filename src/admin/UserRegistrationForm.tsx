@@ -1289,6 +1289,7 @@ export function UserDetailModal({
   onReviewRequest,
   detailsReadOnly = false,
   assignmentsReadOnly = false,
+  initialSelectedAdminIds,
   onNotify,
   onAssignmentsSaved,
   onClose,
@@ -1308,6 +1309,7 @@ export function UserDetailModal({
   ) => void | Promise<ShipperUser[]>;
   detailsReadOnly?: boolean;
   assignmentsReadOnly?: boolean;
+  initialSelectedAdminIds?: string[];
   onNotify?: (type: "success" | "error", message: string) => void;
   onAssignmentsSaved: (user: ShipperUser) => void;
   onClose: () => void;
@@ -1345,6 +1347,7 @@ export function UserDetailModal({
     "approved" | "rejected" | null
   >(null);
   const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(() =>
+    initialSelectedAdminIds ??
     (user.admin_assignments ?? []).map(
       (assignment) => assignment.admin_user_id,
     ),
@@ -1352,11 +1355,12 @@ export function UserDetailModal({
 
   useEffect(() => {
     setSelectedAdminIds(
-      (user.admin_assignments ?? []).map(
-        (assignment) => assignment.admin_user_id,
-      ),
+      initialSelectedAdminIds ??
+        (user.admin_assignments ?? []).map(
+          (assignment) => assignment.admin_user_id,
+        ),
     );
-  }, [user.admin_assignments, user.id]);
+  }, [initialSelectedAdminIds, user.admin_assignments, user.id]);
 
   useEffect(() => {
     setForm({

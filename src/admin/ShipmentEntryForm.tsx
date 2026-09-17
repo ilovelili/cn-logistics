@@ -100,8 +100,10 @@ export default function ShipmentEntryForm({
   const [transportFilter, setTransportFilter] = useState("all");
   const [shipperFilter, setShipperFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<ShipmentJob | null>(null);
-  const [assignmentChangeShipperName, setAssignmentChangeShipperName] =
-    useState<string | null>(null);
+  const [assignmentChangeTarget, setAssignmentChangeTarget] = useState<{
+    shipperName: string;
+    adminUserIds: string[];
+  } | null>(null);
   const [mode, setMode] = useState<"create" | "update">("update");
   const [loading, setLoading] = useState(false);
   const [sortKey, setSortKey] = useState<ShipmentJobsTableSortKey | null>(null);
@@ -605,16 +607,26 @@ export default function ShipmentEntryForm({
             shipperOptions={shipperOptions}
             assignedAdminsReadOnly={!canEditAssignedAdmins}
             onRequestShipperAssignmentChange={
-              isSuperAdmin ? undefined : setAssignmentChangeShipperName
+              isSuperAdmin
+                ? undefined
+                : (job) =>
+                    setAssignmentChangeTarget({
+                      shipperName: job.shipper_name!,
+                      adminUserIds: [
+                        ...(job.operations_admin_user_ids ?? []),
+                        ...(job.sales_admin_user_ids ?? []),
+                      ],
+                    })
             }
           />
-          {assignmentChangeShipperName && (
+          {assignmentChangeTarget && (
             <ShipperAssignmentChangeRequestModal
               adminEmail={adminEmail}
-              shipperName={assignmentChangeShipperName}
-              onClose={() => setAssignmentChangeShipperName(null)}
+              shipperName={assignmentChangeTarget.shipperName}
+              initialAdminUserIds={assignmentChangeTarget.adminUserIds}
+              onClose={() => setAssignmentChangeTarget(null)}
               onRequested={() => {
-                setAssignmentChangeShipperName(null);
+                setAssignmentChangeTarget(null);
                 setToast({
                   type: "success",
                   message: t("admin.userRegistration.changeRequested"),
@@ -720,7 +732,7 @@ function AdminShipmentJobModal({
   onSubmit: (form: Parameters<typeof updateShipmentJob>[1]) => Promise<void>;
   onRefresh: () => Promise<void>;
   assignedAdminsReadOnly: boolean;
-  onRequestShipperAssignmentChange?: (shipperName: string) => void;
+  onRequestShipperAssignmentChange?: (job: ShipmentJob) => void;
 }) {
   const [previewDocument, setPreviewDocument] =
     useState<ShipmentDocument | null>(null);
@@ -824,7 +836,7 @@ function AdminShipmentJobModal({
             job.shipper_name &&
             onRequestShipperAssignmentChange
               ? () => {
-                  onRequestShipperAssignmentChange(job.shipper_name!);
+                  onRequestShipperAssignmentChange(job);
                 }
               : undefined
           }
