@@ -1619,9 +1619,7 @@ export function UserDetailModal({
               adminOperators={adminOperators}
               selectedAdminIds={selectedAdminIds}
               selectedOperationsAdminIds={
-                assignmentShipmentJobId
-                  ? selectedOperationsAdminIds
-                  : undefined
+                assignmentShipmentJobId ? selectedOperationsAdminIds : undefined
               }
               selectedSalesAdminIds={
                 assignmentShipmentJobId ? selectedSalesAdminIds : undefined
