@@ -1870,40 +1870,68 @@ function ChangeRequestSummary({
         return operator?.user_name || operator?.email || adminUserId;
       })
       .join(", ");
-  const rows = [
-    [
-      t("admin.userRegistration.shipperName"),
-      before.shipper_name,
-      after.shipper_name,
-    ],
-    [t("admin.userRegistration.zipcode"), before.zipcode, after.zipcode],
-    [
-      t("admin.userRegistration.shipperAddress"),
-      before.shipper_address,
-      after.shipper_address,
-    ],
-    [t("admin.userRegistration.telephone"), before.telephone, after.telephone],
-    [
-      t("admin.userRegistration.budget"),
-      String(before.budget),
-      String(after.budget),
-    ],
-    [t("admin.userRegistration.notes"), before.notes, after.notes],
-    [
-      t("admin.userRegistration.contacts"),
-      before.contacts
-        .map((contact) => `${contact.contact_person} <${contact.email}>`)
-        .join(", "),
-      after.contacts
-        .map((contact) => `${contact.contact_person} <${contact.email}>`)
-        .join(", "),
-    ],
-    [
-      t("admin.userRegistration.salesAssignees"),
-      assignmentLabel(before.admin_user_ids),
-      assignmentLabel(after.admin_user_ids),
-    ],
-  ].filter(([, previousValue, nextValue]) => previousValue !== nextValue);
+  const isShipmentAssignmentRequest =
+    "shipment_job_id" in before && "shipment_job_id" in after;
+  const rows: Array<[string, string, string]> = isShipmentAssignmentRequest
+    ? [
+        [
+          t("admin.userRegistration.operationsAssignees"),
+          assignmentLabel(before.operations_admin_user_ids ?? []),
+          assignmentLabel(after.operations_admin_user_ids ?? []),
+        ],
+        [
+          t("admin.userRegistration.salesAssignees"),
+          assignmentLabel(before.sales_admin_user_ids ?? []),
+          assignmentLabel(after.sales_admin_user_ids ?? []),
+        ],
+      ]
+    : "shipper_name" in before && "shipper_name" in after
+      ? [
+          [
+            t("admin.userRegistration.shipperName"),
+            before.shipper_name,
+            after.shipper_name,
+          ],
+          [
+            t("admin.userRegistration.zipcode"),
+            before.zipcode,
+            after.zipcode,
+          ],
+          [
+            t("admin.userRegistration.shipperAddress"),
+            before.shipper_address,
+            after.shipper_address,
+          ],
+          [
+            t("admin.userRegistration.telephone"),
+            before.telephone,
+            after.telephone,
+          ],
+          [
+            t("admin.userRegistration.budget"),
+            String(before.budget),
+            String(after.budget),
+          ],
+          [t("admin.userRegistration.notes"), before.notes, after.notes],
+          [
+            t("admin.userRegistration.contacts"),
+            (before.contacts ?? [])
+              .map((contact) => `${contact.contact_person} <${contact.email}>`)
+              .join(", "),
+            (after.contacts ?? [])
+              .map((contact) => `${contact.contact_person} <${contact.email}>`)
+              .join(", "),
+          ],
+          [
+            t("admin.userRegistration.salesAssignees"),
+            assignmentLabel(before.admin_user_ids ?? []),
+            assignmentLabel(after.admin_user_ids ?? []),
+          ],
+        ]
+      : [];
+  const changedRows = rows.filter(
+    ([, previousValue, nextValue]) => previousValue !== nextValue,
+  );
 
   return (
     <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
@@ -1916,7 +1944,7 @@ function ChangeRequestSummary({
         })}
       </p>
       <div className="mt-3 space-y-2">
-        {rows.map(([label, previousValue, nextValue]) => (
+        {changedRows.map(([label, previousValue, nextValue]) => (
           <div
             key={label}
             className="grid gap-1 rounded-lg bg-white/70 p-3 text-sm sm:grid-cols-[140px_1fr_auto_1fr] dark:bg-slate-950/30"

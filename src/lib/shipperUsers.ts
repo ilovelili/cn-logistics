@@ -58,7 +58,7 @@ export interface ShipperAdminAssignmentOption {
   admin_assignments: ShipperUserAdminAssignment[];
 }
 
-export interface ShipperChangeRequestSnapshot {
+export interface ShipperProfileChangeRequestSnapshot {
   shipper_name: string;
   zipcode: string;
   shipper_address: string;
@@ -68,6 +68,16 @@ export interface ShipperChangeRequestSnapshot {
   contacts: ShipperUserContact[];
   admin_user_ids: string[];
 }
+
+export interface ShipmentAssignmentChangeRequestSnapshot {
+  shipment_job_id: string;
+  operations_admin_user_ids: string[];
+  sales_admin_user_ids: string[];
+}
+
+export type ShipperChangeRequestSnapshot =
+  | ShipperProfileChangeRequestSnapshot
+  | ShipmentAssignmentChangeRequestSnapshot;
 
 export interface ShipperChangeRequest {
   id: string;
