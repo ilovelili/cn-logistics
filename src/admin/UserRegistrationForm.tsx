@@ -1892,11 +1892,7 @@ function ChangeRequestSummary({
             before.shipper_name,
             after.shipper_name,
           ],
-          [
-            t("admin.userRegistration.zipcode"),
-            before.zipcode,
-            after.zipcode,
-          ],
+          [t("admin.userRegistration.zipcode"), before.zipcode, after.zipcode],
           [
             t("admin.userRegistration.shipperAddress"),
             before.shipper_address,

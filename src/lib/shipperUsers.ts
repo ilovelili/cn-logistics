@@ -76,8 +76,7 @@ export interface ShipmentAssignmentChangeRequestSnapshot {
 }
 
 export type ShipperChangeRequestSnapshot =
-  | ShipperProfileChangeRequestSnapshot
-  | ShipmentAssignmentChangeRequestSnapshot;
+  ShipperProfileChangeRequestSnapshot | ShipmentAssignmentChangeRequestSnapshot;
 
 export interface ShipperChangeRequest {
   id: string;
