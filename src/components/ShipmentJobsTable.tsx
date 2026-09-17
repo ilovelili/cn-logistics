@@ -909,6 +909,7 @@ function buildColumns(
                   job,
                   shipperOptions,
                   staffRole,
+                  adminOperators,
                 )}
                 assignmentRole={staffRole}
                 emptyClassName="text-slate-400"

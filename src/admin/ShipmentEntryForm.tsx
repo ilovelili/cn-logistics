@@ -202,10 +202,11 @@ export default function ShipmentEntryForm({
         if (!normalizedQuery) return true;
         return buildShipmentJobSearchText(
           job,
-          getResponsibleAdminSearchTerms(job, shipperOptions),
+          getResponsibleAdminSearchTerms(job, shipperOptions, adminOperators),
         ).includes(normalizedQuery);
       });
   }, [
+    adminOperators,
     shipperFilter,
     shipperOptions,
     activeCriteria,
@@ -233,6 +234,7 @@ export default function ShipmentEntryForm({
               : sortKey === "sales_admins"
                 ? "sales"
                 : undefined,
+            adminOperators,
           ),
         ),
         getShipmentJobSortValue(
@@ -246,13 +248,14 @@ export default function ShipmentEntryForm({
               : sortKey === "sales_admins"
                 ? "sales"
                 : undefined,
+            adminOperators,
           ),
         ),
         sortDirection,
         sortKey,
       ),
     );
-  }, [shipperOptions, filteredJobs, sortDirection, sortKey]);
+  }, [adminOperators, shipperOptions, filteredJobs, sortDirection, sortKey]);
 
   const pageCount = Math.max(Math.ceil(sortedJobs.length / pageSize), 1);
   const safeCurrentPage = Math.min(currentPage, pageCount);

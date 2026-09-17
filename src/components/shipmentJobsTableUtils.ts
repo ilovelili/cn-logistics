@@ -9,6 +9,7 @@ import {
 } from "../lib/shipmentJobs";
 import type { ShipperUserAdminAssignment } from "../lib/shipperUsers";
 import type { AdminOperatorStaffRole } from "../lib/adminOperators";
+import type { AdminOperator } from "../lib/adminOperators";
 import type { SortDirection } from "./SortableTableHeader";
 import type { ShipmentJobsTableSortKey } from "./ShipmentJobsTable";
 
@@ -152,8 +153,14 @@ export function getResponsibleAdminNames(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
   staffRole?: AdminOperatorStaffRole,
+  adminOperators: AdminOperator[] = [],
 ) {
-  return getResponsibleAdminAssignments(job, shipperOptions, staffRole)
+  return getResponsibleAdminAssignments(
+    job,
+    shipperOptions,
+    staffRole,
+    adminOperators,
+  )
     .map((assignment) => assignment.user_name || assignment.email)
     .filter(Boolean);
 }
@@ -161,10 +168,16 @@ export function getResponsibleAdminNames(
 export function getResponsibleAdminSearchTerms(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
+  adminOperators: AdminOperator[] = [],
 ) {
   return [
     ...new Set(
-      getResponsibleAdminAssignments(job, shipperOptions).flatMap(
+      getResponsibleAdminAssignments(
+        job,
+        shipperOptions,
+        undefined,
+        adminOperators,
+      ).flatMap(
         (assignment) => [
           ...(assignment.user_name ? [assignment.user_name] : []),
           assignment.email,
@@ -179,6 +192,7 @@ export function getResponsibleAdminAssignments(
   job: ShipmentJob,
   shipperOptions: ShipmentJobsShipperOption[],
   staffRole?: AdminOperatorStaffRole,
+  adminOperators: AdminOperator[] = [],
 ) {
   const assignedAdminIds = new Set(
     staffRole === "operations"
@@ -192,8 +206,28 @@ export function getResponsibleAdminAssignments(
     return [];
   }
 
-  return getShipperAdminAssignments(job.shipper_name, shipperOptions).filter(
-    (assignment) => assignedAdminIds.has(assignment.admin_user_id),
+  const assignmentsByAdminId = new Map(
+    getShipperAdminAssignments(job.shipper_name, shipperOptions).map(
+      (assignment) => [assignment.admin_user_id, assignment],
+    ),
+  );
+
+  adminOperators.forEach((operator) => {
+    if (!assignmentsByAdminId.has(operator.id)) {
+      assignmentsByAdminId.set(operator.id, {
+        admin_user_id: operator.id,
+        email: operator.email,
+        user_name: operator.user_name,
+        staff_role: operator.staff_role,
+        staff_roles: operator.staff_roles,
+        created_at: operator.created_at,
+        updated_at: operator.updated_at,
+      });
+    }
+  });
+
+  return [...assignmentsByAdminId.values()].filter((assignment) =>
+    assignedAdminIds.has(assignment.admin_user_id),
   );
 }
 
