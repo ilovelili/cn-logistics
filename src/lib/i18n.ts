@@ -51,19 +51,27 @@ const ja = {
   "appNotifications.actor": "申請・更新者",
   "appNotifications.events.shipper_created": "荷主が登録されました",
   "appNotifications.events.shipment_created": "出荷案件が登録されました",
-  "appNotifications.events.shipment_status_updated": "案件ステータスが更新されました",
-  "appNotifications.events.shipper_update_requested": "荷主更新が申請されました",
+  "appNotifications.events.shipment_status_updated":
+    "案件ステータスが更新されました",
+  "appNotifications.events.shipper_update_requested":
+    "荷主更新が申請されました",
   "appNotifications.events.shipper_update_approved": "荷主更新が承認されました",
   "appNotifications.events.shipper_update_rejected": "荷主更新が却下されました",
-  "appNotifications.events.assignment_change_requested": "担当変更が申請されました",
-  "appNotifications.events.assignment_change_approved": "担当変更が承認されました",
-  "appNotifications.events.assignment_change_rejected": "担当変更が却下されました",
+  "appNotifications.events.assignment_change_requested":
+    "担当変更が申請されました",
+  "appNotifications.events.assignment_change_approved":
+    "担当変更が承認されました",
+  "appNotifications.events.assignment_change_rejected":
+    "担当変更が却下されました",
   "appNotifications.events.assignment_added": "荷主担当に追加されました",
   "appNotifications.events.assignment_removed": "荷主担当から外されました",
   "appNotifications.events.document_download_pending": "書類DLが申請されました",
-  "appNotifications.events.document_download_approved": "書類DLが承認されました",
-  "appNotifications.events.document_download_rejected": "書類DLが却下されました",
-  "appNotifications.events.customer_document_added": "顧客向け書類が追加されました",
+  "appNotifications.events.document_download_approved":
+    "書類DLが承認されました",
+  "appNotifications.events.document_download_rejected":
+    "書類DLが却下されました",
+  "appNotifications.events.customer_document_added":
+    "顧客向け書類が追加されました",
   "notifications.statusUpdated": "船積みスケジュールが更新されました",
   "notifications.statusSet": "出荷ステータスが設定されました",
   "notifications.statusSetSummary":
@@ -680,17 +688,24 @@ const en: Messages = {
   "appNotifications.events.shipper_created": "Shipper registered",
   "appNotifications.events.shipment_created": "Shipment created",
   "appNotifications.events.shipment_status_updated": "Shipment status updated",
-  "appNotifications.events.shipper_update_requested": "Shipper update requested",
+  "appNotifications.events.shipper_update_requested":
+    "Shipper update requested",
   "appNotifications.events.shipper_update_approved": "Shipper update approved",
   "appNotifications.events.shipper_update_rejected": "Shipper update rejected",
-  "appNotifications.events.assignment_change_requested": "Assignment change requested",
-  "appNotifications.events.assignment_change_approved": "Assignment change approved",
-  "appNotifications.events.assignment_change_rejected": "Assignment change rejected",
+  "appNotifications.events.assignment_change_requested":
+    "Assignment change requested",
+  "appNotifications.events.assignment_change_approved":
+    "Assignment change approved",
+  "appNotifications.events.assignment_change_rejected":
+    "Assignment change rejected",
   "appNotifications.events.assignment_added": "Added as shipper contact",
   "appNotifications.events.assignment_removed": "Removed as shipper contact",
-  "appNotifications.events.document_download_pending": "Document download requested",
-  "appNotifications.events.document_download_approved": "Document download approved",
-  "appNotifications.events.document_download_rejected": "Document download rejected",
+  "appNotifications.events.document_download_pending":
+    "Document download requested",
+  "appNotifications.events.document_download_approved":
+    "Document download approved",
+  "appNotifications.events.document_download_rejected":
+    "Document download rejected",
   "appNotifications.events.customer_document_added": "Customer document added",
   "notifications.statusUpdated": "Shipping schedule updated",
   "notifications.statusSet": "Shipment status was set",

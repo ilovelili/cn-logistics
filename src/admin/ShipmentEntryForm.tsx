@@ -824,7 +824,7 @@ function AdminShipmentJobModal({
             job.shipper_name &&
             onRequestShipperAssignmentChange
               ? () => {
-                    onRequestShipperAssignmentChange(job.shipper_name!);
+                  onRequestShipperAssignmentChange(job.shipper_name!);
                 }
               : undefined
           }

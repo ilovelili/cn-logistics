@@ -147,14 +147,17 @@ export default function ShipmentJobDetailModal({
                       : "text-slate-400"
                   }`}
                   fill={
-                    feedbackLoading || feedbackComplete ? "currentColor" : "none"
+                    feedbackLoading || feedbackComplete
+                      ? "currentColor"
+                      : "none"
                   }
                 />
                 {feedbackLoading
                   ? t("common.loadingFeedback")
                   : feedback
                     ? `${t("feedback.ratingValue", {
-                        rating: getShipmentFeedbackSummaryRating(feedback).toFixed(1),
+                        rating:
+                          getShipmentFeedbackSummaryRating(feedback).toFixed(1),
                       })}${feedbackComplete ? "" : ` · ${t("feedback.open")}`}`
                     : t("feedback.open")}
               </button>

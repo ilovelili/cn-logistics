@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchAssignableAdminOperators, type AdminOperator } from "../lib/adminOperators";
+import {
+  fetchAssignableAdminOperators,
+  type AdminOperator,
+} from "../lib/adminOperators";
 import {
   fetchAccessibleShipperChangeRequests,
   fetchShipperUsersForAssignmentChange,

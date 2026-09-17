@@ -248,7 +248,6 @@ export default function UserRegistrationForm({
     }
   }, [onUsersChange, users, usersLoading]);
 
-
   useEffect(() => {
     let active = true;
     async function loadAdminOperators() {
@@ -2164,10 +2163,9 @@ function StatusBadge({
   const label = pendingChangeRequest
     ? t("admin.userRegistration.status.changePending")
     : getApprovalStatusLabel(status);
-  const classes =
-    pendingChangeRequest
-      ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-      : status === "approved"
+  const classes = pendingChangeRequest
+    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+    : status === "approved"
       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
       : status === "rejected"
         ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300"

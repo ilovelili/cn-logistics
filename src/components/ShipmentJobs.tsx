@@ -898,9 +898,9 @@ function FeedbackModal({
                       key={category.key}
                       label={category.label}
                       value={
-                        feedbackByTarget[getShipmentFeedbackTargetKey(target)]?.[
-                          category.key
-                        ] ?? 0
+                        feedbackByTarget[
+                          getShipmentFeedbackTargetKey(target)
+                        ]?.[category.key] ?? 0
                       }
                       disabled={isActiveRoleSubmitted}
                       onChange={(ratingValue) =>
@@ -1068,9 +1068,8 @@ function getInitialFeedbackRatingsByTarget(
 function getInitialFeedbackReasons(feedback?: ShipmentFeedback[] | null) {
   return {
     operations:
-      feedback?.find(
-        (item) => item.admin_operator_staff_role === "operations",
-      )?.reason ?? "",
+      feedback?.find((item) => item.admin_operator_staff_role === "operations")
+        ?.reason ?? "",
     sales:
       feedback?.find((item) => item.admin_operator_staff_role === "sales")
         ?.reason ?? "",
