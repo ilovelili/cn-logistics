@@ -36,6 +36,7 @@ interface ShipmentJobDetailModalProps {
   job: ShipmentJob | null;
   documents: ShipmentDocument[];
   feedback?: ShipmentFeedback | null;
+  feedbackComplete?: boolean;
   feedbackLoading?: boolean;
   showInternalDocuments?: boolean;
   shipperOptions?: ShipmentJobsShipperOption[];
@@ -48,6 +49,7 @@ export default function ShipmentJobDetailModal({
   job,
   documents,
   feedback,
+  feedbackComplete = false,
   feedbackLoading = false,
   showInternalDocuments = false,
   shipperOptions = [],
@@ -126,33 +128,34 @@ export default function ShipmentJobDetailModal({
             {onOpenFeedback && (
               <button
                 type="button"
-                disabled={feedbackLoading || Boolean(feedback)}
+                disabled={feedbackLoading || feedbackComplete}
                 onClick={() => {
-                  if (!feedbackLoading && !feedback) {
+                  if (!feedbackLoading && !feedbackComplete) {
                     onOpenFeedback(job);
                   }
                 }}
                 className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-black transition ${
-                  feedbackLoading || feedback
+                  feedbackLoading || feedbackComplete
                     ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-600"
                     : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 }`}
               >
                 <Star
                   className={`h-4 w-4 ${
-                    feedbackLoading || feedback
+                    feedbackLoading || feedbackComplete
                       ? "text-slate-400"
                       : "text-slate-400"
                   }`}
-                  fill={feedbackLoading || feedback ? "currentColor" : "none"}
+                  fill={
+                    feedbackLoading || feedbackComplete ? "currentColor" : "none"
+                  }
                 />
                 {feedbackLoading
                   ? t("common.loadingFeedback")
                   : feedback
-                    ? t("feedback.ratingValue", {
-                        rating:
-                          getShipmentFeedbackSummaryRating(feedback).toFixed(1),
-                      })
+                    ? `${t("feedback.ratingValue", {
+                        rating: getShipmentFeedbackSummaryRating(feedback).toFixed(1),
+                      })}${feedbackComplete ? "" : ` · ${t("feedback.open")}`}`
                     : t("feedback.open")}
               </button>
             )}

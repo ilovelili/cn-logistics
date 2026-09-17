@@ -81,6 +81,17 @@ function isSameShipperGroup(first: ShipperUser, second: ShipperUser) {
   );
 }
 
+function findShipperChangeRequest(
+  user: ShipperUserRow,
+  requests: ShipperChangeRequest[],
+) {
+  return requests.find((request) =>
+    user.contact_users.some(
+      (contactUser) => contactUser.id === request.target_user_id,
+    ),
+  );
+}
+
 interface UserRegistrationFormProps {
   adminEmail: string;
   isSuperAdmin?: boolean;
@@ -236,6 +247,7 @@ export default function UserRegistrationForm({
       onUsersChange?.(users);
     }
   }, [onUsersChange, users, usersLoading]);
+
 
   useEffect(() => {
     let active = true;
@@ -637,9 +649,12 @@ export default function UserRegistrationForm({
           </div>
         ),
       },
-      ...(["sales"] as const).map((staffRole) => ({
+      ...(["operations", "sales"] as const).map((staffRole) => ({
         id: `${staffRole}_admins` as const,
-        label: t("admin.userRegistration.salesAssignees"),
+        label:
+          staffRole === "operations"
+            ? t("admin.userRegistration.operationsAssignees")
+            : t("admin.userRegistration.salesAssignees"),
         width: 140,
         render: (user: ShipperUserRow) => (
           <AssignedAdminsSummary
@@ -665,7 +680,14 @@ export default function UserRegistrationForm({
         label: t("admin.userRegistration.status"),
         width: isSuperAdmin ? 90 : 110,
         sortKey: "approval_status",
-        render: (user) => <StatusBadge status={user.approval_status} />,
+        render: (user) => (
+          <StatusBadge
+            status={user.approval_status}
+            pendingChangeRequest={Boolean(
+              findShipperChangeRequest(user, changeRequests),
+            )}
+          />
+        ),
       },
       {
         id: "created_at",
@@ -726,7 +748,13 @@ export default function UserRegistrationForm({
     }
 
     return userColumns;
-  }, [actionLoadingId, handleRetryProvisioning, isSuperAdmin, provisioningId]);
+  }, [
+    actionLoadingId,
+    changeRequests,
+    handleRetryProvisioning,
+    isSuperAdmin,
+    provisioningId,
+  ]);
 
   const {
     orderedColumns,
@@ -1046,8 +1074,12 @@ export default function UserRegistrationForm({
           showAdminAssignments
           adminOperators={adminOperators}
           requesterEmail={adminEmail}
-          changeRequest={changeRequests.find(
-            (request) => request.target_user_id === selectedUser.id,
+          changeRequest={changeRequests.find((request) =>
+            users.some(
+              (candidate) =>
+                isSameShipperGroup(candidate, selectedUser) &&
+                candidate.id === request.target_user_id,
+            ),
           )}
           canSubmitChangeRequest={
             !isSuperAdmin && selectedUser.approval_status === "approved"
@@ -1206,7 +1238,7 @@ export default function UserRegistrationForm({
             <section className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
               <div className="mb-3">
                 <h4 className="font-bold text-gray-900 dark:text-white">
-                  {t("admin.userRegistration.salesAssignees")}
+                  {t("admin.userRegistration.assignedAdmins")}
                 </h4>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t("admin.userRegistration.assignedAdminsDescription")}
@@ -1486,7 +1518,10 @@ export function UserDetailModal({
         </div>
 
         <div className="mb-6">
-          <StatusBadge status={user.approval_status} />
+          <StatusBadge
+            status={user.approval_status}
+            pendingChangeRequest={Boolean(changeRequest)}
+          />
         </div>
 
         {changeRequest ? (
@@ -1509,7 +1544,7 @@ export function UserDetailModal({
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white">
-                  {t("admin.userRegistration.salesAssignees")}
+                  {t("admin.userRegistration.assignedAdmins")}
                 </h4>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t("admin.userRegistration.assignedAdminsDescription")}
@@ -1946,6 +1981,10 @@ function AdminOperatorAssignmentGroups(
 ) {
   const groups = [
     {
+      role: "operations" as const,
+      label: t("admin.userRegistration.operationsAssignees"),
+    },
+    {
       role: "sales" as const,
       label: t("admin.userRegistration.salesAssignees"),
     },
@@ -2115,10 +2154,20 @@ function DetailItem({
   );
 }
 
-function StatusBadge({ status }: { status: ShipperUser["approval_status"] }) {
-  const label = getApprovalStatusLabel(status);
+function StatusBadge({
+  status,
+  pendingChangeRequest = false,
+}: {
+  status: ShipperUser["approval_status"];
+  pendingChangeRequest?: boolean;
+}) {
+  const label = pendingChangeRequest
+    ? t("admin.userRegistration.status.changePending")
+    : getApprovalStatusLabel(status);
   const classes =
-    status === "approved"
+    pendingChangeRequest
+      ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+      : status === "approved"
       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
       : status === "rejected"
         ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300"

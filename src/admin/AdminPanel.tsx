@@ -20,6 +20,7 @@ import EmailTemplateManagement from "./EmailTemplateManagement";
 import StandardFlowManagement from "./StandardFlowManagement";
 import ProfileButton from "../components/ProfileButton";
 import DynamicTutorial from "../components/DynamicTutorial";
+import AppNotificationBell from "../components/AppNotificationBell";
 import LanguageSelect from "../components/LanguageSelect";
 import InstantTooltip from "../components/InstantTooltip";
 import LogoMark from "../components/LogoMark";
@@ -416,6 +417,7 @@ export default function AdminPanel({
               )}
             </InstantTooltip>
             <ProfileButton email={profileEmail} />
+            <AppNotificationBell profileEmail={profileEmail} />
             <DynamicTutorial
               variant="admin"
               adminTheme

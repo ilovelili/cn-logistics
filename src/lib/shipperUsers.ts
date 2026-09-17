@@ -144,6 +144,18 @@ export async function fetchShipperUsersByAdmin(createdBy: string) {
   return (data ?? []) as ShipperUser[];
 }
 
+export async function fetchShipperUsersForAssignmentChange(
+  requesterEmail: string,
+  shipperName: string,
+) {
+  const { data, error } = await supabase.rpc(
+    "list_shipper_users_for_assignment_change",
+    { requester_email: requesterEmail, target_shipper_name: shipperName },
+  );
+  if (error) throw error;
+  return (data ?? []) as ShipperUser[];
+}
+
 export async function fetchApprovedShippersForShipments(
   requesterEmail: string,
 ) {

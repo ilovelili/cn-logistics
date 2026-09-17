@@ -31,6 +31,7 @@ import { appendErrorDetails } from "../lib/errors";
 import {
   FeedbackRatingPayload,
   fetchShipmentFeedbackForUser,
+  getShipmentFeedbackTargetKey,
   ShipmentFeedback,
   ShipmentFeedbackTarget,
   ShipmentFeedbackTargetRole,
@@ -504,6 +505,14 @@ export default function ShipmentJobs({
             ? getFeedbackSummaryForJob(feedbackByJob[selectedJob.id])
             : null
         }
+        feedbackComplete={
+          selectedJob
+            ? isFeedbackComplete(
+                feedbackByJob[selectedJob.id],
+                getShipmentFeedbackTargets(selectedJob, shipperOptions),
+              )
+            : false
+        }
         feedbackLoading={feedbackLoading}
         showInternalDocuments={canManageShipments}
         shipperOptions={shipperOptions}
@@ -546,7 +555,9 @@ export default function ShipmentJobs({
             const missingTargets = feedback.targets.filter(
               (target) =>
                 !existingJobFeedback.some(
-                  (item) => item.admin_operator_id === target.adminOperatorId,
+                  (item) =>
+                    item.admin_operator_id === target.adminOperatorId &&
+                    item.admin_operator_staff_role === target.role,
                 ),
             );
             const savedFeedback = await submitShipmentFeedbackForTargets({
@@ -707,7 +718,11 @@ function FeedbackModal({
     useState<FeedbackRatingsByTarget>(() =>
       getInitialFeedbackRatingsByTarget(targets, initialFeedback),
     );
-  const [reason, setReason] = useState(initialFeedback?.[0]?.reason ?? "");
+  const [activeRole, setActiveRole] =
+    useState<ShipmentFeedbackTargetRole>("operations");
+  const [reasonByRole, setReasonByRole] = useState<
+    Record<ShipmentFeedbackTargetRole, string>
+  >(() => getInitialFeedbackReasons(initialFeedback));
   const [pendingFeedback, setPendingFeedback] =
     useState<PendingFeedbackSubmission | null>(null);
 
@@ -715,7 +730,12 @@ function FeedbackModal({
     setFeedbackByTarget(
       getInitialFeedbackRatingsByTarget(targets, initialFeedback),
     );
-    setReason(initialFeedback?.[0]?.reason ?? "");
+    setReasonByRole(getInitialFeedbackReasons(initialFeedback));
+    setActiveRole(
+      targets.some((target) => target.role === "operations")
+        ? "operations"
+        : "sales",
+    );
     setPendingFeedback(null);
   }, [initialFeedback, job?.id, targets]);
 
@@ -725,8 +745,18 @@ function FeedbackModal({
 
   const title =
     job.invoice_number || job.mbl_mawb || formatShipmentJobShortId(job.id);
-  const isAlreadySubmitted = isFeedbackComplete(initialFeedback, targets);
-  const isComplete = isFeedbackByTargetComplete(feedbackByTarget, targets);
+  const availableRoles = (["operations", "sales"] as const).filter((role) =>
+    targets.some((target) => target.role === role),
+  );
+  const activeTargets = targets.filter((target) => target.role === activeRole);
+  const isActiveRoleSubmitted = isFeedbackComplete(
+    initialFeedback,
+    activeTargets,
+  );
+  const isActiveRoleComplete = isFeedbackByTargetComplete(
+    feedbackByTarget,
+    activeTargets,
+  );
   const feedbackCategories = [
     {
       key: "attitudeRating" as const,
@@ -801,24 +831,60 @@ function FeedbackModal({
           className="max-h-[calc(90vh-112px)] space-y-6 overflow-y-auto p-6"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!isComplete || isAlreadySubmitted) return;
+            if (!isActiveRoleComplete || isActiveRoleSubmitted) return;
             setPendingFeedback({
               feedbackByTarget,
-              targets,
-              reason: reason.trim(),
+              targets: activeTargets,
+              reason: reasonByRole[activeRole].trim(),
             });
           }}
         >
+          {availableRoles.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 dark:bg-gray-950">
+              {availableRoles.map((role) => {
+                const roleTargets = targets.filter(
+                  (target) => target.role === role,
+                );
+                const submitted = isFeedbackComplete(
+                  initialFeedback,
+                  roleTargets,
+                );
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setActiveRole(role)}
+                    className={`rounded-lg px-4 py-3 text-sm font-black transition ${
+                      activeRole === role
+                        ? "bg-white text-cyan-700 shadow-sm dark:bg-gray-800 dark:text-cyan-300"
+                        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    }`}
+                  >
+                    {getFeedbackTargetRoleLabel(role)}
+                    {submitted && (
+                      <span className="ml-2 text-xs text-gray-400">
+                        {t("feedback.submitted")}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="space-y-6">
             {!targets.length && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                 {t("feedback.noTargets")}
               </div>
             )}
-            {targets.map((target) => (
+            {activeTargets.map((target) => (
               <section
-                key={target.adminOperatorId}
-                className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"
+                key={getShipmentFeedbackTargetKey(target)}
+                className={`rounded-2xl border border-gray-200 p-4 dark:border-gray-800 ${
+                  isActiveRoleSubmitted
+                    ? "bg-gray-100 opacity-60 dark:bg-gray-950"
+                    : ""
+                }`}
               >
                 <h3 className="text-sm font-black text-gray-900 dark:text-white">
                   {target.name}
@@ -832,14 +898,14 @@ function FeedbackModal({
                       key={category.key}
                       label={category.label}
                       value={
-                        feedbackByTarget[target.adminOperatorId]?.[
+                        feedbackByTarget[getShipmentFeedbackTargetKey(target)]?.[
                           category.key
                         ] ?? 0
                       }
-                      disabled={isAlreadySubmitted}
+                      disabled={isActiveRoleSubmitted}
                       onChange={(ratingValue) =>
                         setCategoryRating(
-                          target.adminOperatorId,
+                          getShipmentFeedbackTargetKey(target),
                           category.key,
                           ratingValue,
                         )
@@ -856,12 +922,17 @@ function FeedbackModal({
               {t("feedback.reason")}
             </span>
             <textarea
-              value={reason}
-              readOnly={isAlreadySubmitted}
-              onChange={(event) => setReason(event.target.value)}
+              value={reasonByRole[activeRole]}
+              readOnly={isActiveRoleSubmitted}
+              onChange={(event) =>
+                setReasonByRole((current) => ({
+                  ...current,
+                  [activeRole]: event.target.value,
+                }))
+              }
               rows={5}
               placeholder={t("feedback.reasonPlaceholder")}
-              className="mt-3 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 read-only:cursor-not-allowed read-only:text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900"
+              className="mt-3 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 read-only:cursor-not-allowed read-only:bg-gray-100 read-only:text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white dark:focus:bg-gray-900 dark:read-only:bg-gray-950"
             />
           </label>
 
@@ -876,11 +947,14 @@ function FeedbackModal({
             <button
               type="submit"
               disabled={
-                !targets.length || !isComplete || saving || isAlreadySubmitted
+                !activeTargets.length ||
+                !isActiveRoleComplete ||
+                saving ||
+                isActiveRoleSubmitted
               }
               className="rounded-lg bg-cyan-300 px-5 py-3 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isAlreadySubmitted
+              {isActiveRoleSubmitted
                 ? t("feedback.submitted")
                 : saving
                   ? t("common.saving")
@@ -978,15 +1052,29 @@ function getInitialFeedbackRatingsByTarget(
 ): FeedbackRatingsByTarget {
   return targets.reduce((ratingsByTarget, target) => {
     const targetFeedback = feedback?.find(
-      (item) => item.admin_operator_id === target.adminOperatorId,
+      (item) =>
+        item.admin_operator_id === target.adminOperatorId &&
+        item.admin_operator_staff_role === target.role,
     );
 
-    ratingsByTarget[target.adminOperatorId] = targetFeedback
+    ratingsByTarget[getShipmentFeedbackTargetKey(target)] = targetFeedback
       ? getFeedbackRatings(targetFeedback)
       : getEmptyFeedbackRatings();
 
     return ratingsByTarget;
   }, {} as FeedbackRatingsByTarget);
+}
+
+function getInitialFeedbackReasons(feedback?: ShipmentFeedback[] | null) {
+  return {
+    operations:
+      feedback?.find(
+        (item) => item.admin_operator_staff_role === "operations",
+      )?.reason ?? "",
+    sales:
+      feedback?.find((item) => item.admin_operator_staff_role === "sales")
+        ?.reason ?? "",
+  };
 }
 
 function getFeedbackRatings(feedback: ShipmentFeedback): FeedbackRatings {
@@ -1020,7 +1108,9 @@ function isFeedbackComplete(
     targets.length > 0 &&
     targets.every((target) =>
       feedback?.some(
-        (item) => item.admin_operator_id === target.adminOperatorId,
+        (item) =>
+          item.admin_operator_id === target.adminOperatorId &&
+          item.admin_operator_staff_role === target.role,
       ),
     )
   );
@@ -1031,9 +1121,9 @@ function isFeedbackByTargetComplete(
   targets: ShipmentFeedbackTarget[],
 ) {
   return targets.every((target) =>
-    Object.values(feedbackByTarget[target.adminOperatorId] ?? {}).every(
-      (rating) => rating > 0,
-    ),
+    Object.values(
+      feedbackByTarget[getShipmentFeedbackTargetKey(target)] ?? {},
+    ).every((rating) => rating > 0),
   );
 }
 
@@ -1068,18 +1158,20 @@ function getShipmentFeedbackTargets(
     .filter((option) => option.shipper_name === job.shipper_name)
     .flatMap((option) => option.admin_assignments)
     .forEach((assignment) => {
-      const role = operationsAdminIds.has(assignment.admin_user_id)
-        ? "operations"
-        : salesAdminIds.has(assignment.admin_user_id)
-          ? "sales"
-          : null;
-      if (!role) return;
+      (["operations", "sales"] as const).forEach((role) => {
+        const isAssigned =
+          role === "operations"
+            ? operationsAdminIds.has(assignment.admin_user_id)
+            : salesAdminIds.has(assignment.admin_user_id);
+        if (!isAssigned) return;
 
-      targetsById.set(assignment.admin_user_id, {
-        adminOperatorId: assignment.admin_user_id,
-        name: assignment.user_name?.trim() || assignment.email,
-        email: assignment.email,
-        role,
+        const target = {
+          adminOperatorId: assignment.admin_user_id,
+          name: assignment.user_name?.trim() || assignment.email,
+          email: assignment.email,
+          role,
+        };
+        targetsById.set(getShipmentFeedbackTargetKey(target), target);
       });
     });
 

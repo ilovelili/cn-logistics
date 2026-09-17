@@ -28,6 +28,12 @@ export interface ShipmentFeedbackTarget {
   role: ShipmentFeedbackTargetRole;
 }
 
+export function getShipmentFeedbackTargetKey(
+  target: Pick<ShipmentFeedbackTarget, "adminOperatorId" | "role">,
+) {
+  return `${target.role}:${target.adminOperatorId}`;
+}
+
 export interface ShipmentFeedbackReview extends ShipmentFeedback {
   shipment_invoice_number: string | null;
 }
@@ -68,12 +74,17 @@ export async function submitShipmentFeedbackForTargets({
     feedback_by_target: targets.map((target) => ({
       admin_operator_id: target.adminOperatorId,
       target_role: target.role,
-      attitude_rating: feedbackByTarget[target.adminOperatorId].attitudeRating,
+      attitude_rating:
+        feedbackByTarget[getShipmentFeedbackTargetKey(target)].attitudeRating,
       professionalism_rating:
-        feedbackByTarget[target.adminOperatorId].professionalismRating,
-      speed_rating: feedbackByTarget[target.adminOperatorId].speedRating,
-      accuracy_rating: feedbackByTarget[target.adminOperatorId].accuracyRating,
-      price_rating: feedbackByTarget[target.adminOperatorId].priceRating,
+        feedbackByTarget[getShipmentFeedbackTargetKey(target)]
+          .professionalismRating,
+      speed_rating:
+        feedbackByTarget[getShipmentFeedbackTargetKey(target)].speedRating,
+      accuracy_rating:
+        feedbackByTarget[getShipmentFeedbackTargetKey(target)].accuracyRating,
+      price_rating:
+        feedbackByTarget[getShipmentFeedbackTargetKey(target)].priceRating,
     })),
     feedback_reason: reason,
   });

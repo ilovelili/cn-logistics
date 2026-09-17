@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Bell, LogOut, Menu, Moon, Sun, X } from "lucide-react";
+import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import ShipmentJobs from "./components/ShipmentJobs";
 import NotificationsPage from "./components/NotificationsPage";
 import DynamicTutorial from "./components/DynamicTutorial";
@@ -9,6 +9,7 @@ import InstantTooltip from "./components/InstantTooltip";
 import LanguageSelect from "./components/LanguageSelect";
 import LogoMark from "./components/LogoMark";
 import ProfileButton from "./components/ProfileButton";
+import AppNotificationBell from "./components/AppNotificationBell";
 import { AdminAuthProvider } from "./admin/AdminAuthProvider";
 import { useAdminAuth } from "./admin/useAdminAuth";
 import AdminPanel from "./admin/AdminPanel";
@@ -129,14 +130,6 @@ function MainApp({
     string | null
   >(null);
   const { isAdminAuthenticated } = useAdminAuth();
-  const unreadNotificationCount = useMemo(
-    () =>
-      notifications.reduce(
-        (count, notification) => count + (notification.read_at ? 0 : 1),
-        0,
-      ),
-    [notifications],
-  );
   const visibleJobs = useMemo(() => {
     if (profileRole !== "normal") {
       return jobs;
@@ -464,46 +457,7 @@ function MainApp({
                     day: "numeric",
                   })}
                 </div>
-                {profileRole === "normal" && (
-                  <InstantTooltip
-                    label={
-                      unreadNotificationCount > 0
-                        ? t("notifications.unreadCount", {
-                            count: unreadNotificationCount,
-                          })
-                        : t("notifications.open")
-                    }
-                  >
-                    {(tooltipId) => (
-                      <button
-                        type="button"
-                        onClick={() => setCurrentView("notifications")}
-                        className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
-                          currentView === "notifications"
-                            ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                        }`}
-                        aria-label={
-                          unreadNotificationCount > 0
-                            ? t("notifications.unreadCount", {
-                                count: unreadNotificationCount,
-                              })
-                            : t("notifications.open")
-                        }
-                        aria-describedby={tooltipId}
-                      >
-                        <Bell className="h-5 w-5" />
-                        {unreadNotificationCount > 0 && (
-                          <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white ring-2 ring-white dark:ring-gray-900">
-                            {unreadNotificationCount > 99
-                              ? "99+"
-                              : unreadNotificationCount}
-                          </span>
-                        )}
-                      </button>
-                    )}
-                  </InstantTooltip>
-                )}
+                <AppNotificationBell profileEmail={profileEmail} />
                 <InstantTooltip
                   label={darkMode ? t("app.theme.light") : t("app.theme.dark")}
                 >

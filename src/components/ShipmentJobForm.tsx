@@ -32,6 +32,7 @@ interface ShipmentJobFormProps {
   documents?: ShipmentDocument[];
   onPreviewDocument?: (document: ShipmentDocument) => void;
   onDeleteDocument?: (document: ShipmentDocument) => void;
+  onRequestAssignmentChange?: () => void;
   submitLabel: string;
   loading?: boolean;
   onCancel?: () => void;
@@ -88,6 +89,7 @@ export default function ShipmentJobForm({
   documents = [],
   onPreviewDocument,
   onDeleteDocument,
+  onRequestAssignmentChange,
   submitLabel,
   loading = false,
   onCancel,
@@ -745,6 +747,17 @@ export default function ShipmentJobForm({
         }
         onToggle={toggleAssignedAdmin}
       />
+      {job && assignedAdminsReadOnly && onRequestAssignmentChange && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onRequestAssignmentChange}
+            className="rounded-lg border border-amber-300 px-4 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-50 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-950/40"
+          >
+            {t("admin.entry.requestAssignmentChange")}
+          </button>
+        </div>
+      )}
       {form.shipper_name && form.sales_admin_user_ids.length === 0 && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
           {t("form.salesAssignmentMissing")}
