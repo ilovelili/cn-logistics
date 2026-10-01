@@ -418,7 +418,11 @@ function MainApp({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <InstantTooltip label={t("app.menu.toggle")} align="left">
+              <InstantTooltip
+                label={t("app.menu.toggle")}
+                align="left"
+                disabled={sidebarOpen}
+              >
                 {(tooltipId) => (
                   <button
                     onClick={handleSidebarToggle}

@@ -5,12 +5,14 @@ interface InstantTooltipProps {
   label: string;
   children: (tooltipId: string) => ReactNode;
   align?: "left" | "right";
+  disabled?: boolean;
 }
 
 export default function InstantTooltip({
   label,
   children,
   align = "right",
+  disabled = false,
 }: InstantTooltipProps) {
   const tooltipId = useId();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -39,13 +41,21 @@ export default function InstantTooltip({
     <div
       ref={wrapperRef}
       className="inline-flex"
-      onMouseEnter={showTooltip}
+      onMouseEnter={() => {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          showTooltip();
+        }
+      }}
       onMouseLeave={hideTooltip}
-      onFocus={showTooltip}
+      onFocus={(event) => {
+        if (event.target.matches(":focus-visible")) showTooltip();
+      }}
       onBlur={hideTooltip}
+      onPointerDown={hideTooltip}
     >
       {children(tooltipId)}
-      {position &&
+      {!disabled &&
+        position &&
         createPortal(
           <div
             id={tooltipId}

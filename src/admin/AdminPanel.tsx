@@ -347,7 +347,11 @@ export default function AdminPanel({
       <header className="border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <InstantTooltip label={t("app.menu.toggle")} align="left">
+            <InstantTooltip
+              label={t("app.menu.toggle")}
+              align="left"
+              disabled={sidebarOpen}
+            >
               {(tooltipId) => (
                 <button
                   type="button"
