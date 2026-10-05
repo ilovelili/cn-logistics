@@ -321,6 +321,26 @@ export async function deleteShipperUser({ userId }: { userId: string }) {
   await deleteAuth0User(userId);
 }
 
+export async function setOperatorShipperAssignment({
+  requesterEmail,
+  userId,
+  operatorId,
+  assigned,
+}: {
+  requesterEmail: string;
+  userId: string;
+  operatorId: string;
+  assigned: boolean;
+}) {
+  const { error } = await supabase.rpc("set_operator_shipper_assignment", {
+    requester_email: requesterEmail,
+    target_user_id: userId,
+    target_operator_id: operatorId,
+    should_be_assigned: assigned,
+  });
+  if (error) throw error;
+}
+
 export async function updateShipperUserAdminAssignments({
   requesterEmail,
   userId,

@@ -24,7 +24,7 @@ import {
 } from "../lib/adminOperators";
 import {
   fetchShipperUsersByAdmin,
-  updateShipperUserAdminAssignments,
+  setOperatorShipperAssignment,
   type ShipperUser,
 } from "../lib/shipperUsers";
 import { t } from "../lib/i18n";
@@ -372,24 +372,17 @@ export default function AdminOperatorManagement({
     for (const shipperUser of [...currentShipperUsers].sort((first, second) =>
       first.id.localeCompare(second.id),
     )) {
-      const adminUserIds = new Set(
-        (shipperUser.admin_assignments ?? []).map(
-          (assignment) => assignment.admin_user_id,
-        ),
+      const isAssigned = (shipperUser.admin_assignments ?? []).some(
+        (assignment) => assignment.admin_user_id === operatorId,
       );
       const shouldBeAssigned = selectedShipperUserIdSet.has(shipperUser.id);
-      if (adminUserIds.has(operatorId) === shouldBeAssigned) continue;
+      if (isAssigned === shouldBeAssigned) continue;
 
-      if (shouldBeAssigned) {
-        adminUserIds.add(operatorId);
-      } else {
-        adminUserIds.delete(operatorId);
-      }
-
-      await updateShipperUserAdminAssignments({
+      await setOperatorShipperAssignment({
         requesterEmail: superAdminEmail,
         userId: shipperUser.id,
-        adminUserIds: [...adminUserIds],
+        operatorId,
+        assigned: shouldBeAssigned,
       });
     }
   };
