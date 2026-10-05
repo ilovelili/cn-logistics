@@ -287,15 +287,19 @@ export default function UserRegistrationForm({
           createdContactEmails.includes(user.email.toLowerCase()),
         );
 
-        const assignedUsers = await Promise.all(
-          createdUsers.map((user) =>
-            updateShipperUserAdminAssignments({
+        // Save sequentially to avoid competing assignment transactions and deadlocks.
+        const assignedUsers: ShipperUser[] = [];
+        for (const user of [...createdUsers].sort((first, second) =>
+          first.id.localeCompare(second.id),
+        )) {
+          assignedUsers.push(
+            await updateShipperUserAdminAssignments({
               requesterEmail: adminEmail,
               userId: user.id,
               adminUserIds: selectedCreateAdminIds,
             }),
-          ),
-        );
+          );
+        }
         const assignedUsersById = new Map(
           assignedUsers.map((user) => [user.id, user]),
         );
@@ -1615,23 +1619,50 @@ export function UserDetailModal({
               )}
             </div>
 
-            <AdminOperatorAssignmentGroups
-              adminOperators={adminOperators}
-              selectedAdminIds={selectedAdminIds}
-              selectedOperationsAdminIds={
-                assignmentShipmentJobId ? selectedOperationsAdminIds : undefined
-              }
-              selectedSalesAdminIds={
-                assignmentShipmentJobId ? selectedSalesAdminIds : undefined
-              }
-              assignmentsReadOnly={assignmentsReadOnly && !isChangeRequestMode}
-              onToggle={toggleAdminAssignment}
-              onToggleForRole={
-                assignmentShipmentJobId
-                  ? toggleShipmentAdminAssignment
-                  : undefined
-              }
-            />
+            {assignmentsReadOnly && !assignmentShipmentJobId ? (
+              <div className="space-y-4">
+                {shipperContacts.map((contact) => (
+                  <div key={contact.id} className="space-y-2">
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">
+                      {contact.contact_person && (
+                        <span>{contact.contact_person} · </span>
+                      )}
+                      <span className="break-all">{contact.email}</span>
+                    </div>
+                    <AdminOperatorAssignmentGroups
+                      adminOperators={adminOperators}
+                      selectedAdminIds={(contact.admin_assignments ?? []).map(
+                        (assignment) => assignment.admin_user_id,
+                      )}
+                      assignmentsReadOnly
+                      onToggle={() => undefined}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <AdminOperatorAssignmentGroups
+                adminOperators={adminOperators}
+                selectedAdminIds={selectedAdminIds}
+                selectedOperationsAdminIds={
+                  assignmentShipmentJobId
+                    ? selectedOperationsAdminIds
+                    : undefined
+                }
+                selectedSalesAdminIds={
+                  assignmentShipmentJobId ? selectedSalesAdminIds : undefined
+                }
+                assignmentsReadOnly={
+                  assignmentsReadOnly && !isChangeRequestMode
+                }
+                onToggle={toggleAdminAssignment}
+                onToggleForRole={
+                  assignmentShipmentJobId
+                    ? toggleShipmentAdminAssignment
+                    : undefined
+                }
+              />
+            )}
 
             {assignmentError && (
               <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">

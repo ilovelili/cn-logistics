@@ -46,6 +46,28 @@ import TableColumnResizeHandle from "../components/TableColumnResizeHandle";
 import { usePagination } from "../components/usePagination";
 import { UserDetailModal } from "./UserRegistrationForm";
 
+function shipperGroupKey(user: {
+  id: string;
+  shipper_name: string;
+  created_by?: string | null;
+}) {
+  // Unknown creators must not merge unrelated accounts.
+  return user.created_by === undefined
+    ? JSON.stringify([user.shipper_name, user.id])
+    : JSON.stringify([user.shipper_name, user.created_by ?? ""]);
+}
+
+function groupByKey<T>(items: T[], keyFor: (item: T) => string) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyFor(item);
+    const group = groups.get(key) ?? [];
+    group.push(item);
+    groups.set(key, group);
+  }
+  return groups;
+}
+
 function appendAdminErrorDetails(summary: string, error: unknown) {
   return appendErrorDetails(summary, error, { includeTechnicalDetails: true });
 }
@@ -107,6 +129,10 @@ export default function AdminOperatorManagement({
   const [shipperUsers, setShipperUsers] = useState<ShipperUser[]>([]);
   const [query, setQuery] = useState("");
   const [form, setForm] = useState(defaultAdminOperatorForm);
+  const shipperUsersById = useMemo(
+    () => new Map(shipperUsers.map((user) => [user.id, user])),
+    [shipperUsers],
+  );
   const [selectedShipperUserIds, setSelectedShipperUserIds] = useState<
     string[]
   >([]);
@@ -129,6 +155,9 @@ export default function AdminOperatorManagement({
   });
   const [selectedShipperUser, setSelectedShipperUser] =
     useState<ShipperUser | null>(null);
+  const [selectedShipperContacts, setSelectedShipperContacts] = useState<
+    ShipperUser[]
+  >([]);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [stickyHeaderEnabled, toggleStickyHeader] =
@@ -283,24 +312,9 @@ export default function AdminOperatorManagement({
       );
 
       if (createdOperator && selectedShipperUserIds.length > 0) {
-        await Promise.all(
-          selectedShipperUserIds.map((shipperUserId) => {
-            const shipperUser = shipperUsers.find(
-              (currentShipperUser) => currentShipperUser.id === shipperUserId,
-            );
-            const adminUserIds = new Set(
-              (shipperUser?.admin_assignments ?? []).map(
-                (assignment) => assignment.admin_user_id,
-              ),
-            );
-            adminUserIds.add(createdOperator.id);
-
-            return updateShipperUserAdminAssignments({
-              requesterEmail: superAdminEmail,
-              userId: shipperUserId,
-              adminUserIds: [...adminUserIds],
-            });
-          }),
+        await syncOperatorShipperAssignments(
+          createdOperator.id,
+          selectedShipperUserIds,
         );
       }
 
@@ -353,27 +367,31 @@ export default function AdminOperatorManagement({
   ) => {
     const selectedShipperUserIdSet = new Set(selectedShipperUserIdsForOperator);
 
-    await Promise.all(
-      shipperUsers.map((shipperUser) => {
-        const adminUserIds = new Set(
-          (shipperUser.admin_assignments ?? []).map(
-            (assignment) => assignment.admin_user_id,
-          ),
-        );
+    // Read current assignments so a retry also handles a partially completed save.
+    const currentShipperUsers = await fetchShipperUsersByAdmin(superAdminEmail);
+    for (const shipperUser of [...currentShipperUsers].sort((first, second) =>
+      first.id.localeCompare(second.id),
+    )) {
+      const adminUserIds = new Set(
+        (shipperUser.admin_assignments ?? []).map(
+          (assignment) => assignment.admin_user_id,
+        ),
+      );
+      const shouldBeAssigned = selectedShipperUserIdSet.has(shipperUser.id);
+      if (adminUserIds.has(operatorId) === shouldBeAssigned) continue;
 
-        if (selectedShipperUserIdSet.has(shipperUser.id)) {
-          adminUserIds.add(operatorId);
-        } else {
-          adminUserIds.delete(operatorId);
-        }
+      if (shouldBeAssigned) {
+        adminUserIds.add(operatorId);
+      } else {
+        adminUserIds.delete(operatorId);
+      }
 
-        return updateShipperUserAdminAssignments({
-          requesterEmail: superAdminEmail,
-          userId: shipperUser.id,
-          adminUserIds: [...adminUserIds],
-        });
-      }),
-    );
+      await updateShipperUserAdminAssignments({
+        requesterEmail: superAdminEmail,
+        userId: shipperUser.id,
+        adminUserIds: [...adminUserIds],
+      });
+    }
   };
 
   const openEditModal = (operator: AdminOperator) => {
@@ -490,10 +508,14 @@ export default function AdminOperatorManagement({
         width: 300,
         render: (operator) => (
           <AssignedShipperUsers
-            shipperUsers={operator.assigned_shipper_users ?? []}
-            onSelect={(shipperUser) =>
-              setSelectedShipperUser(toShipperUser(shipperUser))
-            }
+            shipperUsers={(operator.assigned_shipper_users ?? []).map(
+              (assigned) => shipperUsersById.get(assigned.id) ?? assigned,
+            )}
+            onSelect={(contacts) => {
+              const users = contacts.map(toShipperUser);
+              setSelectedShipperUser(users[0]);
+              setSelectedShipperContacts(users);
+            }}
           />
         ),
       },
@@ -538,7 +560,7 @@ export default function AdminOperatorManagement({
         ),
       },
     ],
-    [deletingId, handleRetryProvisioning, provisioningId],
+    [deletingId, handleRetryProvisioning, provisioningId, shipperUsersById],
   );
 
   const {
@@ -617,6 +639,8 @@ export default function AdminOperatorManagement({
       {selectedShipperUser && (
         <UserDetailModal
           user={selectedShipperUser}
+          users={selectedShipperContacts}
+          assignmentsReadOnly
           showAdminAssignments
           adminOperators={operators}
           requesterEmail={superAdminEmail}
@@ -624,13 +648,14 @@ export default function AdminOperatorManagement({
           onNotify={showToast}
           onSaved={(updatedUsers) => {
             setSelectedShipperUser(updatedUsers[0] ?? selectedShipperUser);
+            setSelectedShipperContacts(updatedUsers);
             void loadOperators();
           }}
-          onAssignmentsSaved={(updatedUser) => {
-            setSelectedShipperUser(updatedUser);
-            void loadOperators();
+          onAssignmentsSaved={() => undefined}
+          onClose={() => {
+            setSelectedShipperUser(null);
+            setSelectedShipperContacts([]);
           }}
-          onClose={() => setSelectedShipperUser(null)}
         />
       )}
 
@@ -688,6 +713,7 @@ export default function AdminOperatorManagement({
               options={shipperUsers.map((shipperUser) => ({
                 value: shipperUser.id,
                 label: shipperUser.shipper_name,
+                groupKey: shipperGroupKey(shipperUser),
                 description: shipperUser.email,
               }))}
               emptyLabel={t("admin.userRegistration.noUsers")}
@@ -920,27 +946,32 @@ function AssignedShipperUsers({
   onSelect,
 }: {
   shipperUsers: NonNullable<AdminOperator["assigned_shipper_users"]>;
-  onSelect: (shipperUser: AssignedShipperUser) => void;
+  onSelect: (contacts: AssignedShipperUser[]) => void;
 }) {
   if (shipperUsers.length === 0) {
     return <span className="text-sm text-gray-400">-</span>;
   }
 
+  const companies = groupByKey(shipperUsers, shipperGroupKey);
+
   return (
     <div className="flex flex-col items-start gap-1.5">
-      {shipperUsers.map((shipperUser) => (
-        <button
-          type="button"
-          key={shipperUser.id}
-          onClick={() => onSelect(shipperUser)}
-          className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
-          title={`${shipperUser.shipper_name} / ${shipperUser.email}`}
-        >
-          <span className="min-w-0 truncate" title={shipperUser.shipper_name}>
-            {shipperUser.shipper_name}
-          </span>
-        </button>
-      ))}
+      {[...companies.values()].map((contacts) => {
+        const shipperUser = contacts[0];
+        return (
+          <button
+            type="button"
+            key={shipperUser.id}
+            onClick={() => onSelect(contacts)}
+            className="inline-flex max-w-full items-center rounded-full border border-cyan-200 bg-transparent px-2.5 py-1 text-left text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
+            title={`${shipperUser.shipper_name} / ${contacts.map((contact) => contact.email).join(", ")}`}
+          >
+            <span className="min-w-0 truncate" title={shipperUser.shipper_name}>
+              {shipperUser.shipper_name}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -963,7 +994,7 @@ function toShipperUser(shipperUser: AssignedShipperUser): ShipperUser {
         ? shipperUser.approval_status
         : "to_be_approved",
     auth0_provisioning_status: shipperUser.auth0_provisioning_status,
-    created_by: null,
+    created_by: shipperUser.created_by ?? null,
     created_at: shipperUser.created_at,
     updated_at: shipperUser.updated_at,
     admin_assignments: shipperUser.admin_assignments ?? [],
@@ -1046,6 +1077,7 @@ function EditOperatorModal({
             options={shipperUsers.map((shipperUser) => ({
               value: shipperUser.id,
               label: shipperUser.shipper_name,
+              groupKey: shipperGroupKey(shipperUser),
               description: shipperUser.email,
             }))}
             emptyLabel={t("admin.userRegistration.noUsers")}
@@ -1229,21 +1261,35 @@ function FormMultiSelect({
 }: {
   label: string;
   value: string[];
-  options: { value: string; label: string; description?: string }[];
+  options: {
+    value: string;
+    label: string;
+    groupKey: string;
+    description?: string;
+  }[];
   emptyLabel: string;
   onChange: (value: string[]) => void;
 }) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredOptions = normalizedQuery
-    ? options.filter((option) =>
-        [option.label, option.description]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery),
-      )
-    : options;
+  const groups = groupByKey(options, (option) => option.groupKey);
+  const filteredGroups = [...groups.entries()]
+    .map(([key, contacts]) => {
+      const matchesCompany = contacts[0].label
+        .toLowerCase()
+        .includes(normalizedQuery);
+      return [
+        key,
+        matchesCompany
+          ? contacts
+          : contacts.filter((contact) =>
+              (contact.description ?? "")
+                .toLowerCase()
+                .includes(normalizedQuery),
+            ),
+      ] as const;
+    })
+    .filter(([, contacts]) => contacts.length > 0);
   const selectedValueSet = new Set(value);
   const toggleValue = (nextValue: string) => {
     onChange(
@@ -1274,61 +1320,101 @@ function FormMultiSelect({
             />
           </div>
           <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
-            {filteredOptions.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
                 {t("admin.userRegistration.noMatches")}
               </div>
             ) : (
-              filteredOptions.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 transition hover:border-cyan-300 hover:bg-cyan-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/20"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedValueSet.has(option.value)}
-                    onChange={() => toggleValue(option.value)}
-                    className="mt-1 h-4 w-4 rounded border-gray-300"
-                  />
-                  <span className="min-w-0">
-                    <span
-                      className="block truncate text-sm font-bold text-gray-900 dark:text-white"
-                      title={option.label}
-                    >
-                      {option.label}
-                    </span>
-                    {option.description && (
-                      <span
-                        className="block truncate text-xs text-gray-500 dark:text-gray-400"
-                        title={option.description}
-                      >
-                        {option.description}
-                      </span>
-                    )}
-                  </span>
-                </label>
-              ))
+              filteredGroups.map(([groupKey, contacts]) => {
+                const company = contacts[0].label;
+                const allSelected = contacts.every((contact) =>
+                  selectedValueSet.has(contact.value),
+                );
+                const someSelected = contacts.some((contact) =>
+                  selectedValueSet.has(contact.value),
+                );
+                const contactIds = new Set(
+                  contacts.map((contact) => contact.value),
+                );
+                return (
+                  <div
+                    key={groupKey}
+                    className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
+                  >
+                    <label className="flex cursor-pointer items-center gap-3 text-sm font-bold text-gray-900 dark:text-white">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        ref={(input) => {
+                          if (input)
+                            input.indeterminate = someSelected && !allSelected;
+                        }}
+                        onChange={() =>
+                          onChange(
+                            allSelected
+                              ? value.filter((id) => !contactIds.has(id))
+                              : [...new Set([...value, ...contactIds])],
+                          )
+                        }
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <span className="min-w-0 break-words">{company}</span>
+                    </label>
+                    <div className="mt-2 space-y-2 pl-7">
+                      {contacts.map((contact) => (
+                        <label
+                          key={contact.value}
+                          className="flex cursor-pointer items-center gap-3 text-xs text-gray-500 dark:text-gray-400"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedValueSet.has(contact.value)}
+                            onChange={() => toggleValue(contact.value)}
+                            className="h-4 w-4 shrink-0 rounded border-gray-300"
+                          />
+                          <span className="min-w-0 break-all">
+                            {contact.description ?? contact.value}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
           {value.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {value.map((selectedValue) => {
-                const selectedOption = options.find(
-                  (option) => option.value === selectedValue,
-                );
-                if (!selectedOption) return null;
-
-                return (
-                  <button
-                    key={selectedValue}
-                    type="button"
-                    onClick={() => toggleValue(selectedValue)}
-                    className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-900 transition hover:bg-cyan-200 dark:bg-cyan-950 dark:text-cyan-200 dark:hover:bg-cyan-900"
-                  >
-                    {selectedOption.label}
-                  </button>
-                );
-              })}
+              {[...groups.entries()]
+                .filter(([, contacts]) =>
+                  contacts.some((contact) =>
+                    selectedValueSet.has(contact.value),
+                  ),
+                )
+                .map(([groupKey, contacts]) => {
+                  const company = contacts[0].label;
+                  const selectedContacts = contacts.filter((contact) =>
+                    selectedValueSet.has(contact.value),
+                  );
+                  const selectedIds = new Set(
+                    selectedContacts.map((contact) => contact.value),
+                  );
+                  return (
+                    <button
+                      key={groupKey}
+                      type="button"
+                      onClick={() =>
+                        onChange(value.filter((id) => !selectedIds.has(id)))
+                      }
+                      title={selectedContacts
+                        .map((contact) => contact.description)
+                        .join(", ")}
+                      className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-900 transition hover:bg-cyan-200 dark:bg-cyan-950 dark:text-cyan-200 dark:hover:bg-cyan-900"
+                    >
+                      {company}
+                    </button>
+                  );
+                })}
             </div>
           )}
         </div>

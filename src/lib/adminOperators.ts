@@ -31,6 +31,8 @@ export const adminOperatorStaffRoleOptions: {
 ];
 
 export interface AssignedShipperUser {
+  // Enriched from the client shipper list; list_admin_operators does not return this field.
+  created_by?: string | null;
   id: string;
   email: string;
   shipper_name: string;
