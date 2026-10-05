@@ -431,7 +431,7 @@ export default function AdminPanel({
                           user.email,
                         )}:${encodeURIComponent(user.shipper_name)}`}
                       >
-                        {user.shipper_name}
+                        {user.shipper_name} · {user.email}
                       </option>
                     ))}
                   </optgroup>

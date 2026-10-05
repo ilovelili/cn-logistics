@@ -69,7 +69,7 @@ await db.exec(
   "UPDATE app_notifications SET read_at=now() WHERE id=(SELECT id FROM app_notifications ORDER BY created_at,id LIMIT 1)",
 );
 await db.exec(
-  `BEGIN; ${migration("20261005081344_deduplicate_shipper_registration_notifications.sql")} COMMIT;`,
+  `BEGIN; ${migration("20261005081737_deduplicate_shipper_registration_notifications.sql")} COMMIT;`,
 );
 assert.equal(await count(superAdmin, "Legacy Company"), 1);
 assert.equal(await count(ops, "Legacy Company"), 1);
