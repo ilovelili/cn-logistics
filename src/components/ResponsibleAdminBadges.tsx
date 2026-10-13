@@ -1,5 +1,8 @@
 import { t, type TranslationKey } from "../lib/i18n";
-import type { ShipperUserAdminAssignment } from "../lib/shipperUsers";
+import {
+  getShipperAssignmentRoles,
+  type ShipperUserAdminAssignment,
+} from "../lib/shipperUsers";
 import type { AdminOperatorStaffRole } from "../lib/adminOperators";
 
 interface ResponsibleAdminBadgesProps {
@@ -17,10 +20,7 @@ export default function ResponsibleAdminBadges({
 }: ResponsibleAdminBadgesProps) {
   const visibleAssignments = staffRole
     ? assignments.filter((assignment) =>
-        (assignment.staff_roles?.length
-          ? assignment.staff_roles
-          : [assignment.staff_role]
-        ).includes(staffRole),
+        getShipperAssignmentRoles(assignment).includes(staffRole),
       )
     : assignments;
 
@@ -35,9 +35,9 @@ export default function ResponsibleAdminBadges({
         const roleLabels = (
           assignmentRole
             ? [assignmentRole]
-            : assignment.staff_roles?.length
-              ? assignment.staff_roles
-              : [assignment.staff_role]
+            : staffRole
+              ? [staffRole]
+              : getShipperAssignmentRoles(assignment)
         ).map((role) =>
           t(`superAdmin.operators.staffRole.${role}` as TranslationKey),
         );

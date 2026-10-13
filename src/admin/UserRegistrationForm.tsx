@@ -33,7 +33,8 @@ import {
   fetchShipperUsersByAdmin,
   retryShipperUserAuth0Provisioning,
   updateShipperUserApprovalStatus,
-  updateShipperUserAdminAssignments,
+  updateShipperStaffAssignments,
+  getShipperAssignedAdminIds,
   updateShipperContacts,
   fetchAccessibleShipperChangeRequests,
   reviewShipperChangeRequest,
@@ -146,9 +147,18 @@ export default function UserRegistrationForm({
     [],
   );
   const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
-  const [selectedCreateAdminIds, setSelectedCreateAdminIds] = useState<
-    string[]
-  >([]);
+  const [
+    selectedCreateOperationsAdminIds,
+    setSelectedCreateOperationsAdminIds,
+  ] = useState<string[]>([]);
+  const [selectedCreateSalesAdminIds, setSelectedCreateSalesAdminIds] =
+    useState<string[]>([]);
+  const selectedCreateAdminIds = [
+    ...new Set([
+      ...selectedCreateOperationsAdminIds,
+      ...selectedCreateSalesAdminIds,
+    ]),
+  ];
   const [pendingContactDelete, setPendingContactDelete] = useState<{
     index: number;
     title: string;
@@ -276,40 +286,15 @@ export default function UserRegistrationForm({
     setLoading(true);
 
     try {
-      const createdContactEmails = form.contacts
-        .map((contact) => contact.email.trim().toLowerCase())
-        .filter(Boolean);
-      const { auth0Provisioned } = await createShipperUser(form, adminEmail);
-      let updatedUsers = await fetchShipperUsersByAdmin(adminEmail);
-
-      if (selectedCreateAdminIds.length > 0) {
-        const createdUsers = updatedUsers.filter((user) =>
-          createdContactEmails.includes(user.email.toLowerCase()),
-        );
-
-        // Save sequentially to avoid competing assignment transactions and deadlocks.
-        const assignedUsers: ShipperUser[] = [];
-        for (const user of [...createdUsers].sort((first, second) =>
-          first.id.localeCompare(second.id),
-        )) {
-          assignedUsers.push(
-            await updateShipperUserAdminAssignments({
-              requesterEmail: adminEmail,
-              userId: user.id,
-              adminUserIds: selectedCreateAdminIds,
-            }),
-          );
-        }
-        const assignedUsersById = new Map(
-          assignedUsers.map((user) => [user.id, user]),
-        );
-        updatedUsers = updatedUsers.map(
-          (user) => assignedUsersById.get(user.id) ?? user,
-        );
-      }
+      const { auth0Provisioned } = await createShipperUser(form, adminEmail, {
+        operationsAdminUserIds: selectedCreateOperationsAdminIds,
+        salesAdminUserIds: selectedCreateSalesAdminIds,
+      });
+      const updatedUsers = await fetchShipperUsersByAdmin(adminEmail);
 
       setForm(defaultShipperUserForm);
-      setSelectedCreateAdminIds([]);
+      setSelectedCreateOperationsAdminIds([]);
+      setSelectedCreateSalesAdminIds([]);
       setShowCreateForm(false);
       setUsers(updatedUsers);
       showToast(
@@ -356,7 +341,8 @@ export default function UserRegistrationForm({
   const toggleCreateForm = () => {
     setShowCreateForm((currentValue) => {
       if (currentValue) {
-        setSelectedCreateAdminIds([]);
+        setSelectedCreateOperationsAdminIds([]);
+        setSelectedCreateSalesAdminIds([]);
       }
 
       return !currentValue;
@@ -1251,16 +1237,19 @@ export default function UserRegistrationForm({
               <AdminOperatorAssignmentGroups
                 adminOperators={adminOperators}
                 selectedAdminIds={selectedCreateAdminIds}
+                selectedOperationsAdminIds={selectedCreateOperationsAdminIds}
+                selectedSalesAdminIds={selectedCreateSalesAdminIds}
                 assignmentsReadOnly={false}
-                onToggle={(operatorId) =>
-                  setSelectedCreateAdminIds((currentIds) =>
-                    currentIds.includes(operatorId)
-                      ? currentIds.filter(
-                          (currentId) => currentId !== operatorId,
-                        )
-                      : [...currentIds, operatorId],
-                  )
-                }
+                onToggleForRole={(role, operatorId) => {
+                  const update = (ids: string[]) =>
+                    ids.includes(operatorId)
+                      ? ids.filter((id) => id !== operatorId)
+                      : [...ids, operatorId];
+                  if (role === "operations")
+                    setSelectedCreateOperationsAdminIds(update);
+                  else if (role === "sales")
+                    setSelectedCreateSalesAdminIds(update);
+                }}
               />
             </section>
           </div>
@@ -1283,7 +1272,7 @@ export default function UserRegistrationForm({
 
 export function UserDetailModal({
   user,
-  users = [user],
+  users,
   onSaved,
   showAdminAssignments = false,
   adminOperators,
@@ -1328,12 +1317,39 @@ export function UserDetailModal({
   const isChangeRequestMode = canSubmitChangeRequest && !changeRequest;
   const isEditable = !detailsReadOnly || isChangeRequestMode;
   const shipperContacts = useMemo(() => {
-    const matchingUsers = users.filter((currentUser) =>
+    const matchingUsers = (users ?? [user]).filter((currentUser) =>
       isSameShipperGroup(currentUser, user),
     );
 
     return matchingUsers.length > 0 ? matchingUsers : [user];
   }, [user, users]);
+  const companyAssignments = useMemo(
+    () => shipperContacts.flatMap((contact) => contact.admin_assignments ?? []),
+    [shipperContacts],
+  );
+  const initialCompanyAssignments = useMemo(
+    () =>
+      companyAssignments.filter(
+        (assignment) =>
+          !initialSelectedAdminIds ||
+          initialSelectedAdminIds.includes(assignment.admin_user_id),
+      ),
+    [companyAssignments, initialSelectedAdminIds],
+  );
+  const retainedAssignmentOperators = useMemo<AdminOperator[]>(
+    () =>
+      companyAssignments.map((assignment) => ({
+        id: assignment.admin_user_id,
+        email: assignment.email,
+        user_name: assignment.user_name,
+        staff_role: assignment.staff_role,
+        staff_roles: assignment.staff_roles ?? [assignment.staff_role],
+        created_at: assignment.created_at,
+        updated_at: assignment.updated_at,
+        auth0_provisioning_status: "unknown",
+      })),
+    [companyAssignments],
+  );
   const [form, setForm] = useState<ShipperUserForm>({
     email: user.email,
     shipper_name: user.shipper_name,
@@ -1357,35 +1373,48 @@ export function UserDetailModal({
   const [reviewingStatus, setReviewingStatus] = useState<
     "approved" | "rejected" | null
   >(null);
-  const [selectedAdminIds, setSelectedAdminIds] = useState<string[]>(
-    () =>
-      initialSelectedAdminIds ??
-      (user.admin_assignments ?? []).map(
-        (assignment) => assignment.admin_user_id,
-      ),
-  );
   const [selectedOperationsAdminIds, setSelectedOperationsAdminIds] = useState<
     string[]
-  >(() => initialSelectedOperationsAdminIds ?? []);
-  const [selectedSalesAdminIds, setSelectedSalesAdminIds] = useState<string[]>(
-    () => initialSelectedSalesAdminIds ?? [],
+  >(
+    () =>
+      initialSelectedOperationsAdminIds ??
+      (assignmentShipmentJobId
+        ? []
+        : getShipperAssignedAdminIds(initialCompanyAssignments, "operations")),
   );
+  const [selectedSalesAdminIds, setSelectedSalesAdminIds] = useState<string[]>(
+    () =>
+      initialSelectedSalesAdminIds ??
+      (assignmentShipmentJobId
+        ? []
+        : getShipperAssignedAdminIds(initialCompanyAssignments, "sales")),
+  );
+  const selectedAdminIds = [
+    ...new Set([...selectedOperationsAdminIds, ...selectedSalesAdminIds]),
+  ];
 
   useEffect(() => {
-    setSelectedAdminIds(
-      initialSelectedAdminIds ??
-        (user.admin_assignments ?? []).map(
-          (assignment) => assignment.admin_user_id,
-        ),
+    setSelectedOperationsAdminIds(
+      initialSelectedOperationsAdminIds ??
+        (assignmentShipmentJobId
+          ? []
+          : getShipperAssignedAdminIds(
+              initialCompanyAssignments,
+              "operations",
+            )),
     );
-  }, [initialSelectedAdminIds, user.admin_assignments, user.id]);
-
-  useEffect(() => {
-    setSelectedOperationsAdminIds(initialSelectedOperationsAdminIds ?? []);
-    setSelectedSalesAdminIds(initialSelectedSalesAdminIds ?? []);
+    setSelectedSalesAdminIds(
+      initialSelectedSalesAdminIds ??
+        (assignmentShipmentJobId
+          ? []
+          : getShipperAssignedAdminIds(initialCompanyAssignments, "sales")),
+    );
   }, [
+    initialSelectedAdminIds,
     initialSelectedOperationsAdminIds,
     initialSelectedSalesAdminIds,
+    assignmentShipmentJobId,
+    initialCompanyAssignments,
     user.id,
   ]);
 
@@ -1451,7 +1480,8 @@ export function UserDetailModal({
             userId: user.id,
             requesterEmail,
             form,
-            adminUserIds: selectedAdminIds,
+            operationsAdminUserIds: selectedOperationsAdminIds,
+            salesAdminUserIds: selectedSalesAdminIds,
           });
         }
         await onChangeRequested?.();
@@ -1500,15 +1530,7 @@ export function UserDetailModal({
     }
   };
 
-  const toggleAdminAssignment = (adminUserId: string) => {
-    setSelectedAdminIds((currentIds) =>
-      currentIds.includes(adminUserId)
-        ? currentIds.filter((currentId) => currentId !== adminUserId)
-        : [...currentIds, adminUserId],
-    );
-  };
-
-  const toggleShipmentAdminAssignment = (
+  const toggleStaffAssignment = (
     role: AdminOperatorStaffRole,
     adminUserId: string,
   ) => {
@@ -1529,10 +1551,11 @@ export function UserDetailModal({
     setAssignmentError("");
 
     try {
-      const updatedUser = await updateShipperUserAdminAssignments({
+      const updatedUser = await updateShipperStaffAssignments({
         requesterEmail,
         userId: user.id,
-        adminUserIds: selectedAdminIds,
+        operationsAdminUserIds: selectedOperationsAdminIds,
+        salesAdminUserIds: selectedSalesAdminIds,
       });
       onAssignmentsSaved(updatedUser);
       onNotify?.("success", t("admin.userRegistration.assignmentUpdated"));
@@ -1631,11 +1654,19 @@ export function UserDetailModal({
                     </div>
                     <AdminOperatorAssignmentGroups
                       adminOperators={adminOperators}
+                      retainedOperators={retainedAssignmentOperators}
                       selectedAdminIds={(contact.admin_assignments ?? []).map(
                         (assignment) => assignment.admin_user_id,
                       )}
+                      selectedOperationsAdminIds={getShipperAssignedAdminIds(
+                        contact.admin_assignments ?? [],
+                        "operations",
+                      )}
+                      selectedSalesAdminIds={getShipperAssignedAdminIds(
+                        contact.admin_assignments ?? [],
+                        "sales",
+                      )}
                       assignmentsReadOnly
-                      onToggle={() => undefined}
                     />
                   </div>
                 ))}
@@ -1643,24 +1674,14 @@ export function UserDetailModal({
             ) : (
               <AdminOperatorAssignmentGroups
                 adminOperators={adminOperators}
+                retainedOperators={retainedAssignmentOperators}
                 selectedAdminIds={selectedAdminIds}
-                selectedOperationsAdminIds={
-                  assignmentShipmentJobId
-                    ? selectedOperationsAdminIds
-                    : undefined
-                }
-                selectedSalesAdminIds={
-                  assignmentShipmentJobId ? selectedSalesAdminIds : undefined
-                }
+                selectedOperationsAdminIds={selectedOperationsAdminIds}
+                selectedSalesAdminIds={selectedSalesAdminIds}
                 assignmentsReadOnly={
                   assignmentsReadOnly && !isChangeRequestMode
                 }
-                onToggle={toggleAdminAssignment}
-                onToggleForRole={
-                  assignmentShipmentJobId
-                    ? toggleShipmentAdminAssignment
-                    : undefined
-                }
+                onToggleForRole={toggleStaffAssignment}
               />
             )}
 
@@ -1949,11 +1970,27 @@ function ChangeRequestSummary({
               .map((contact) => `${contact.contact_person} <${contact.email}>`)
               .join(", "),
           ],
-          [
-            t("admin.userRegistration.salesAssignees"),
-            assignmentLabel(before.admin_user_ids ?? []),
-            assignmentLabel(after.admin_user_ids ?? []),
-          ],
+          ...(("operations_admin_user_ids" in before &&
+          "operations_admin_user_ids" in after
+            ? [
+                [
+                  t("admin.userRegistration.operationsAssignees"),
+                  assignmentLabel(before.operations_admin_user_ids ?? []),
+                  assignmentLabel(after.operations_admin_user_ids ?? []),
+                ],
+                [
+                  t("admin.userRegistration.salesAssignees"),
+                  assignmentLabel(before.sales_admin_user_ids ?? []),
+                  assignmentLabel(after.sales_admin_user_ids ?? []),
+                ],
+              ]
+            : [
+                [
+                  t("admin.userRegistration.assignedAdmins"),
+                  assignmentLabel(before.admin_user_ids ?? []),
+                  assignmentLabel(after.admin_user_ids ?? []),
+                ],
+              ]) as [string, string, string][]),
         ]
       : [];
   const changedRows = rows.filter(
@@ -2010,7 +2047,9 @@ function AdminOperatorCheckboxGrid({
   selectedAdminIds,
   assignmentsReadOnly,
   onToggle,
+  unavailableOperatorIds = [],
 }: {
+  unavailableOperatorIds?: string[];
   adminOperators: AdminOperator[];
   selectedAdminIds: string[];
   assignmentsReadOnly: boolean;
@@ -2066,6 +2105,12 @@ function AdminOperatorCheckboxGrid({
               >
                 {operator.email}
               </span>
+              {!assignmentsReadOnly &&
+                unavailableOperatorIds.includes(operator.id) && (
+                  <span className="block text-xs text-amber-700 dark:text-amber-300">
+                    {t("admin.userRegistration.assignmentUnavailable")}
+                  </span>
+                )}
             </span>
           </>
         );
@@ -2095,7 +2140,9 @@ function AdminOperatorCheckboxGrid({
 }
 
 function AdminOperatorAssignmentGroups(
-  props: Parameters<typeof AdminOperatorCheckboxGrid>[0] & {
+  props: Omit<Parameters<typeof AdminOperatorCheckboxGrid>[0], "onToggle"> & {
+    onToggle?: (operatorId: string) => void;
+    retainedOperators?: AdminOperator[];
     selectedOperationsAdminIds?: string[];
     selectedSalesAdminIds?: string[];
     onToggleForRole?: (
@@ -2104,6 +2151,16 @@ function AdminOperatorAssignmentGroups(
     ) => void;
   },
 ) {
+  const availableIds = new Set(
+    props.adminOperators.map((operator) => operator.id),
+  );
+  const operatorsById = new Map(
+    props.adminOperators.map((operator) => [operator.id, operator]),
+  );
+  for (const operator of props.retainedOperators ?? []) {
+    if (!operatorsById.has(operator.id))
+      operatorsById.set(operator.id, operator);
+  }
   const groups = [
     {
       role: "operations" as const,
@@ -2117,34 +2174,43 @@ function AdminOperatorAssignmentGroups(
 
   return (
     <div className="grid gap-5">
-      {groups.map(({ role, label }) => (
-        <div key={role}>
-          <h5 className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-200">
-            {label}
-          </h5>
-          <AdminOperatorCheckboxGrid
-            {...props}
-            selectedAdminIds={
-              role === "operations"
-                ? (props.selectedOperationsAdminIds ?? props.selectedAdminIds)
-                : (props.selectedSalesAdminIds ?? props.selectedAdminIds)
-            }
-            onToggle={(operatorId) => {
-              if (props.onToggleForRole) {
-                props.onToggleForRole(role, operatorId);
-              } else {
-                props.onToggle(operatorId);
-              }
-            }}
-            adminOperators={props.adminOperators.filter((operator) =>
-              (operator.staff_roles?.length
-                ? operator.staff_roles
-                : [operator.staff_role]
-              ).includes(role),
-            )}
-          />
-        </div>
-      ))}
+      {groups.map(({ role, label }) => {
+        const selectedIds =
+          role === "operations"
+            ? (props.selectedOperationsAdminIds ?? props.selectedAdminIds)
+            : (props.selectedSalesAdminIds ?? props.selectedAdminIds);
+        const eligible = (operator: AdminOperator) =>
+          availableIds.has(operator.id) &&
+          (operator.staff_roles?.length
+            ? operator.staff_roles
+            : [operator.staff_role]
+          ).includes(role);
+        const visibleOperators = [...operatorsById.values()].filter(
+          (operator) => eligible(operator) || selectedIds.includes(operator.id),
+        );
+        return (
+          <div key={role}>
+            <h5 className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-200">
+              {label}
+            </h5>
+            <AdminOperatorCheckboxGrid
+              {...props}
+              selectedAdminIds={selectedIds}
+              unavailableOperatorIds={visibleOperators
+                .filter((operator) => !eligible(operator))
+                .map((operator) => operator.id)}
+              onToggle={(operatorId) => {
+                if (props.onToggleForRole) {
+                  props.onToggleForRole(role, operatorId);
+                } else {
+                  props.onToggle?.(operatorId);
+                }
+              }}
+              adminOperators={visibleOperators}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

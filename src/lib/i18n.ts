@@ -472,9 +472,11 @@ const ja = {
   "admin.userRegistration.updateFailed": "荷主情報の更新に失敗しました",
   "admin.userRegistration.assignedAdmins": "CN担当",
   "admin.userRegistration.assignedAdminsDescription":
-    "荷主に紐づくOps担当とSales担当を複数選択できます。",
+    "Ops担当とSales担当をそれぞれ個別に選択できます。",
   "admin.userRegistration.operationsAssignees": "Ops担当",
   "admin.userRegistration.salesAssignees": "Sales担当",
+  "admin.userRegistration.assignmentUnavailable":
+    "現在、この担当区分には割り当てできません。選択を解除して保存してください。",
   "admin.userRegistration.assignmentUpdated":
     "CN担当を更新しました。再承認されるまで承認待ちとなります。",
   "admin.userRegistration.assignmentUpdateFailed": "CN担当の更新に失敗しました",
@@ -1114,9 +1116,11 @@ const en: Messages = {
   "admin.userRegistration.updateFailed": "Failed to update shipper",
   "admin.userRegistration.assignedAdmins": "CN contact",
   "admin.userRegistration.assignedAdminsDescription":
-    "Select one or more Ops and Sales contacts assigned to this shipper.",
+    "Select Ops and Sales contacts independently for this shipper.",
   "admin.userRegistration.operationsAssignees": "Ops contact",
   "admin.userRegistration.salesAssignees": "Sales contact",
+  "admin.userRegistration.assignmentUnavailable":
+    "This person is no longer eligible for this duty. Uncheck them before saving.",
   "admin.userRegistration.assignmentUpdated":
     "CN contacts updated and returned to pending approval.",
   "admin.userRegistration.assignmentUpdateFailed":

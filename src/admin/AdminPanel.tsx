@@ -30,6 +30,7 @@ import {
 } from "../lib/adminOperators";
 import {
   ShipperUser,
+  getShipperAssignmentRoles,
   fetchAccessibleShipmentShipperContacts,
   fetchApprovedShippersForShipments,
   fetchShipperUsersByAdmin,
@@ -115,9 +116,7 @@ export default function AdminPanel({
     shipmentShipperUsers.forEach((user) => {
       const ids = salesIdsByShipper.get(user.shipper_name) ?? new Set<string>();
       (user.admin_assignments ?? []).forEach((assignment) => {
-        const roles = assignment.staff_roles?.length
-          ? assignment.staff_roles
-          : [assignment.staff_role];
+        const roles = getShipperAssignmentRoles(assignment);
         if (roles.includes("sales")) ids.add(assignment.admin_user_id);
       });
       salesIdsByShipper.set(user.shipper_name, ids);
@@ -165,10 +164,7 @@ export default function AdminPanel({
           admin_assignments: operatorAssignments,
           sales_admin_user_ids: (contact.admin_assignments ?? [])
             .filter((assignment) =>
-              (assignment.staff_roles?.length
-                ? assignment.staff_roles
-                : [assignment.staff_role]
-              ).includes("sales"),
+              getShipperAssignmentRoles(assignment).includes("sales"),
             )
             .map((assignment) => assignment.admin_user_id),
         })),

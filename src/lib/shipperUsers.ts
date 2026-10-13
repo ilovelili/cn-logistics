@@ -43,12 +43,40 @@ export interface ShipperUser {
 
 export interface ShipperUserAdminAssignment {
   admin_user_id: string;
+  assignment_roles?: ("operations" | "sales")[];
   email: string;
   user_name: string | null;
   staff_role: "sales" | "customer_service" | "operations" | "other";
   staff_roles?: ("sales" | "customer_service" | "operations" | "other")[];
   created_at: string;
   updated_at: string;
+}
+
+// Older API responses infer duties from employee qualifications; an explicit empty array stays empty.
+export function getShipperAssignmentRoles(
+  assignment: ShipperUserAdminAssignment,
+) {
+  return (
+    assignment.assignment_roles ??
+    (assignment.staff_roles?.length
+      ? assignment.staff_roles
+      : [assignment.staff_role])
+  );
+}
+
+export function getShipperAssignedAdminIds(
+  assignments: ShipperUserAdminAssignment[],
+  role: "operations" | "sales",
+) {
+  return [
+    ...new Set(
+      assignments
+        .filter((assignment) =>
+          getShipperAssignmentRoles(assignment).includes(role),
+        )
+        .map((assignment) => assignment.admin_user_id),
+    ),
+  ];
 }
 
 export interface ShipperAdminAssignmentOption {
@@ -67,6 +95,8 @@ export interface ShipperProfileChangeRequestSnapshot {
   notes: string;
   contacts: ShipperUserContact[];
   admin_user_ids: string[];
+  operations_admin_user_ids?: string[];
+  sales_admin_user_ids?: string[];
 }
 
 export interface ShipmentAssignmentChangeRequestSnapshot {
@@ -104,6 +134,10 @@ export const defaultShipperUserForm: ShipperUserForm = {
 export async function createShipperUser(
   form: ShipperUserForm,
   createdBy: string,
+  assignments: {
+    operationsAdminUserIds: string[];
+    salesAdminUserIds: string[];
+  },
 ) {
   const contacts = form.contacts
     .map((contact) => ({
@@ -112,16 +146,21 @@ export async function createShipperUser(
     }))
     .filter((contact) => contact.email && contact.contact_person);
 
-  const { error } = await supabase.rpc("create_registered_normal_user", {
-    user_shipper_name: form.shipper_name.trim(),
-    user_zipcode: form.zipcode.trim(),
-    user_shipper_address: form.shipper_address.trim(),
-    user_telephone: form.telephone.trim(),
-    user_budget: Number(form.budget || 0),
-    user_contacts: contacts,
-    user_notes: form.notes.trim(),
-    admin_email: createdBy,
-  });
+  const { error } = await supabase.rpc(
+    "create_registered_shipper_with_staff_roles",
+    {
+      user_shipper_name: form.shipper_name.trim(),
+      user_zipcode: form.zipcode.trim(),
+      user_shipper_address: form.shipper_address.trim(),
+      user_telephone: form.telephone.trim(),
+      user_budget: Number(form.budget || 0),
+      user_contacts: contacts,
+      user_notes: form.notes.trim(),
+      admin_email: createdBy,
+      operations_admin_user_ids: assignments.operationsAdminUserIds,
+      sales_admin_user_ids: assignments.salesAdminUserIds,
+    },
+  );
 
   if (error) {
     throw error;
@@ -341,6 +380,33 @@ export async function setOperatorShipperAssignment({
   if (error) throw error;
 }
 
+export async function updateShipperStaffAssignments({
+  requesterEmail,
+  userId,
+  operationsAdminUserIds,
+  salesAdminUserIds,
+}: {
+  requesterEmail: string;
+  userId: string;
+  operationsAdminUserIds: string[];
+  salesAdminUserIds: string[];
+}) {
+  const { data, error } = await supabase.rpc(
+    "update_accessible_shipper_staff_assignments",
+    {
+      requester_email: requesterEmail,
+      target_user_id: userId,
+      operations_admin_user_ids: operationsAdminUserIds,
+      sales_admin_user_ids: salesAdminUserIds,
+    },
+  );
+  if (error) throw error;
+  const [updatedUser] = (data ?? []) as ShipperUser[];
+  if (!updatedUser)
+    throw new Error("Customer staff assignments were not updated.");
+  return updatedUser;
+}
+
 export async function updateShipperUserAdminAssignments({
   requesterEmail,
   userId,
@@ -384,31 +450,37 @@ export async function submitShipperChangeRequest({
   userId,
   requesterEmail,
   form,
-  adminUserIds,
+  operationsAdminUserIds,
+  salesAdminUserIds,
 }: {
   userId: string;
   requesterEmail: string;
   form: ShipperUserForm;
-  adminUserIds: string[];
+  operationsAdminUserIds: string[];
+  salesAdminUserIds: string[];
 }) {
-  const { data, error } = await supabase.rpc("submit_shipper_change_request", {
-    target_user_id: userId,
-    proposed_shipper_name: form.shipper_name.trim(),
-    proposed_zipcode: form.zipcode.trim(),
-    proposed_shipper_address: form.shipper_address.trim(),
-    proposed_telephone: form.telephone.trim(),
-    proposed_budget: Number(form.budget || 0),
-    proposed_contacts: form.contacts
-      .map((contact) => ({
-        id: contact.id,
-        email: contact.email.trim(),
-        contact_person: contact.contact_person.trim(),
-      }))
-      .filter((contact) => contact.email && contact.contact_person),
-    proposed_notes: form.notes.trim(),
-    proposed_admin_user_ids: adminUserIds,
-    requester_email: requesterEmail,
-  });
+  const { data, error } = await supabase.rpc(
+    "submit_shipper_staff_change_request",
+    {
+      target_user_id: userId,
+      proposed_shipper_name: form.shipper_name.trim(),
+      proposed_zipcode: form.zipcode.trim(),
+      proposed_shipper_address: form.shipper_address.trim(),
+      proposed_telephone: form.telephone.trim(),
+      proposed_budget: Number(form.budget || 0),
+      proposed_contacts: form.contacts
+        .map((contact) => ({
+          id: contact.id,
+          email: contact.email.trim(),
+          contact_person: contact.contact_person.trim(),
+        }))
+        .filter((contact) => contact.email && contact.contact_person),
+      proposed_notes: form.notes.trim(),
+      proposed_operations_admin_user_ids: operationsAdminUserIds,
+      proposed_sales_admin_user_ids: salesAdminUserIds,
+      requester_email: requesterEmail,
+    },
+  );
 
   if (error) throw error;
   return data as string;
