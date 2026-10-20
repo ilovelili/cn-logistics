@@ -1066,7 +1066,9 @@ function buildColumns(
       width: 130,
       sortKey: "pol_aol",
       render: (job) => (
-        <span className={`whitespace-nowrap ${mutedText}`}>
+        <span
+          className={`block whitespace-normal [overflow-wrap:anywhere] ${mutedText}`}
+        >
           {job.pol_aol || "-"}
         </span>
       ),
@@ -1077,7 +1079,9 @@ function buildColumns(
       width: 130,
       sortKey: "pod_aod",
       render: (job) => (
-        <span className={`whitespace-nowrap ${mutedText}`}>
+        <span
+          className={`block whitespace-normal [overflow-wrap:anywhere] ${mutedText}`}
+        >
           {job.pod_aod || "-"}
         </span>
       ),
@@ -1580,7 +1584,10 @@ function VesselFlightList({ values }: { values?: string[] | null }) {
   return (
     <div className="space-y-1">
       {filteredValues.map((value, index) => (
-        <div key={`${value}-${index}`} className="whitespace-nowrap">
+        <div
+          key={`${value}-${index}`}
+          className="whitespace-normal [overflow-wrap:anywhere]"
+        >
           <span className="font-semibold text-slate-500">{index + 1}.</span>{" "}
           {value}
         </div>
